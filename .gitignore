@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Browser profile — contains live session cookies. NEVER commit.
+browser_session/
+
+# Runtime artifacts
+diagnostics_report.json
+debug_*.png
+logs/

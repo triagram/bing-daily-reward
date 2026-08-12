@@ -23,6 +23,10 @@ class SearchResult:
     balance_before: int | None = None
     balance_after: int | None = None
     errors: list[str] = field(default_factory=list)
+    # One entry per search when per_search_balance is on: which term, how it was
+    # issued, and what the balance did immediately afterwards. A batch measurement
+    # cannot attribute its delta to any single search; this can.
+    per_search: list[dict] = field(default_factory=list)
 
     @property
     def points_earned(self) -> int | None:
@@ -73,6 +77,8 @@ async def run_daily_searches(
     context: BrowserContext,
     search_count: int = DAILY_SEARCH_COUNT,
     state_page: Page | None = None,
+    per_search_balance: bool = False,
+    force_input_mode: str | None = None,
 ) -> SearchResult:
     """
     Perform Bing searches and measure what they earned.
@@ -81,6 +87,15 @@ async def run_daily_searches(
     the point total this reports is observed rather than inferred from the number of
     pages that happened to load. When the balance cannot be read the result says so
     instead of quietly claiming success.
+
+    `per_search_balance` reads the balance after every single search instead of only
+    at the ends. It roughly doubles the run time, so it is off by default, but it is
+    the only way to attribute a gain to a particular search — a before/after pair
+    around a batch cannot say which query earned the points, or whether earning
+    stopped partway because a quota filled.
+
+    `force_input_mode` pins how queries are issued, "url" or "type", so the two can be
+    compared directly instead of mixed at random.
     """
     result = SearchResult(attempted=search_count)
     owns_state_page = state_page is None
@@ -100,16 +115,46 @@ async def run_daily_searches(
     search_tab = await context.new_page()
 
     try:
+        running_balance = result.balance_before
+
         for idx, term in enumerate(terms, start=1):
-            # Type a minority of queries rather than navigating straight to the URL.
-            use_box = random.random() < 0.3
-            logger.info(f"   [{idx}/{search_count}] {'typing' if use_box else 'query'}: {term!r}")
+            if force_input_mode:
+                use_box = force_input_mode == "type"
+            else:
+                # Type a minority of queries rather than navigating straight to the URL.
+                use_box = random.random() < 0.3
+            mode = "type" if use_box else "url"
+            logger.info(f"   [{idx}/{search_count}] {mode}: {term!r}")
             try:
                 await _search_once(search_tab, term, use_box)
                 result.submitted += 1
+                ok = True
             except Exception as e:
+                ok = False
                 result.errors.append(f"search {idx} ({term!r}): {e}")
                 logger.warning(f"   [{idx}/{search_count}] failed: {e}")
+
+            if per_search_balance:
+                await asyncio.sleep(3.0)  # let the credit land before looking
+                try:
+                    now = (await fetch_state(state_page)).balance
+                except Exception as e:
+                    now = None
+                    result.errors.append(f"balance after search {idx}: {e}")
+                gained = (
+                    now - running_balance
+                    if isinstance(now, int) and isinstance(running_balance, int)
+                    else None
+                )
+                result.per_search.append(
+                    {"index": idx, "term": term, "mode": mode, "ok": ok,
+                     "balance": now, "gained": gained}
+                )
+                marker = "💰" if gained else "  "
+                logger.info(f"       {marker} balance {now} ({gained:+d})" if gained is not None
+                            else f"       balance {now} (delta unknown)")
+                if isinstance(now, int):
+                    running_balance = now
 
             if idx < search_count:
                 gap = search_gap()

@@ -12,6 +12,42 @@ async def random_sleep(min_seconds: float = 1.5, max_seconds: float = 3.0):
     duration = random.uniform(min_seconds, max_seconds)
     await asyncio.sleep(duration)
 
+
+def search_gap() -> float:
+    """
+    Draw a gap between consecutive searches.
+
+    A uniform 6-9s window is not what a person's timing looks like: real gaps are
+    heavy-tailed, mostly short with an occasional long pause where attention went
+    elsewhere. This draws from a three-part mixture instead, which keeps the mean
+    reasonable while producing the long tail.
+
+    Mean is roughly 20s, so a twenty-search run takes about seven minutes.
+    """
+    roll = random.random()
+    if roll < 0.70:
+        return random.uniform(7.0, 18.0)     # skimmed the results and moved on
+    if roll < 0.95:
+        return random.uniform(18.0, 45.0)    # actually read something
+    return random.uniform(45.0, 120.0)       # got distracted
+
+
+async def human_scroll(page: Page):
+    """
+    Scroll a results page the way someone skimming it would: a few downward steps of
+    varying size, sometimes a scroll back up to re-read something, with pauses that
+    are not all the same length.
+    """
+    try:
+        for _ in range(random.randint(2, 5)):
+            await page.evaluate(f"window.scrollBy(0, {random.randint(180, 620)})")
+            await asyncio.sleep(random.uniform(0.5, 2.2))
+        if random.random() < 0.35:
+            await page.evaluate(f"window.scrollBy(0, -{random.randint(120, 400)})")
+            await asyncio.sleep(random.uniform(0.6, 1.8))
+    except Exception as e:
+        logger.debug(f"scroll note: {e}")
+
 async def human_type(locator: Locator, text: str):
     """Fast typing simulation (15-40ms per key) to speed up search execution."""
     try:

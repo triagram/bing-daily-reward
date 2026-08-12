@@ -29,3 +29,6 @@ browser_session/
 diagnostics_report.json
 debug_*.png
 logs/
+
+# Reconnaissance output — contains account state. Never commit.
+captures/

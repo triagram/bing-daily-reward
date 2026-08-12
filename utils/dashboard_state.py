@@ -1,0 +1,277 @@
+"""
+Parse the Microsoft Rewards dashboard's embedded state out of its HTML.
+
+The dashboard is a Next.js app using React Server Components. It makes no separate
+data request — the state arrives serialised inside the HTML document, in a stream of
+`self.__next_f.push([1, "<chunk>"])` calls that concatenate into React's flight
+format. That stream is the ground truth behind every card the page draws.
+
+This module reads that stream and returns structured offers, so callers can ask
+"which tasks are outstanding today?" instead of guessing at CSS class names. It is a
+pure function of the HTML: no network, no browser, no I/O. That makes it testable
+offline against a captured page (see capture_state.py).
+
+    from utils.dashboard_state import parse_dashboard
+    state = parse_dashboard(await page.content())
+    for offer in state.daily_set(today):
+        if not offer.is_completed:
+            ...
+"""
+
+import re
+import json
+import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from typing import Iterator, Any
+
+logger = logging.getLogger("bing_rewards")
+
+# offerId is self-describing, e.g. Gamification_DailySet_ENGB_20260811_Child2
+OFFER_ID_PATTERN = re.compile(
+    r"^(?P<family>[A-Za-z]+)_(?P<kind>[A-Za-z]+)_(?P<market>[A-Z]{4})_"
+    r"(?P<day>\d{8})_(?P<slot>[A-Za-z0-9]+)$"
+)
+
+
+@dataclass
+class Offer:
+    """One task card, as the dashboard itself describes it."""
+
+    offer_id: str
+    title: str | None = None
+    description: str | None = None
+    points: int | None = None
+    is_completed: bool | None = None
+    date_text: str | None = None       # the payload's own "date" field, e.g. "08/11/2026"
+    destination: str | None = None     # where the card sends you
+    cta_text: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
+
+    # --- derived from the offerId itself, which is more structural than any field ---
+
+    @property
+    def market(self) -> str | None:
+        """Market code baked into the id, e.g. ENGB."""
+        m = OFFER_ID_PATTERN.match(self.offer_id)
+        return m.group("market") if m else None
+
+    @property
+    def slot(self) -> str | None:
+        """Which card of the set, e.g. Child1 / Child2 / Child3."""
+        m = OFFER_ID_PATTERN.match(self.offer_id)
+        return m.group("slot") if m else None
+
+    @property
+    def day(self) -> date | None:
+        """The date the id encodes. Preferred over date_text: it is part of the key."""
+        m = OFFER_ID_PATTERN.match(self.offer_id)
+        if not m:
+            return None
+        try:
+            return datetime.strptime(m.group("day"), "%Y%m%d").date()
+        except ValueError:
+            return None
+
+    @property
+    def is_daily_set(self) -> bool:
+        m = OFFER_ID_PATTERN.match(self.offer_id)
+        return bool(m) and m.group("kind").lower() == "dailyset"
+
+
+@dataclass
+class DashboardState:
+    balance: int | None = None
+    level: int | None = None
+    offers: list[Offer] = field(default_factory=list)
+    counters: list[dict[str, Any]] = field(default_factory=list)
+
+    def daily_set(self, day: date | None = None) -> list[Offer]:
+        """Daily-set offers for one day, ordered by slot. Defaults to today."""
+        day = day or date.today()
+        found = [o for o in self.offers if o.is_daily_set and o.day == day]
+        return sorted(found, key=lambda o: o.slot or "")
+
+    def outstanding(self, day: date | None = None) -> list[Offer]:
+        """Daily-set offers for the day that are not yet marked complete."""
+        return [o for o in self.daily_set(day) if o.is_completed is False]
+
+    @property
+    def markets(self) -> set[str]:
+        return {m for m in (o.market for o in self.offers) if m}
+
+
+# --------------------------------------------------------------------------- #
+# Flight-stream extraction
+# --------------------------------------------------------------------------- #
+
+
+def extract_flight_stream(html: str) -> str:
+    """
+    Reassemble the React flight stream from the page's __next_f.push() calls.
+
+    Each call looks like `self.__next_f.push([1,"…"])`. The argument is valid JSON,
+    so it is parsed rather than unescaped by hand — the chunks contain quotes and
+    backslashes that ad-hoc unescaping gets wrong.
+    """
+    chunks: list[str] = []
+    needle = "self.__next_f.push("
+    pos = 0
+
+    while True:
+        start = html.find(needle, pos)
+        if start == -1:
+            break
+        open_paren = start + len(needle) - 1
+        end = _match_bracket(html, open_paren, "(", ")")
+        if end == -1:
+            pos = start + len(needle)
+            continue
+        try:
+            payload = json.loads(html[open_paren + 1 : end])
+            if isinstance(payload, list) and len(payload) >= 2 and isinstance(payload[1], str):
+                chunks.append(payload[1])
+        except (ValueError, TypeError):
+            pass
+        pos = end + 1
+
+    return "".join(chunks)
+
+
+def _match_bracket(text: str, start: int, opener: str, closer: str) -> int:
+    """Index of the bracket closing the one at `start`, or -1. String-aware."""
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+        elif c == opener:
+            depth += 1
+        elif c == closer:
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
+def iter_objects_containing(text: str, key: str) -> Iterator[dict]:
+    """
+    Yield the smallest balanced JSON object around each occurrence of `key`.
+
+    Scanning with a stack means inner objects close first, so each occurrence is
+    claimed by the tightest object that encloses it — an outer wrapper holding the
+    same key is skipped rather than returned as a duplicate. This is what makes the
+    result trustworthy where a regex window would bleed into the neighbouring object.
+    """
+    marker = f'"{key}"'
+    claimed: set[int] = set()
+    stack: list[int] = []
+    in_str = False
+    esc = False
+
+    for i, c in enumerate(text):
+        if in_str:
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            continue
+
+        if c == '"':
+            in_str = True
+        elif c == "{":
+            stack.append(i)
+        elif c == "}" and stack:
+            start = stack.pop()
+            segment = text[start : i + 1]
+            hits = [start + m.start() for m in re.finditer(re.escape(marker), segment)]
+            if not hits or all(h in claimed for h in hits):
+                continue
+            try:
+                obj = json.loads(segment)
+            except ValueError:
+                continue  # let an enclosing object try instead
+            if isinstance(obj, dict):
+                claimed.update(hits)
+                yield obj
+
+
+# --------------------------------------------------------------------------- #
+# Public entry point
+# --------------------------------------------------------------------------- #
+
+
+def parse_dashboard(html: str) -> DashboardState:
+    """Parse a dashboard or /earn HTML document into structured state."""
+    stream = extract_flight_stream(html)
+    if not stream:
+        logger.warning("No __next_f flight stream found — page layout may have changed.")
+        return DashboardState()
+
+    state = DashboardState()
+    seen: set[tuple] = set()
+
+    for obj in iter_objects_containing(stream, "offerId"):
+        offer_id = obj.get("offerId")
+        if not isinstance(offer_id, str) or not offer_id:
+            continue
+        points = obj.get("points")
+        completed = obj.get("isCompleted")
+        # The same offer can appear more than once (card plus a modal, say); keep the
+        # richest copy rather than the first one encountered.
+        fingerprint = (offer_id, obj.get("title"), points, completed)
+        if fingerprint in seen:
+            continue
+        seen.add(fingerprint)
+
+        state.offers.append(
+            Offer(
+                offer_id=offer_id,
+                title=obj.get("title"),
+                description=obj.get("description"),
+                points=points if isinstance(points, int) else None,
+                is_completed=completed if isinstance(completed, bool) else None,
+                date_text=obj.get("date"),
+                destination=obj.get("destination") or obj.get("ctaUrl"),
+                cta_text=obj.get("ctaText"),
+                raw=obj,
+            )
+        )
+
+    for obj in iter_objects_containing(stream, "balance"):
+        if isinstance(obj.get("balance"), int):
+            state.balance = obj["balance"]
+            if isinstance(obj.get("level"), int):
+                state.level = obj["level"]
+            break
+
+    for obj in iter_objects_containing(stream, "maxValue"):
+        if isinstance(obj.get("maxValue"), int) and isinstance(obj.get("value"), int):
+            state.counters.append(
+                {
+                    "value": obj["value"],
+                    "maxValue": obj["maxValue"],
+                    "label": obj.get("aria-label") or obj.get("label"),
+                }
+            )
+
+    return state
+
+
+def parse_dashboard_file(path) -> DashboardState:
+    """Convenience wrapper for offline work against a capture."""
+    from pathlib import Path
+
+    return parse_dashboard(Path(path).read_text(encoding="utf-8", errors="replace"))

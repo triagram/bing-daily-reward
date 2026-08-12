@@ -9,7 +9,7 @@ format. That stream is the ground truth behind every card the page draws.
 This module reads that stream and returns structured offers, so callers can ask
 "which tasks are outstanding today?" instead of guessing at CSS class names. It is a
 pure function of the HTML: no network, no browser, no I/O. That makes it testable
-offline against a captured page (see capture_state.py).
+offline against a captured page (see recon.py).
 
     from utils.dashboard_state import parse_dashboard
     state = parse_dashboard(await page.content())

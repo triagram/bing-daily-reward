@@ -14,8 +14,8 @@ Run it daily and the questions we currently cannot answer — where the search c
 lives, what resets overnight, whether points credit with a lag — answer themselves
 from the diffs.
 
-    uv run python sample_state.py            # take a sample
-    uv run python sample_state.py --history  # show what has been collected so far
+    uv run python monitor.py            # take a sample
+    uv run python monitor.py --history  # show what has been collected so far
 """
 
 import sys
@@ -147,6 +147,18 @@ def print_history():
     console.print(table)
 
 
+def profile_in_use() -> bool:
+    """
+    True when something already has the browser profile open.
+
+    Chromium allows only one process per user-data-dir. On a schedule this matters:
+    a sample firing while the bot runs, or while the profile is open by hand, would
+    fail noisily or disturb the other session. Skipping is the right response — the
+    next sample is only hours away.
+    """
+    return any((USER_DATA_DIR / name).exists() for name in ("SingletonLock", "SingletonSocket"))
+
+
 async def take_sample(note: str) -> dict | None:
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -201,6 +213,13 @@ async def main():
 
     console.print("\n[bold cyan]📊 Rewards state sample (read-only)[/bold cyan]")
     console.print("[dim]Loads the dashboard and records it. No searches, no clicks.[/dim]\n")
+
+    if profile_in_use():
+        console.print(
+            "[yellow]Browser profile is in use — skipping this sample.[/yellow]\n"
+            "[dim]Close the browser or wait for the current run to finish.[/dim]\n"
+        )
+        return
 
     previous = load_history()
     previous_record = previous[-1] if previous else None

@@ -3,10 +3,13 @@
 > An automated agent for Microsoft Bing Rewards daily tasks, built with Python, Playwright and uv.
 
 > [!WARNING]
-> **v0.1.0 is an early skeleton.** The happy path runs end to end, but the bot
-> cannot yet verify that it actually earned any points — the point totals in its
-> log output are estimates, not measurements. Read
-> [Current Limitations](#current-limitations) before relying on it.
+> **This is an early skeleton.** Searches now measure what they actually earned,
+> but the Daily set and Explore tasks still report assumed point totals rather
+> than observed ones. Read [Current Limitations](#current-limitations) before
+> relying on it.
+>
+> Working notes, the reverse-engineered data contract, and the list of unsettled
+> questions live in [docs/DEVELOP.md](docs/DEVELOP.md).
 
 ---
 
@@ -57,8 +60,15 @@ bing-daily-reward/
 │   │                           #   new-tab capture/cleanup, quiz & poll interaction
 │   ├── task_daily_set.py       # Task 1 — the three "Daily set" cards, plus point claiming
 │   ├── task_explore.py         # Task 2 — the "Explore on Bing" activity cards
-│   └── task_searches.py        # Task 3 — N Bing searches with an enforced cooldown
+│   ├── task_searches.py        # Task 3 — N Bing searches, closed-loop measured
+│   ├── dashboard_state.py      # Pure parser: dashboard HTML → structured offers & counters
+│   ├── state_reader.py         # Thin layer that feeds the parser from a live page
+│   └── keywords.py             # Date-seeded search-term generation
 │
+├── monitor.py                  # Read-only daily sampler — records state, diffs against last run
+├── recon.py                    # Read-only deep capture — screenshots, DOM, network log
+│
+├── docs/DEVELOP.md             # Data contract, open questions, tooling notes
 ├── scientific_diagnostics.py   # Diagnostic — dumps points, task states and claim buttons to JSON
 ├── step_by_step_debugger.py    # Diagnostic — interactive walkthrough, pauses at each step
 ├── debug_task1.py              # Diagnostic — screenshots the dashboard and scans for Daily set cards
@@ -103,10 +113,21 @@ tabs. `execute_action_and_cleanup_new_tab()` in `utils/humanizer.py` snapshots
 than waiting on a `page` event. It bundles the whole
 open → interact → linger → close cycle into one reusable call.
 
-**Deliberate pacing.** Microsoft's point counter ignores searches that arrive
-too quickly, so `task_searches.py` waits a randomised 6–9 s between queries.
-This is a functional requirement, not just bot-avoidance: shortening it costs
-you points.
+**State is read, not inferred.** The dashboard is a Next.js app that makes no
+data request of its own: its state ships inside the HTML as a React flight
+stream. `utils/dashboard_state.py` parses that stream, so the task list, each
+task's point value and its completion flag are read from the same data the page
+draws from, rather than guessed at from CSS classes. It is a pure function of the
+HTML, which lets it be tested offline against an archived page.
+
+**Searches are measured, not assumed.** `run_daily_searches()` reads the point
+balance before and after and reports the observed difference. If the balance
+cannot be read it says the result is unknown instead of claiming success.
+
+**Pacing is drawn from a heavy-tailed distribution.** Gaps between searches come
+from a three-part mixture (median ~15 s, mean ~21 s, 5% over 45 s) rather than a
+flat window, and search terms are generated from topic/modifier combinations
+seeded by the date, so consecutive days do not repeat the same strings.
 
 ---
 
@@ -116,7 +137,14 @@ you points.
 |---|---|---|---|
 | 1 | **Daily set** — completes the three daily cards, claims pending points | `task_daily_set.py` | varies |
 | 2 | **Explore on Bing** — works through the Explore activity cards | `task_explore.py` | ~10 pts each |
-| 3 | **Daily searches** — 20 Bing searches, 6–9 s apart | `task_searches.py` | 3 pts each (60 total) |
+| 3 | **Daily searches** — N Bing searches, variably spaced | `task_searches.py` | measured per run (see below) |
+
+> [!NOTE]
+> The reward column for searches is deliberately vague. `DAILY_SEARCH_COUNT = 20`
+> and its "3 pts each = 60 total" comment are inherited guesses that measurement
+> has not supported: a four-search run on 2026-08-12 earned **3 points, not 12**.
+> The real per-market limit is still being established — see
+> [docs/DEVELOP.md](docs/DEVELOP.md#open-questions).
 
 Supporting behaviour:
 

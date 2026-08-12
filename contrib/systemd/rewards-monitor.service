@@ -1,0 +1,9 @@
+[Unit]
+Description=Microsoft Rewards read-only state sample
+Documentation=file:///projects/bing-daily-reward/docs/DEVELOP.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=/projects/bing-daily-reward
+ExecStart=/home/mengyuan/.local/bin/uv run python monitor.py --note scheduled
+TimeoutStartSec=300

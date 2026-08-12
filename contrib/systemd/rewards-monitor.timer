@@ -1,0 +1,16 @@
+[Unit]
+Description=Sample Rewards state four times a day
+
+[Timer]
+# Bracket the daily reset (Q3 in docs/DEVELOP.md) and catch crediting lag.
+OnCalendar=*-*-* 06:00:00
+OnCalendar=*-*-* 12:00:00
+OnCalendar=*-*-* 18:00:00
+OnCalendar=*-*-* 23:30:00
+# Catch up a sample missed while the machine was off.
+Persistent=true
+# Jitter so samples do not land on the same second every day.
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

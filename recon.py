@@ -15,8 +15,8 @@ renders from, so the task list and its completion state become facts rather than
 inferences.
 
 Usage:
-    uv run python capture_state.py              # redact identifiers (default)
-    uv run python capture_state.py --no-redact  # keep raw values, local eyes only
+    uv run python recon.py              # redact identifiers (default)
+    uv run python recon.py --no-redact  # keep raw values, local eyes only
 """
 
 import re

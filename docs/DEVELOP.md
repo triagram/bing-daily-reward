@@ -71,21 +71,44 @@ tomorrow); `/earn` returned 36 offers across four. Anything that picks tasks wit
 filtering by date will act on the wrong day's offers. This is why
 `DashboardState.daily_set()` takes a day and defaults to today.
 
-### Category counters
+### Category counters are daily gates, not search counts
 
-Progress rings, recovered as `{label, value, maxValue}`:
+The four progress rings, recovered as `{label, value, maxValue}`, render the
+dashboard's **"Your activity"** section. Confirmed against the capture screenshot,
+which prints the sub-label of each ring:
 
-| Label | Observed | Meaning |
-|---|---|---|
-| `Bing` | 1 / 1 | Unconfirmed — max of 1 suggests a daily gate, not a search count |
-| `Daily Set` | 1 / 3 | Contradicts the offers, see open questions |
-| `Edge` | 0 / 30 | Unconfirmed |
-| `Mobile App` | 0 / 1 | Unconfirmed |
+| `aria-label` | On-screen sub-label | Observed | Meaning |
+|---|---|---|---|
+| `Bing` | **"Search: 1/1"** | 1 / 1 | Did any qualifying search happen today. Binary |
+| `Daily Set` | "Activity: 0/3" | 0–1 / 3 | Daily-set cards done. Disagrees with the cards, see Q2 |
+| `Edge` | "How to activate" | 0 / 30 | Not activated on this account |
+| `Mobile App` | "Check-in: 0/1" | 0 / 1 | Binary |
 
-None of these has been confirmed to be the PC search counter. `config.py` still
-carries `DAILY_SEARCH_COUNT = 20` with a comment claiming 3 points each for 60 total;
-**those numbers are inherited guesswork and have not survived contact with
-measurement** (see below).
+**There is no search-count counter anywhere on the dashboard.** "Search: 1/1" has a
+maximum of one: it records *that* you searched, not *how many times*. Anything
+wanting to know the daily search allowance has to establish it by measurement — the
+page will not report it.
+
+Streaks are tracked separately, under **"Your progress"**: a `Daily streak` reading
+28 days at capture time, plus a stamp card. So the rings are not streak counters
+either; they are today's completion gates.
+
+Consequently `DAILY_SEARCH_COUNT = 20` in `config.py`, and its comment claiming 3
+points each for 60 total, are **inherited guesswork with nothing on the page to
+support them** (see Q1).
+
+### Other things the dashboard shows that the parser does not yet read
+
+Visible in the capture screenshot, absent from `DashboardState`:
+
+- **"Ready to claim"** — a separate pot of unclaimed points (6 at capture time).
+  Points can sit here without being in the balance, which matters for any
+  before/after measurement.
+- **An active 2x perk** — "For a limited time, search 2x more per day to earn more
+  points", with a Claim offer button. This changes search economics while it lasts
+  and would confound Q1 if it expires mid-experiment.
+- **Monthly bonuses** — Bing Star bonus 2,100, monthly level-up 420, default search
+  bonus 210, all shown as fully earned last month.
 
 ### Market
 
@@ -123,14 +146,22 @@ to a particular search**. Two live hypotheses:
 | Nothing earns at all | (b) — rerun with `force_input_mode="type"` to confirm |
 | Only the first earns | Neither is settled; quota was already spent before the run |
 
-### Q2 — `Daily Set 1/3` contradicts three incomplete offers
+### Q2 — The Daily Set ring disagrees with the Daily Set cards
 
-Same sample: the counter said one of three done, while all three of that day's offers
-reported `isCompleted: false`.
+Observed in both directions, which rules out a simple offset:
 
-Possible causes, none eliminated: the counter refers to a different day; `isCompleted`
-updates on a lag; the counter counts something other than offers; or `daily_set()`'s
-date matching is wrong.
+| Date | Ring | Cards | Direction |
+|---|---|---|---|
+| 2026-08-11 | 0 / 3 | one card visibly marked **Completed** | ring undercounts |
+| 2026-08-12 | 1 / 3 | all three `isCompleted: false` | ring overcounts |
+
+**Not a parser artifact.** The 08-11 case is confirmed on the screenshot: the ring
+reads "Activity: 0/3" while the "Upcoming comedy events" card carries a Completed
+badge on the same page.
+
+Possible causes, none eliminated: the ring updates on a lag or a different schedule;
+it counts a different notion of "done" than the cards do; or it is scoped to a
+different day boundary than the offer ids are.
 
 **Must be settled before rewriting the Daily Set task** — otherwise the new code
 inherits a broken completion test, which is the same failure the rewrite is meant to
@@ -168,12 +199,14 @@ counter cannot stand in for the balance as a success signal.
 
 Next: a sample pair across a window with *no* human use of the account at all.
 
-### Q5 — Why does `/earn` yield no counters?
+### Q5 — Why does `/earn` yield no counters? — **RESOLVED 2026-08-13**
 
-`parse_dashboard` recovers four counters from the dashboard and **zero** from
-`/earn`, though `/earn` has nearly three times the offers. Either that page genuinely
-has none, or the parser misses their shape. Worth checking before trusting `/earn`
-parsing anywhere.
+Not a parser bug: `/earn` genuinely does not carry them. Its flight stream contains
+`maxValue` **once**, against five occurrences on the dashboard, and none of those
+belongs to a progress ring.
+
+The counters are dashboard-only. Read activity state from `rewards.bing.com/`, and
+treat `/earn` as a source of offers alone.
 
 ---
 

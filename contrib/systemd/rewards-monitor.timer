@@ -7,10 +7,14 @@ OnCalendar=*-*-* 06:00:00
 OnCalendar=*-*-* 12:00:00
 OnCalendar=*-*-* 18:00:00
 OnCalendar=*-*-* 23:30:00
+# Temporary: narrow the reset window (Q3). Remove once the boundary is pinned.
+OnCalendar=*-*-* 00:15:00
+OnCalendar=*-*-* 01:15:00
+OnCalendar=*-*-* 02:15:00
 # Catch up a sample missed while the machine was off.
 Persistent=true
 # Jitter so samples do not land on the same second every day.
-RandomizedDelaySec=600
+RandomizedDelaySec=120
 
 [Install]
 WantedBy=timers.target

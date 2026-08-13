@@ -83,8 +83,19 @@ class Offer:
 class DashboardState:
     balance: int | None = None
     level: int | None = None
+    # Points earned but not yet collected. They sit outside the balance, so a
+    # before/after balance comparison can read zero for a task that did earn.
+    # Any measurement of "what did this run earn" has to add both.
+    ready_to_claim: int | None = None
     offers: list[Offer] = field(default_factory=list)
     counters: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def total_points(self) -> int | None:
+        """Balance plus anything waiting to be claimed."""
+        if self.balance is None:
+            return None
+        return self.balance + (self.ready_to_claim or 0)
 
     def daily_set(self, day: date | None = None) -> list[Offer]:
         """Daily-set offers for one day, ordered by slot. Defaults to today."""
@@ -213,6 +224,28 @@ def iter_objects_containing(text: str, key: str) -> Iterator[dict]:
 # --------------------------------------------------------------------------- #
 
 
+def extract_ready_to_claim(stream: str) -> int | None:
+    """
+    Recover the "Ready to claim" total from the flight stream.
+
+    Unlike the balance, which arrives as a clean `{"balance": N}` field, this number
+    exists only inside the rendered element tree: a label node carrying the text
+    "Ready to claim", followed by a heading node holding the digits. Matching on
+    presentation is more fragile than reading a field — a restyle breaks it — so this
+    returns None rather than guessing, and callers should treat None as "unknown"
+    rather than "zero".
+    """
+    for match in re.finditer(r'"children":"Ready to claim"', stream):
+        window = stream[match.end() : match.end() + 1500]
+        hit = re.search(r'"text-pageHeader","children":"?(\d[\d,]*)"?', window)
+        if hit:
+            try:
+                return int(hit.group(1).replace(",", ""))
+            except ValueError:
+                continue
+    return None
+
+
 def parse_dashboard(html: str) -> DashboardState:
     """Parse a dashboard or /earn HTML document into structured state."""
     stream = extract_flight_stream(html)
@@ -249,6 +282,8 @@ def parse_dashboard(html: str) -> DashboardState:
                 raw=obj,
             )
         )
+
+    state.ready_to_claim = extract_ready_to_claim(stream)
 
     for obj in iter_objects_containing(stream, "balance"):
         if isinstance(obj.get("balance"), int):

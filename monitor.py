@@ -48,6 +48,8 @@ def to_record(state: DashboardState, note: str = "") -> dict:
         "date": today.isoformat(),
         "note": note,
         "balance": state.balance,
+        "ready_to_claim": state.ready_to_claim,
+        "total_points": state.total_points,
         "level": state.level,
         "counters": state.counters,
         "offer_count": len(state.offers),
@@ -89,11 +91,14 @@ def show_diff(previous: dict | None, current: dict):
 
     console.print(f"\n[bold]Changes since {previous['sampled_at']}[/bold]")
 
-    before, after = previous.get("balance"), current.get("balance")
-    if isinstance(before, int) and isinstance(after, int):
-        delta = after - before
-        colour = "green" if delta > 0 else "dim"
-        console.print(f"  balance  {before} → {after}  [{colour}]{delta:+d}[/{colour}]")
+    for key, label in (("balance", "balance "), ("ready_to_claim", "to claim"),
+                       ("total_points", "TOTAL   ")):
+        before, after = previous.get(key), current.get(key)
+        if isinstance(before, int) and isinstance(after, int) and before != after:
+            delta = after - before
+            console.print(f"  {label} {before} → {after}  [green]{delta:+d}[/green]")
+        elif isinstance(after, int) and before == after:
+            console.print(f"  {label} {after}  [dim]+0[/dim]")
 
     old_counters = {str(c.get("label")): c for c in previous.get("counters", [])}
     for counter in current.get("counters", []):
@@ -228,7 +233,11 @@ async def main():
     if record is None:
         return
 
-    console.print(f"  balance   [bold]{record['balance']}[/bold]  (level {record['level']})")
+    console.print(
+        f"  balance   [bold]{record['balance']}[/bold]  (level {record['level']})"
+        f"   ready to claim: {record['ready_to_claim']}"
+        f"   [dim]total {record['total_points']}[/dim]"
+    )
     console.print(f"  offers    {record['offer_count']}  ·  markets {record['markets']}")
     console.print("  counters:")
     for counter in record["counters"]:

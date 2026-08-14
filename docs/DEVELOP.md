@@ -137,14 +137,35 @@ to a particular search**. Two live hypotheses:
   `bing.com/search?q=…`; only the fourth was typed into the search box. If Bing only
   credits queries issued through the UI, the typed one earned the 3 points.
 
-**Experiment:** from a clean morning state, run
-`run_daily_searches(ctx, 6, per_search_balance=True, force_input_mode="url")`.
+**Result 2026-08-14, from a clean post-reset state:** six searches, all issued by
+navigating to `bing.com/search?q=…`, measured after each.
 
-| Result | Conclusion |
-|---|---|
-| Each search earns, then earning stops | (a) — and the stopping point is the real quota |
-| Nothing earns at all | (b) — rerun with `force_input_mode="type"` to confirm |
-| Only the first earns | Neither is settled; quota was already spent before the run |
+```
+#1..#6   total 107357 → 107357   (+0 each)
+Bing gate:  0/1 before  →  0/1 after
+```
+
+**Nothing registered.** Not a filled quota — the gate never moved, so these requests
+were not counted as searches at all. Against the previous day, where a *single*
+mobile browser search flipped the same gate and earned 3:
+
+| | 08-13 | 08-14 |
+|---|---|---|
+| Searches | 1, mobile browser | 6, URL navigation |
+| `Bing` gate | 0/1 → **1/1** | 0/1 → **0/1** |
+| Points | **+3** | **+0** |
+
+This supports (b) and retroactively explains Q1: of those four searches only the
+last was typed, and 3 points is exactly one search's worth.
+
+**If it holds, the current Task 3 earns nothing.** Twenty navigated searches a day
+would accumulate behavioural signal for zero return.
+
+**Not yet conclusive.** The 08-13 gate flip was observed six hours later, while
+today's was read immediately, so a slow-crediting explanation (c) is not excluded:
+navigated searches might count but settle late. Two checks separate them — a later
+sample today showing the gate still at 0/1, and a `force_input_mode="type"` run
+flipping it promptly.
 
 ### Q2 — The Daily Set ring disagrees with the Daily Set cards
 

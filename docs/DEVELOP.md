@@ -97,130 +97,7 @@ Consequently `DAILY_SEARCH_COUNT = 20` in `config.py`, and its comment claiming 
 points each for 60 total, are **inherited guesswork with nothing on the page to
 support them** (see Q1).
 
-### Other things the dashboard shows that the parser does not yet read
-
-Visible in the capture screenshot, absent from `DashboardState`:
-
-- **"Ready to claim"** — a separate pot of unclaimed points (6 at capture time).
-  Points can sit here without being in the balance, which matters for any
-  before/after measurement.
-- **An active 2x perk** — "For a limited time, search 2x more per day to earn more
-  points", with a Claim offer button. This changes search economics while it lasts
-  and would confound Q1 if it expires mid-experiment.
-- **Monthly bonuses** — Bing Star bonus 2,100, monthly level-up 420, default search
-  bonus 210, all shown as fully earned last month.
-
-### Market
-
-This account is `ENGB` (UK). Task sets and point values differ by market, so numbers
-found in projects targeting the US market do not transfer.
-
----
-
-## Open questions
-
-Each entry names the hypothesis, how to falsify it, and where the evidence stands.
-**This is the work queue.** Resolve before building on top of the affected area.
-
-### Q1 — Why did four searches earn only 3 points? — **RESOLVED 2026-08-14**
-
-Measured 2026-08-12: four searches submitted, balance `107309 → 107312`.
-
-The run read the balance only at the start and end, so it **cannot attribute the gain
-to a particular search**. Two live hypotheses:
-
-- **(a) Quota already filled.** The `Bing` counter read `1/1` afterwards; if it was
-  already `1/1` before the run, only the first search could earn and the rest were
-  wasted. If true, `DAILY_SEARCH_COUNT = 20` does not merely overshoot — it spends
-  behavioural budget for nothing.
-- **(b) Navigated queries do not count.** Three of the four searches went straight to
-  `bing.com/search?q=…`; only the fourth was typed into the search box. If Bing only
-  credits queries issued through the UI, the typed one earned the 3 points.
-
-**Result 2026-08-14, from a clean post-reset state:** six searches, all issued by
-navigating to `bing.com/search?q=…`, measured after each.
-
-```
-#1..#6   total 107357 → 107357   (+0 each)
-Bing gate:  0/1 before  →  0/1 after
-```
-
-**Nothing registered.** Not a filled quota — the gate never moved, so these requests
-were not counted as searches at all. Against the previous day, where a *single*
-mobile browser search flipped the same gate and earned 3:
-
-| | 08-13 | 08-14 |
-|---|---|---|
-| Searches | 1, mobile browser | 6, URL navigation |
-| `Bing` gate | 0/1 → **1/1** | 0/1 → **0/1** |
-| Points | **+3** | **+0** |
-
-This supports (b) and retroactively explains Q1: of those four searches only the
-last was typed, and 3 points is exactly one search's worth.
-
-**If it holds, the current Task 3 earns nothing.** Twenty navigated searches a day
-would accumulate behavioural signal for zero return.
-
-**Confirmed the same hour** by a typed-mode run with fresh terms — fresh because a
-repeated query might not be credited, which would have made a same-terms comparison
-unreadable:
-
-| Input mode | Queries | Per-search | Total | Gate |
-|---|---|---|---|---|
-| `url` (12:55) | 6 | +0 each | **0** | 0/1 → 0/1 |
-| `type` (13:12) | 3 | **+3 each** | **+9** | 0/1 → 1/1 |
-
-Same account, same machine, seventeen minutes apart. **Navigating to
-`bing.com/search?q=…` is not credited. Typing into the search box is, at 3 points a
-query, within about fifteen seconds.**
-
-That timing also disposes of hypothesis (c): typed queries settled in seconds, so
-navigated ones would have too had they counted at all.
-
-The 9 points split 6 to the balance and 3 to the unclaimed pot, which is further
-reason to measure the sum rather than either side.
-
-**Consequence:** `_search_once` now always types. The previous default sent 70% of
-queries by navigation, so most of every run was unpaid.
-
-**Still unknown: the daily search allowance.** Three typed queries all paid, so the
-ceiling is above three. Finding it means continuing to search until payment stops.
-
-### Q2 — The Daily Set ring disagrees with the Daily Set cards
-
-Observed in both directions, which rules out a simple offset:
-
-| Date | Ring | Cards | Direction |
-|---|---|---|---|
-| 2026-08-11 | 0 / 3 | one card visibly marked **Completed** | ring undercounts |
-| 2026-08-12 | 1 / 3 | all three `isCompleted: false` | ring overcounts |
-
-**Not a parser artifact.** The 08-11 case is confirmed on the screenshot: the ring
-reads "Activity: 0/3" while the "Upcoming comedy events" card carries a Completed
-badge on the same page.
-
-Possible causes, none eliminated: the ring updates on a lag or a different schedule;
-it counts a different notion of "done" than the cards do; or it is scoped to a
-different day boundary than the offer ids are.
-
-**Must be settled before rewriting the Daily Set task** — otherwise the new code
-inherits a broken completion test, which is the same failure the rewrite is meant to
-fix, in a new place.
-
-### Q3 — When does the daily reset happen? — **RESOLVED 2026-08-14**
-
-**Midnight UTC.** Bracketed to a single hour by samples either side:
-
-| Sample (BST) | UTC | `Bing` |
-|---|---|---|
-| 08-14 00:16 | 08-13 23:16 | 1/1 |
-| 08-14 01:16 | 08-14 00:16 | **0/1** |
-
-During British Summer Time that is 01:00 local, so a "morning" sample any time
-after 01:00 BST sees a fresh day. The 00:15/01:15/02:15 timer entries have done
-their job and can be removed.
-
-### Earnings land in "Ready to claim", not the balance — **CONFIRMED 2026-08-13**
+### Earnings land in "Ready to claim", not the balance
 
 An accidental single mobile search, with clean samples either side and nothing else
 happening that day:
@@ -243,50 +120,159 @@ This also puts Q1's original reading in doubt from the other side: that run saw 
 balance move by 3, where this one saw the pot move instead. Whether the routing
 differs by device, by point type, or by when the pot flushes is not yet known.
 
-### Q4 — Does point crediting lag?
+### Other things the dashboard shows that the parser does not yet read
 
-Balance was read ~10 s after the last search. If credit lands later, Q1's measurement
-undercounts. Spaced samples on a day with known activity will show it.
+Visible in the capture screenshot, absent from `DashboardState`:
 
-**Evidence, 2026-08-12.** Two samples five hours apart, with no automated activity
-between them:
+- **"Ready to claim"** — a separate pot of unclaimed points (6 at capture time).
+  Points can sit here without being in the balance, which matters for any
+  before/after measurement.
+- **An active 2x perk** — "For a limited time, search 2x more per day to earn more
+  points", with a Claim offer button. This changes search economics while it lasts
+  and would confound Q1 if it expires mid-experiment.
+- **Monthly bonuses** — Bing Star bonus 2,100, monthly level-up 420, default search
+  bonus 210, all shown as fully earned last month.
 
-| | 15:46 | 20:42 |
-|---|---|---|
-| balance | 107312 | **107324** (+12) |
-| `Bing` | 1/1 | 1/1 |
-| `Daily Set` | 1/3 | 1/3 |
-| `Edge` | 0/30 | 0/30 |
-| `Mobile App` | 0/1 | 0/1 |
+### Market
 
-Twelve points arrived while **every counter stayed still**. Three readings are
-consistent with that, and this sample cannot separate them: the points are delayed
-credit for the earlier searches; the account holder used Bing by hand in that window;
-or points accrue from something none of these four counters track. Note the second
-reading would also mean the +3 attributed to the search run in Q1 is unsafe — manual
-activity contaminates that measurement the same way.
-
-Whichever it is, **balance movement and counter movement are not coupled**, so a
-counter cannot stand in for the balance as a success signal.
-
-**Clean control obtained 2026-08-13.** From 06:08 to 12:01 with no activity at all,
-balance, unclaimed and every counter held still. The balance has now been frozen at
-107345 since 08-12 23:31 — over 30 hours — while the unclaimed pot moved. So the
-balance does not drift on its own, and it is not where day-to-day earnings arrive.
-
-What remains open is what moves points from the pot into the balance, and whether
-that is what the +12 and +21 on 08-12 evening were.
-
-### Q5 — Why does `/earn` yield no counters? — **RESOLVED 2026-08-13**
-
-Not a parser bug: `/earn` genuinely does not carry them. Its flight stream contains
-`maxValue` **once**, against five occurrences on the dashboard, and none of those
-belongs to a progress ring.
-
-The counters are dashboard-only. Read activity state from `rewards.bing.com/`, and
-treat `/earn` as a source of offers alone.
+This account is `ENGB` (UK). Task sets and point values differ by market, so numbers
+found in projects targeting the US market do not transfer.
 
 ---
+
+## Open questions
+
+Each entry leads with its answer, then the cause and what was changed. **This is the
+work queue** — an entry closes only when an experiment settles it.
+
+| # | Question | Status |
+|---|---|---|
+| [Q1](#q1) | Why did four searches earn only 3 points? | ✅ Resolved 2026-08-14 |
+| [Q2](#q2) | The Daily Set ring disagrees with the cards | 🔴 **Open** — blocks the Daily Set rewrite |
+| [Q3](#q3) | When does the daily reset happen? | ✅ Resolved 2026-08-14 |
+| [Q4](#q4) | Does point crediting lag? | 🟡 Partly answered |
+| [Q5](#q5) | Why does `/earn` yield no counters? | ✅ Resolved 2026-08-13 |
+| [Q6](#q6) | What is the daily search allowance? | 🔴 **Open** — next experiment |
+
+<a id="q1"></a>
+### Q1 — Why did four searches earn only 3 points?
+
+**Status:** Resolved 2026-08-14.
+
+**Answer:** Queries issued by navigating to `bing.com/search?q=…` are **never
+credited**. Queries typed into the search box pay **3 points each, within about
+fifteen seconds**. Of the original four searches only the last was typed, and 3
+points is exactly one search's worth.
+
+**Cause:** `_search_once()` chose its input method at random, sending roughly 70% of
+every run by navigation. Most of each run was unpaid work that still accumulated
+behavioural signal — the worst of both.
+
+**Fix:** `_search_once()` now always types. `force_input_mode` is kept so the
+comparison can be repeated if Rewards changes.
+
+**Evidence** — same account, same machine, seventeen minutes apart:
+
+| Input mode | Queries | Per search | Total | `Bing` gate |
+|---|---|---|---|---|
+| `url` (12:55) | 6 | +0 each | **0** | 0/1 → 0/1 |
+| `type` (13:12) | 3 | **+3 each** | **+9** | 0/1 → 1/1 |
+
+The gate not moving in the `url` run is what rules out a filled quota: a spent
+allowance would still have registered the search. The typed run settling in seconds
+also disposes of "counts but credits late".
+
+The typed run used **fresh terms deliberately**. Reusing the morning's queries could
+not have separated "this input mode does not work" from "this query was already spent
+today", so `run_daily_searches` takes a `terms` override.
+
+<a id="q2"></a>
+### Q2 — The Daily Set ring disagrees with the Daily Set cards
+
+**Status:** 🔴 Open. **Blocks the Daily Set rewrite** — building on a completion test
+that is known to be wrong reproduces the failure the rewrite exists to fix.
+
+**What is known:** the disagreement runs in both directions, which rules out a fixed
+offset or a simple off-by-one.
+
+| Date | Ring | Cards | Direction |
+|---|---|---|---|
+| 2026-08-11 | 0 / 3 | one card visibly marked **Completed** | ring undercounts |
+| 2026-08-12 | 1 / 3 | all three `isCompleted: false` | ring overcounts |
+
+**Not a parser artifact.** The 08-11 case is legible on the capture screenshot: the
+ring reads "Activity: 0/3" while the "Upcoming comedy events" card carries a
+Completed badge on the same page.
+
+**Candidate causes, none eliminated:** the ring updates on a lag or a different
+schedule; it counts a different notion of "done" than the cards; or it is scoped to a
+different day boundary than the offer ids are.
+
+**How to settle it:** complete exactly one daily-set card from a clean post-reset
+state, then sample immediately, at +5 minutes and at +1 hour. If the ring trails the
+card, it is a lag; if it never agrees, the two count different things. Requires
+clicking a task, so it is the first experiment that is not read-only.
+
+<a id="q3"></a>
+### Q3 — When does the daily reset happen, and in what timezone?
+
+**Status:** Resolved 2026-08-14.
+
+**Answer: midnight UTC** — 01:00 local during British Summer Time.
+
+**Evidence** — samples either side of the boundary:
+
+| Sample (BST) | UTC | `Bing` |
+|---|---|---|
+| 08-14 00:16 | 08-13 23:16 | 1/1 |
+| 08-14 01:16 | 08-14 00:16 | **0/1** |
+
+**Consequence:** any sample after 01:00 BST sees a fresh day, so the 06:00 sample is a
+safe clean baseline. The temporary 00:15/01:15/02:15 timer entries were removed once
+this closed.
+
+<a id="q4"></a>
+### Q4 — Does point crediting lag?
+
+**Status:** 🟡 Partly answered.
+
+**Settled:** crediting is **fast** — typed searches showed up within about fifteen
+seconds (Q1). And **nothing drifts on its own**: from 06:08 to 12:01 on 08-13 with no
+activity, balance, unclaimed and every counter held still. The balance sat frozen at
+107345 for over thirty hours while the unclaimed pot moved.
+
+**Still open:** what moves points from the unclaimed pot into the balance, and
+whether that is what the +12 and +21 on the evening of 08-12 were. Those two jumps
+remain unexplained; manual account use that evening is the likeliest cause but was
+never confirmed.
+
+<a id="q5"></a>
+### Q5 — Why does `/earn` yield no counters?
+
+**Status:** Resolved 2026-08-13.
+
+**Answer:** not a parser bug — `/earn` genuinely does not carry them. Its flight
+stream contains `maxValue` **once**, against five on the dashboard, and none of those
+belongs to a progress ring.
+
+**Consequence:** read activity state from `rewards.bing.com/`; treat `/earn` as a
+source of offers only.
+
+<a id="q6"></a>
+### Q6 — What is the daily search allowance?
+
+**Status:** 🔴 Open. Next experiment.
+
+`DAILY_SEARCH_COUNT = 20`, and its comment claiming 3 points each for 60 total, are
+inherited guesswork. The dashboard does not publish a search counter at all — the
+`Bing` ring is a binary gate — so the ceiling can only be found by measurement.
+
+**Known:** three consecutive typed queries each paid 3, so the ceiling is **above
+three**.
+
+**How to settle it:** from a clean post-reset state, run typed queries with
+`per_search_balance=True` until payment stops. The index where the gain goes to zero
+is the allowance.
 
 ## Tooling
 

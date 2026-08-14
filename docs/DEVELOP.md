@@ -122,7 +122,7 @@ found in projects targeting the US market do not transfer.
 Each entry names the hypothesis, how to falsify it, and where the evidence stands.
 **This is the work queue.** Resolve before building on top of the affected area.
 
-### Q1 — Why did four searches earn only 3 points?
+### Q1 — Why did four searches earn only 3 points? — **RESOLVED 2026-08-14**
 
 Measured 2026-08-12: four searches submitted, balance `107309 → 107312`.
 
@@ -161,11 +161,30 @@ last was typed, and 3 points is exactly one search's worth.
 **If it holds, the current Task 3 earns nothing.** Twenty navigated searches a day
 would accumulate behavioural signal for zero return.
 
-**Not yet conclusive.** The 08-13 gate flip was observed six hours later, while
-today's was read immediately, so a slow-crediting explanation (c) is not excluded:
-navigated searches might count but settle late. Two checks separate them — a later
-sample today showing the gate still at 0/1, and a `force_input_mode="type"` run
-flipping it promptly.
+**Confirmed the same hour** by a typed-mode run with fresh terms — fresh because a
+repeated query might not be credited, which would have made a same-terms comparison
+unreadable:
+
+| Input mode | Queries | Per-search | Total | Gate |
+|---|---|---|---|---|
+| `url` (12:55) | 6 | +0 each | **0** | 0/1 → 0/1 |
+| `type` (13:12) | 3 | **+3 each** | **+9** | 0/1 → 1/1 |
+
+Same account, same machine, seventeen minutes apart. **Navigating to
+`bing.com/search?q=…` is not credited. Typing into the search box is, at 3 points a
+query, within about fifteen seconds.**
+
+That timing also disposes of hypothesis (c): typed queries settled in seconds, so
+navigated ones would have too had they counted at all.
+
+The 9 points split 6 to the balance and 3 to the unclaimed pot, which is further
+reason to measure the sum rather than either side.
+
+**Consequence:** `_search_once` now always types. The previous default sent 70% of
+queries by navigation, so most of every run was unpaid.
+
+**Still unknown: the daily search allowance.** Three typed queries all paid, so the
+ceiling is above three. Finding it means continuing to search until payment stops.
 
 ### Q2 — The Daily Set ring disagrees with the Daily Set cards
 

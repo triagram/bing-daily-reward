@@ -2,19 +2,15 @@
 Description=Sample Rewards state four times a day
 
 [Timer]
-# Bracket the daily reset (Q3 in docs/DEVELOP.md) and catch crediting lag.
+# Reset is midnight UTC (Q3, resolved). 06:00 local is safely into the new day.
 OnCalendar=*-*-* 06:00:00
 OnCalendar=*-*-* 12:00:00
 OnCalendar=*-*-* 18:00:00
 OnCalendar=*-*-* 23:30:00
-# Temporary: narrow the reset window (Q3). Remove once the boundary is pinned.
-OnCalendar=*-*-* 00:15:00
-OnCalendar=*-*-* 01:15:00
-OnCalendar=*-*-* 02:15:00
 # Catch up a sample missed while the machine was off.
 Persistent=true
 # Jitter so samples do not land on the same second every day.
-RandomizedDelaySec=120
+RandomizedDelaySec=600
 
 [Install]
 WantedBy=timers.target

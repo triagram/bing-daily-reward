@@ -121,8 +121,16 @@ draws from, rather than guessed at from CSS classes. It is a pure function of th
 HTML, which lets it be tested offline against an archived page.
 
 **Searches are measured, not assumed.** `run_daily_searches()` reads the point
-balance before and after and reports the observed difference. If the balance
-cannot be read it says the result is unknown instead of claiming success.
+total before and after and reports the observed difference. The total is balance
+*plus* unclaimed points, because earnings can land in either — a run measured on
+the balance alone can read zero for a run that did earn. If the totals cannot be
+read it says the result is unknown instead of claiming success.
+
+**Queries are typed, never navigated.** Issuing a search by loading
+`bing.com/search?q=…` is not credited by Rewards at all: measured on 2026-08-14,
+six navigated queries earned nothing and did not move the account's daily search
+gate, while three typed into the search box earned 3 points each within seconds.
+Anything that navigates directly is doing unpaid work.
 
 **Pacing is drawn from a heavy-tailed distribution.** Gaps between searches come
 from a three-part mixture (median ~15 s, mean ~21 s, 5% over 45 s) rather than a

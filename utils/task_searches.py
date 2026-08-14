@@ -61,8 +61,11 @@ async def _search_once(page: Page, term: str, use_search_box: bool) -> None:
     """
     Run one query, either by typing into the Bing search box or by navigating.
 
-    Typing is closer to how the query would normally be issued; direct navigation is
-    faster and is used for most of the run so the whole thing does not take an hour.
+    **Typing is the only form that earns.** Measured 2026-08-14, same account and
+    hour: six queries issued as `bing.com/search?q=…` earned nothing and did not
+    even move the Bing activity gate, while three typed into the search box earned
+    3 points each within seconds. Navigation is retained only so the two can be
+    compared again after a Rewards change; never make it the default.
     """
     if use_search_box:
         if "bing.com/search" not in page.url:
@@ -88,6 +91,7 @@ async def run_daily_searches(
     state_page: Page | None = None,
     per_search_balance: bool = False,
     force_input_mode: str | None = None,
+    terms: list[str] | None = None,
 ) -> SearchResult:
     """
     Perform Bing searches and measure what they earned.
@@ -105,6 +109,11 @@ async def run_daily_searches(
 
     `force_input_mode` pins how queries are issued, "url" or "type", so the two can be
     compared directly instead of mixed at random.
+
+    `terms` overrides the generated search terms. Comparing two input modes needs
+    fresh queries for the second run: if a repeated query is not credited, a
+    same-terms comparison cannot tell "this input mode does not work" from "this
+    query was already used today".
     """
     result = SearchResult(attempted=search_count)
     owns_state_page = state_page is None
@@ -124,18 +133,17 @@ async def run_daily_searches(
         result.errors.append(f"balance_before: {e}")
         logger.warning(f"   Could not read starting balance: {e}")
 
-    terms = keywords.generate(search_count)
+    terms = list(terms) if terms else keywords.generate(search_count)
+    search_count = min(search_count, len(terms))
+    result.attempted = search_count
     search_tab = await context.new_page()
 
     try:
         running_balance = result.total_before
 
         for idx, term in enumerate(terms, start=1):
-            if force_input_mode:
-                use_box = force_input_mode == "type"
-            else:
-                # Type a minority of queries rather than navigating straight to the URL.
-                use_box = random.random() < 0.3
+            # Always type: navigated queries are not credited at all (see _search_once).
+            use_box = force_input_mode != "url"
             mode = "type" if use_box else "url"
             logger.info(f"   [{idx}/{search_count}] {mode}: {term!r}")
             try:

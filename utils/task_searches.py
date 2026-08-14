@@ -22,6 +22,11 @@ class SearchResult:
     submitted: int = 0          # the query reached Bing without raising
     balance_before: int | None = None
     balance_after: int | None = None
+    # Search points land in the "Ready to claim" pot rather than the balance, so
+    # the balance alone reads zero for a run that did earn. Measured 2026-08-13:
+    # one search moved claim 9 -> 12 while the balance did not move at all.
+    total_before: int | None = None
+    total_after: int | None = None
     errors: list[str] = field(default_factory=list)
     # One entry per search when per_search_balance is on: which term, how it was
     # issued, and what the balance did immediately afterwards. A batch measurement
@@ -30,10 +35,13 @@ class SearchResult:
 
     @property
     def points_earned(self) -> int | None:
-        """Measured, not assumed. None means the balance could not be read."""
-        if self.balance_before is None or self.balance_after is None:
+        """
+        Measured, not assumed: balance plus unclaimed, since earnings can land in
+        either. None means the totals could not be read.
+        """
+        if self.total_before is None or self.total_after is None:
             return None
-        return self.balance_after - self.balance_before
+        return self.total_after - self.total_before
 
     def summary(self) -> str:
         earned = self.points_earned
@@ -44,7 +52,8 @@ class SearchResult:
             )
         return (
             f"{self.submitted}/{self.attempted} searches submitted; "
-            f"{earned:+d} points measured ({self.balance_before} -> {self.balance_after})"
+            f"{earned:+d} points measured (total {self.total_before} -> {self.total_after}, "
+            f"balance {self.balance_before} -> {self.balance_after})"
         )
 
 
@@ -106,7 +115,11 @@ async def run_daily_searches(
     try:
         before = await fetch_state(state_page)
         result.balance_before = before.balance
-        logger.info(f"   Balance before: {before.balance}")
+        result.total_before = before.total_points
+        logger.info(
+            f"   Before: balance {before.balance}, unclaimed {before.ready_to_claim}, "
+            f"total {before.total_points}"
+        )
     except Exception as e:
         result.errors.append(f"balance_before: {e}")
         logger.warning(f"   Could not read starting balance: {e}")
@@ -115,7 +128,7 @@ async def run_daily_searches(
     search_tab = await context.new_page()
 
     try:
-        running_balance = result.balance_before
+        running_balance = result.total_before
 
         for idx, term in enumerate(terms, start=1):
             if force_input_mode:
@@ -137,7 +150,7 @@ async def run_daily_searches(
             if per_search_balance:
                 await asyncio.sleep(3.0)  # let the credit land before looking
                 try:
-                    now = (await fetch_state(state_page)).balance
+                    now = (await fetch_state(state_page)).total_points
                 except Exception as e:
                     now = None
                     result.errors.append(f"balance after search {idx}: {e}")
@@ -148,11 +161,11 @@ async def run_daily_searches(
                 )
                 result.per_search.append(
                     {"index": idx, "term": term, "mode": mode, "ok": ok,
-                     "balance": now, "gained": gained}
+                     "total": now, "gained": gained}
                 )
                 marker = "💰" if gained else "  "
-                logger.info(f"       {marker} balance {now} ({gained:+d})" if gained is not None
-                            else f"       balance {now} (delta unknown)")
+                logger.info(f"       {marker} total {now} ({gained:+d})" if gained is not None
+                            else f"       total {now} (delta unknown)")
                 if isinstance(now, int):
                     running_balance = now
 
@@ -170,7 +183,11 @@ async def run_daily_searches(
     try:
         after = await fetch_state(state_page)
         result.balance_after = after.balance
-        logger.info(f"   Balance after: {after.balance}")
+        result.total_after = after.total_points
+        logger.info(
+            f"   After: balance {after.balance}, unclaimed {after.ready_to_claim}, "
+            f"total {after.total_points}"
+        )
     except Exception as e:
         result.errors.append(f"balance_after: {e}")
         logger.warning(f"   Could not read final balance: {e}")

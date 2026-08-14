@@ -167,9 +167,41 @@ different day boundary than the offer ids are.
 inherits a broken completion test, which is the same failure the rewrite is meant to
 fix, in a new place.
 
-### Q3 — When does the daily reset happen, and in what timezone?
+### Q3 — When does the daily reset happen? — **RESOLVED 2026-08-14**
 
-Unknown. `monitor.py` sampling four times a day is intended to bracket it.
+**Midnight UTC.** Bracketed to a single hour by samples either side:
+
+| Sample (BST) | UTC | `Bing` |
+|---|---|---|
+| 08-14 00:16 | 08-13 23:16 | 1/1 |
+| 08-14 01:16 | 08-14 00:16 | **0/1** |
+
+During British Summer Time that is 01:00 local, so a "morning" sample any time
+after 01:00 BST sees a fresh day. The 00:15/01:15/02:15 timer entries have done
+their job and can be removed.
+
+### Earnings land in "Ready to claim", not the balance — **CONFIRMED 2026-08-13**
+
+An accidental single mobile search, with clean samples either side and nothing else
+happening that day:
+
+| Sample | balance | unclaimed | total | `Bing` | `Mobile App` |
+|---|---|---|---|---|---|
+| 12:01 | 107345 | 9 | 107354 | 0/1 | 0/1 |
+| 18:00 | 107345 | **12** | **107357** | **1/1** | 0/1 |
+
+Three findings from one search:
+
+1. **The balance did not move. The unclaimed pot rose by 3.** Measuring the balance
+   alone would have scored this run as earning nothing — a false negative. Any
+   measurement must compare `balance + ready_to_claim`; `SearchResult` now does.
+2. A **mobile browser search satisfies the `Bing` gate**, so that ring is not
+   desktop-specific.
+3. It does **not** satisfy `Mobile App`, which presumably wants the Bing app itself.
+
+This also puts Q1's original reading in doubt from the other side: that run saw the
+balance move by 3, where this one saw the pot move instead. Whether the routing
+differs by device, by point type, or by when the pot flushes is not yet known.
 
 ### Q4 — Does point crediting lag?
 
@@ -197,7 +229,13 @@ activity contaminates that measurement the same way.
 Whichever it is, **balance movement and counter movement are not coupled**, so a
 counter cannot stand in for the balance as a success signal.
 
-Next: a sample pair across a window with *no* human use of the account at all.
+**Clean control obtained 2026-08-13.** From 06:08 to 12:01 with no activity at all,
+balance, unclaimed and every counter held still. The balance has now been frozen at
+107345 since 08-12 23:31 — over 30 hours — while the unclaimed pot moved. So the
+balance does not drift on its own, and it is not where day-to-day earnings arrive.
+
+What remains open is what moves points from the pot into the balance, and whether
+that is what the +12 and +21 on 08-12 evening were.
 
 ### Q5 — Why does `/earn` yield no counters? — **RESOLVED 2026-08-13**
 

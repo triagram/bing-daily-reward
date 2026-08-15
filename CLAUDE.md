@@ -7,10 +7,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 uv sync                              # create .venv and install deps
 uv run playwright install chromium   # download the browser — separate step, easy to miss
-uv run python rewards_bot.py         # full run: Daily set → Explore → 20 searches (~4-6 min)
+
+uv run python monitor.py             # read-only state sample, appends to logs/state_samples.jsonl
+uv run python monitor.py --history   # what has been collected so far
+uv run python recon.py               # read-only deep capture: screenshots, DOM, network log
 ```
 
-Diagnostics (development tools, not part of the daily flow):
+> `rewards_bot.py` is **not** the way to run anything right now. It is untouched since
+> the initial commit and still calls the original Daily Set and Explore code, which
+> guesses at selectors, has no date filter, and swallows its errors. It also passes a
+> hardcoded `search_count=20` that measurement has not supported, and discards the
+> `SearchResult` it gets back. Drive `run_daily_searches()` directly until the
+> orchestration layer is rewritten.
+
+Diagnostics from the original version, kept for selector archaeology:
 
 ```bash
 uv run python scientific_diagnostics.py   # dump points/task states/claim buttons → diagnostics_report.json
@@ -20,6 +30,28 @@ uv run python debug_task1.py              # screenshot dashboard, list every Dai
 
 There are no tests, no linter and no CI. "Verifying a change" here means either running a
 diagnostic script, or a real run against a live Microsoft account — see below.
+
+Long experiments must run in the background: a foreground command is capped at ten
+minutes, and a run that exceeds it is killed. That is how the first attempt at
+measuring the search allowance was lost.
+
+## Committing and pushing
+
+Commit freely as work is verified; **push only at milestones**. The user asked for this
+explicitly, so that commits stay rewritable — squashable, re-wordable — until a piece of
+work is actually finished.
+
+Commit when a change is self-contained, **verified**, and describable in one sentence
+without "and". Verification is the real gate: `recon.py` sat uncommitted for two days
+until the parser proved it earned its place. Findings count as changes worth committing —
+an experiment result that is not written down is lost.
+
+A milestone is an open question resolved, a task module rewritten and verified, or a
+release tagged. Also push before the user steps away, so nothing of theirs exists only on
+this disk. If they say "push", push.
+
+Messages: Conventional Commits prefix, imperative summary, then a body explaining *why*
+and what evidence supports it — not a restatement of the diff.
 
 ## Running the bot is not a free action
 

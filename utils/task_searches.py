@@ -92,6 +92,7 @@ async def run_daily_searches(
     per_search_balance: bool = False,
     force_input_mode: str | None = None,
     terms: list[str] | None = None,
+    stop_after_zero: int | None = None,
 ) -> SearchResult:
     """
     Perform Bing searches and measure what they earned.
@@ -109,6 +110,11 @@ async def run_daily_searches(
 
     `force_input_mode` pins how queries are issued, "url" or "type", so the two can be
     compared directly instead of mixed at random.
+
+    `stop_after_zero` ends the run once that many consecutive searches earn nothing.
+    Finding the daily allowance means searching until payment stops, and continuing
+    past that point buys no information while still spending behavioural budget.
+    Requires `per_search_balance`.
 
     `terms` overrides the generated search terms. Comparing two input modes needs
     fresh queries for the second run: if a repeated query is not credited, a
@@ -140,6 +146,7 @@ async def run_daily_searches(
 
     try:
         running_balance = result.total_before
+        zero_streak = 0
 
         for idx, term in enumerate(terms, start=1):
             # Always type: navigated queries are not credited at all (see _search_once).
@@ -176,6 +183,15 @@ async def run_daily_searches(
                             else f"       total {now} (delta unknown)")
                 if isinstance(now, int):
                     running_balance = now
+
+                if stop_after_zero:
+                    zero_streak = zero_streak + 1 if gained == 0 else 0
+                    if zero_streak >= stop_after_zero:
+                        logger.info(
+                            f"   Stopping: {zero_streak} consecutive searches earned "
+                            f"nothing — the allowance is spent."
+                        )
+                        break
 
             if idx < search_count:
                 gap = search_gap()

@@ -271,8 +271,32 @@ inherited guesswork. The dashboard does not publish a search counter at all — 
 three**.
 
 **How to settle it:** from a clean post-reset state, run typed queries with
-`per_search_balance=True` until payment stops. The index where the gain goes to zero
-is the allowance.
+`per_search_balance=True` and `stop_after_zero=3`. The index where the gain goes to
+zero is the allowance. **Run it in the background** — the attempt on 2026-08-15 was
+killed by a ten-minute command timeout before it could write its per-search log, and
+a run of this length needs roughly fifteen.
+
+**Partial observation, 2026-08-15 (measurement lost).** The interrupted run left the
+account changed even though its breakdown was not captured:
+
+| | 06:03 | 10:31 |
+|---|---|---|
+| balance | 107351 | 107408 (**+57**) |
+| unclaimed | 15 | 115 (**+100**) |
+| total | 107366 | 107523 (**+157**) |
+
+Two things this does not explain and should not be assumed away:
+
+- **The +100 has no visible source.** Diffing the two archived pages shows no new
+  offer and no completion change; offers went 12 → 11. So it came from something
+  outside the daily tasks — a search milestone, a level bonus, or the active 2x
+  perk are all candidates, with no evidence for any of them.
+- **+57 is more than the run should have produced** at 3 points a query: ten minutes
+  at roughly 38 s per measured search is about fifteen or sixteen queries, worth 45
+  to 48. Either some queries pay more than 3, or part of the gain is from elsewhere.
+
+Both are reasons to re-run cleanly rather than to reason backwards from these
+totals.
 
 ## Tooling
 

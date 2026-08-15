@@ -1,7 +1,10 @@
+import json
 import random
 import asyncio
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
 from urllib.parse import quote_plus
 
 from playwright.async_api import BrowserContext, Page
@@ -93,6 +96,7 @@ async def run_daily_searches(
     force_input_mode: str | None = None,
     terms: list[str] | None = None,
     stop_after_zero: int | None = None,
+    log_path: str | Path | None = None,
 ) -> SearchResult:
     """
     Perform Bing searches and measure what they earned.
@@ -115,6 +119,11 @@ async def run_daily_searches(
     Finding the daily allowance means searching until payment stops, and continuing
     past that point buys no information while still spending behavioural budget.
     Requires `per_search_balance`.
+
+    `log_path` appends one JSON line per search as it happens. Writing results only
+    at the end loses everything if the run is interrupted — which is exactly how the
+    first attempt at measuring the daily allowance was lost. Incremental writes mean
+    a killed run still yields every search it completed.
 
     `terms` overrides the generated search terms. Comparing two input modes needs
     fresh queries for the second run: if a repeated query is not credited, a
@@ -148,6 +157,19 @@ async def run_daily_searches(
         running_balance = result.total_before
         zero_streak = 0
 
+        log_file = Path(log_path) if log_path else None
+        if log_file:
+            log_file.parent.mkdir(parents=True, exist_ok=True)
+            with log_file.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps({
+                    "event": "start",
+                    "at": datetime.now().isoformat(timespec="seconds"),
+                    "planned": search_count,
+                    "input_mode": force_input_mode or "type",
+                    "total_before": result.total_before,
+                    "balance_before": result.balance_before,
+                }, ensure_ascii=False) + "\n")
+
         for idx, term in enumerate(terms, start=1):
             # Always type: navigated queries are not credited at all (see _search_once).
             use_box = force_input_mode != "url"
@@ -174,10 +196,15 @@ async def run_daily_searches(
                     if isinstance(now, int) and isinstance(running_balance, int)
                     else None
                 )
-                result.per_search.append(
-                    {"index": idx, "term": term, "mode": mode, "ok": ok,
-                     "total": now, "gained": gained}
-                )
+                record = {"index": idx, "term": term, "mode": mode, "ok": ok,
+                          "total": now, "gained": gained,
+                          "at": datetime.now().isoformat(timespec="seconds")}
+                result.per_search.append(record)
+                if log_file:
+                    # Flushed per search: an interrupted run keeps what it measured.
+                    with log_file.open("a", encoding="utf-8") as fh:
+                        fh.write(json.dumps({"event": "search", **record},
+                                            ensure_ascii=False) + "\n")
                 marker = "💰" if gained else "  "
                 logger.info(f"       {marker} total {now} ({gained:+d})" if gained is not None
                             else f"       total {now} (delta unknown)")
@@ -221,6 +248,18 @@ async def run_daily_searches(
             await state_page.close()
         except Exception:
             pass
+
+    if log_path:
+        with Path(log_path).open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({
+                "event": "end",
+                "at": datetime.now().isoformat(timespec="seconds"),
+                "submitted": result.submitted,
+                "total_after": result.total_after,
+                "balance_after": result.balance_after,
+                "points_earned": result.points_earned,
+                "errors": result.errors,
+            }, ensure_ascii=False) + "\n")
 
     logger.info(f"✅ [Searches] {result.summary()}")
     return result

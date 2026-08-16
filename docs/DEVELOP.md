@@ -135,6 +135,25 @@ Visible in the capture screenshot, absent from `DashboardState`:
 - **Monthly bonuses** — Bing Star bonus 2,100, monthly level-up 420, default search
   bonus 210, all shown as fully earned last month.
 
+### The /earn page has more sections than the code knows about
+
+Section titles recovered from the `/earn` flight stream, 2026-08-16:
+
+```
+Explore on Bing   ·   Keep earning   ·   Quests   ·   Level up activities
+Streaks           ·   Stamp Bonus    ·   Every day ways to earn rewards
+```
+
+The code models one of these. **Keep earning** was pointed out by the account holder
+and appears to work like the Daily Set — click through — with a variable number of
+items, though neither has been verified. **Quests** and **Level up activities** have
+not been examined at all.
+
+Out of reach by architecture, not merely unimplemented: `Mobile App 0/1`, the "Download
+Bing app to earn 500 points" offer, and anything else needing the Bing phone app. This
+project drives a desktop browser. Excluded from the task inventory by decision on
+2026-08-16 rather than left looking like an oversight.
+
 ### Market
 
 This account is `ENGB` (UK). Task sets and point values differ by market, so numbers
@@ -150,12 +169,12 @@ work queue** — an entry closes only when an experiment settles it.
 | # | Question | Status |
 |---|---|---|
 | [Q1](#q1) | Why did four searches earn only 3 points? | ✅ Resolved 2026-08-14 |
-| [Q2](#q2) | The Daily Set ring disagrees with the cards | 🔴 **Open** — blocks the Daily Set rewrite |
+| [Q2](#q2) | The Daily Set ring disagrees with the cards | 🟠 Open — no longer blocking; treat cards as authoritative |
 | [Q3](#q3) | When does the daily reset happen? | ✅ Resolved 2026-08-14 |
 | [Q4](#q4) | Does point crediting lag? | 🟡 Partly answered |
 | [Q5](#q5) | Why does `/earn` yield no counters? | ✅ Resolved 2026-08-13 |
 | [Q6](#q6) | What is the daily search allowance? | ✅ Resolved 2026-08-16 |
-| [Q7](#q7) | Are the Explore offers today's, or a backlog? | 🔴 **Open** — scopes the Explore rewrite |
+| [Q7](#q7) | Are the Explore offers today's, or a backlog? | 🟡 Partly — they rotate; the daily rate is unknown |
 | [Q8](#q8) | What is the `Edge` 0/30 counter? | 🔴 **Open** — largest unexplored surface |
 
 <a id="q1"></a>
@@ -193,7 +212,22 @@ today", so `run_daily_searches` takes a `terms` override.
 <a id="q2"></a>
 ### Q2 — The Daily Set ring disagrees with the Daily Set cards
 
-**Status:** 🔴 Open. **Blocks the Daily Set rewrite** — building on a completion test
+**Status:** 🟠 Open, but the weight of evidence now points one way.
+
+**Third observation, 2026-08-16** — and the most informative, because the completions
+were done **by hand** rather than by this code, which removes "the automation clicked
+something wrongly" as an explanation. On a single dashboard render: all three Daily set
+cards carried a Completed badge, while the "Your activity" ring read `Activity: 0/3`.
+
+That agrees in direction with 08-11 (ring 0/3, one card Completed): **the ring lags the
+cards**. Of three observations, two show the ring behind and one showed it ahead
+(08-12, ring 1/3 against three incomplete cards), so it is not yet unanimous.
+
+Working conclusion: **treat the cards as authoritative and ignore the ring.** The
+planned experiment would still tighten this, but it is no longer a prerequisite —
+building on `isCompleted` is defensible on the evidence.
+
+**Originally blocked the Daily Set rewrite** — building on a completion test
 that is known to be wrong reproduces the failure the rewrite exists to fix.
 
 **What is known:** the disagreement runs in both directions, which rules out a fixed
@@ -319,33 +353,36 @@ totals.
 <a id="q7"></a>
 ### Q7 — Are the Explore offers today's, or an accumulated backlog?
 
-**Status:** 🔴 Open. **Scopes the Explore rewrite** — "complete everything outstanding"
-is a very different action against six offers than against a month of them, on an
-account where activity volume is the risk.
+**Status:** 🟡 Partly answered 2026-08-16. **They rotate** — but the daily rate is
+still unknown, and the figure this question was raised to support turned out to be a
+one-day snapshot.
 
-Daily-set ids carry a date, which is what makes date-filtering possible. Explore ids
-do not, so a single capture cannot say whether what is outstanding belongs to today.
-
-**Evidence pointing at a backlog.** Three of the outstanding offers are keyed by
-weekday and all three were outstanding at once:
+**Answer to the question as asked:** not an indefinite backlog. Five of the eight
+Explore offers present on 08-11 were **gone from the page** five days later — absent,
+not marked complete:
 
 ```
-ENstar_Rewards_DailyGlobalOffer_Evergreen_Monday
-ENstar_Rewards_DailyGlobalOffer_Evergreen_Tuesday
-ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday
-WW_Rewards_locked_level2_Aug26w2_offer1     (month + week)
-WW_Bing_MonthlyFeaturedTopic_20260811_14    (dated)
+rotated out   Evergreen_Monday, Evergreen_Tuesday,
+              MonthlyFeaturedTopic_20260811_13 and _14,
+              locked_level2_Aug26w2_offer2
+completed     Evergreen_Sunday, locked_level2_Aug26w2_offer1
+reset         EN_Bing_moreactivities_flight_202606   (was complete, now incomplete)
 ```
 
-Monday, Tuesday and Sunday cannot all be today. Either they accumulate, or "Evergreen"
-means they are permanently available and the weekday is decorative.
+So "complete everything outstanding" is bounded rather than a month of work.
 
-**How to settle it:** re-run `recon.py` (read-only) and diff `/earn` against the
-2026-08-11 capture. If the same ids persist across five days it is a backlog; if the
-set rotates, they are current. Costs nothing and uses an archive already on disk.
+**But the value estimate that motivated reordering the roadmap does not hold.** On
+08-11 six offers were outstanding, worth 55 points; on 08-16 one is outstanding, worth
+5. Two snapshots, an order of magnitude apart. **The daily rate for Explore is not
+established**, and it should not be compared against the settled 60 from searches
+until it is.
 
-**Value at stake:** the six outstanding offers are worth 55 points — 5, 10 and 15
-each, not the "~10 each" the README claimed until 08-16.
+This comparison is also confounded: the account holder completed Explore cards
+manually on 08-16, so completions and rotation cannot be separated within it.
+
+**Why this could not be answered from history:** `monitor.py` samples only the
+dashboard, and Explore offers live on `/earn`. There is no series to compute a rate
+from. Sampling `/earn` too is the fix, and is worth more than another guess.
 
 <a id="q8"></a>
 ### Q8 — What is the `Edge` 0/30 counter?

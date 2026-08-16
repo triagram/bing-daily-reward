@@ -155,6 +155,8 @@ work queue** — an entry closes only when an experiment settles it.
 | [Q4](#q4) | Does point crediting lag? | 🟡 Partly answered |
 | [Q5](#q5) | Why does `/earn` yield no counters? | ✅ Resolved 2026-08-13 |
 | [Q6](#q6) | What is the daily search allowance? | ✅ Resolved 2026-08-16 |
+| [Q7](#q7) | Are the Explore offers today's, or a backlog? | 🔴 **Open** — scopes the Explore rewrite |
+| [Q8](#q8) | What is the `Edge` 0/30 counter? | 🔴 **Open** — largest unexplored surface |
 
 <a id="q1"></a>
 ### Q1 — Why did four searches earn only 3 points?
@@ -313,6 +315,54 @@ Two things this does not explain and should not be assumed away:
 
 Both are reasons to re-run cleanly rather than to reason backwards from these
 totals.
+
+<a id="q7"></a>
+### Q7 — Are the Explore offers today's, or an accumulated backlog?
+
+**Status:** 🔴 Open. **Scopes the Explore rewrite** — "complete everything outstanding"
+is a very different action against six offers than against a month of them, on an
+account where activity volume is the risk.
+
+Daily-set ids carry a date, which is what makes date-filtering possible. Explore ids
+do not, so a single capture cannot say whether what is outstanding belongs to today.
+
+**Evidence pointing at a backlog.** Three of the outstanding offers are keyed by
+weekday and all three were outstanding at once:
+
+```
+ENstar_Rewards_DailyGlobalOffer_Evergreen_Monday
+ENstar_Rewards_DailyGlobalOffer_Evergreen_Tuesday
+ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday
+WW_Rewards_locked_level2_Aug26w2_offer1     (month + week)
+WW_Bing_MonthlyFeaturedTopic_20260811_14    (dated)
+```
+
+Monday, Tuesday and Sunday cannot all be today. Either they accumulate, or "Evergreen"
+means they are permanently available and the weekday is decorative.
+
+**How to settle it:** re-run `recon.py` (read-only) and diff `/earn` against the
+2026-08-11 capture. If the same ids persist across five days it is a backlog; if the
+set rotates, they are current. Costs nothing and uses an archive already on disk.
+
+**Value at stake:** the six outstanding offers are worth 55 points — 5, 10 and 15
+each, not the "~10 each" the README claimed until 08-16.
+
+<a id="q8"></a>
+### Q8 — What is the `Edge` 0/30 counter?
+
+**Status:** 🔴 Open. Largest unexplored surface on the account.
+
+Its on-screen sub-label reads "How to activate", so the category is inactive here and
+its semantics are unknown. **Do not assume 30 searches at 3 points.** The Bing ring is
+a 1/1 gate rather than a search count, so a denominator of 30 cannot be read as a
+search quota by analogy.
+
+**How to settle it:** read what the "How to activate" link says, and sample the ring
+after activating. Both read-only up to the activation itself.
+
+**Out of scope, and worth saying so:** `Mobile App 0/1`, and the "Download Bing app to
+earn 500 points" offer, need the Bing mobile app. This project drives a desktop
+browser, so they are unreachable by architecture rather than merely unimplemented.
 
 ## Tooling
 

@@ -144,7 +144,7 @@ seeded by the date, so consecutive days do not repeat the same strings.
 | # | Task | Module | Nominal reward |
 |---|---|---|---|
 | 1 | **Daily set** — completes the three daily cards, claims pending points | `task_daily_set.py` | varies |
-| 2 | **Explore on Bing** — works through the Explore activity cards | `task_explore.py` | ~10 pts each |
+| 2 | **Explore on Bing** — works through the Explore activity cards | `task_explore.py` | 5/10/15 pts each (measured) |
 | 3 | **Daily searches** — 20 Bing searches, variably spaced | `task_searches.py` | 3 pts each, 60 total (measured) |
 
 > [!NOTE]

@@ -11,9 +11,14 @@ REWARDS_EARN_URL = "https://rewards.bing.com/earn"
 BING_SEARCH_URL = "https://www.bing.com"
 
 # Task Settings - Anti-bot & Points Registration Intervals
-DAILY_SEARCH_COUNT = 20  # 20 searches daily (3 pts each = 60 pts)
-MIN_DELAY_BETWEEN_SEARCHES = 6.0  # seconds (Required for Bing points counter cooldown)
-MAX_DELAY_BETWEEN_SEARCHES = 9.0  # seconds
+# Measured on this UK account 2026-08-16: searches 1-20 paid 3 points each, 21-23 paid
+# nothing. Differs by market — re-measure with experiments/q6_allowance.py elsewhere.
+DAILY_SEARCH_COUNT = 20
+
+# Superseded by search_gap() in utils/humanizer.py, which draws from a heavy-tailed
+# mixture instead of a flat window. Kept only for the older task modules.
+MIN_DELAY_BETWEEN_SEARCHES = 6.0
+MAX_DELAY_BETWEEN_SEARCHES = 9.0
 
 # Headless mode: Set to False for visual browser, True for background
 HEADLESS = False

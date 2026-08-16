@@ -145,14 +145,14 @@ seeded by the date, so consecutive days do not repeat the same strings.
 |---|---|---|---|
 | 1 | **Daily set** — completes the three daily cards, claims pending points | `task_daily_set.py` | varies |
 | 2 | **Explore on Bing** — works through the Explore activity cards | `task_explore.py` | ~10 pts each |
-| 3 | **Daily searches** — N Bing searches, variably spaced | `task_searches.py` | measured per run (see below) |
+| 3 | **Daily searches** — 20 Bing searches, variably spaced | `task_searches.py` | 3 pts each, 60 total (measured) |
 
 > [!NOTE]
-> The reward column for searches is deliberately vague. `DAILY_SEARCH_COUNT = 20`
-> and its "3 pts each = 60 total" comment are inherited guesses that measurement
-> has not supported: a four-search run on 2026-08-12 earned **3 points, not 12**.
-> The real per-market limit is still being established — see
-> [docs/DEVELOP.md](docs/DEVELOP.md#open-questions).
+> Measured on this UK account, 2026-08-16: **20 searches pay 3 points each, then
+> payment stops** — searches 21, 22 and 23 all earned nothing. That matches
+> `DAILY_SEARCH_COUNT = 20` exactly. Earlier notes here called those numbers
+> unfounded; they were right all along, and what was broken was the way queries
+> were issued (see below). Point values differ by market.
 
 Supporting behaviour:
 

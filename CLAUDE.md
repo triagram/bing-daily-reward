@@ -15,9 +15,8 @@ uv run python recon.py               # read-only deep capture: screenshots, DOM,
 
 > `rewards_bot.py` is **not** the way to run anything right now. It is untouched since
 > the initial commit and still calls the original Daily Set and Explore code, which
-> guesses at selectors, has no date filter, and swallows its errors. It also passes a
-> hardcoded `search_count=20` that measurement has not supported, and discards the
-> `SearchResult` it gets back. Drive `run_daily_searches()` directly until the
+> guesses at selectors, has no date filter, and swallows its errors. It also discards
+> the `SearchResult` it gets back, so nothing records what a run earned. Drive `run_daily_searches()` directly until the
 > orchestration layer is rewritten.
 
 Diagnostics from the original version, kept for selector archaeology:
@@ -89,34 +88,50 @@ fixing broken selectors.
 diffs after, rather than awaiting a `page` event. It bundles open → interact → linger →
 close into one call; use it rather than hand-rolling tab handling.
 
-## The central defect: success is asserted, not measured
+## Measure; never assert
 
-**The point totals in the logs are fabricated.** `task_searches.py` increments a counter
-and logs `✓ Search [n/20] completed (+3 pts)` whenever `page.goto()` merely failed to
-throw; `task_explore.py` logs `(+10 pts)` the same way. Neither ever reads the account's
-balance. A run blocked by a captcha, a spent quota, or bot detection still prints
-`✅ Completed 20/20 (~60 points earned)`.
+Searches are closed-loop: `run_daily_searches()` reads the point total before and after
+and returns a `SearchResult` carrying the observed delta. **The two remaining tasks are
+not.** `task_explore.py` still logs `(+10 pts)` whenever a click did not raise, and
+`task_daily_set.py` is the same shape — neither has been touched since the initial commit,
+and between them they hold about a dozen `except Exception: pass` blocks that make a
+broken selector indistinguishable from a completed task.
 
-Compounding it, roughly a dozen `except Exception: pass` / `logger.debug(...)` blocks
-across `utils/` swallow failures, so a broken selector is indistinguishable from a
-completed task.
+Treat any point figure from those two as fiction. Do not cite them as evidence a change
+worked, and do not add more of them.
 
-Treat any log line claiming points as unverified. Do not cite them as evidence a change
-worked, and do not add more of them. The agreed next engineering step is closing this
-loop: promote `extract_points()` out of `scientific_diagnostics.py` into `utils/`, capture
-the balance before and after each task, and have tasks return structured results
-(attempted / succeeded / point delta / errors) instead of only logging. Everything else on
-the README roadmap is unverifiable until that lands.
+Measure **balance + unclaimed**, never the balance alone: earnings land in the "Ready to
+claim" pot as often as in the balance, so a balance-only comparison reads zero for a run
+that did earn. `DashboardState.total_points` is the number to compare.
+
+What made this tractable was reading the dashboard's own state rather than inferring it.
+`utils/dashboard_state.py` parses the React flight stream embedded in the page HTML into
+offers (id, points, `isCompleted`, date) and counters. It is a pure function — no browser,
+no network — so it can be developed against archived pages; `utils/state_reader.py` is the
+thin layer that feeds it from a live page. Prefer it over any DOM scraping.
 
 Known related bug: `run_daily_set_streak()` collects card locators once and reuses them
 across page navigations, so cards #2 and #3 can resolve to the wrong element after the DOM
-updates. Re-query inside the loop; identify cards by URL or text, not index.
+updates. Re-query inside the loop; identify cards by offer id, not index — and note the
+page carries several days of offers at once, so filter by date.
+
+Before rewriting the Daily Set task, settle Q2 in `docs/DEVELOP.md`: the Daily Set counter
+and the cards disagree about what is complete, in both directions. Building on a
+completion test known to be wrong reproduces the failure the rewrite exists to fix.
 
 ## Constraints that look like waste but are not
 
-- **The 6–9 s gap between searches** (`MIN/MAX_DELAY_BETWEEN_SEARCHES`) is a functional
-  requirement — Microsoft's counter ignores searches that arrive faster. Shortening it
-  costs points. It is not padding to be optimised away.
+- **Queries must be typed into the search box.** Loading `bing.com/search?q=…` is not
+  credited at all — measured 2026-08-14, six navigated queries earned nothing and did not
+  move the daily search gate, while three typed ones earned 3 points each within seconds.
+  `_search_once()` always types; do not "optimise" it back to navigation.
+- **The allowance is 20 searches at 3 points, 60 total** on this UK account, measured
+  2026-08-16: searches 21, 22 and 23 all earned nothing. The dashboard publishes no search
+  counter, so this is only knowable by measurement, and it differs by market.
+- **Inter-search gaps come from a heavy-tailed mixture** in `search_gap()` (median ~15 s,
+  mean ~21 s), not the flat 6–9 s window `config.py` still describes. Real gaps are not
+  uniform, and pacing is also a functional requirement: queries arriving too fast are not
+  counted.
 - **`playwright` is pinned to `==1.61.0`.** Each release expects a matching Chromium
   build; bumping it without re-running `playwright install chromium` breaks every run with
   a "just installed or updated" message. Do not upgrade it as a drive-by.

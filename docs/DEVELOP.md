@@ -93,9 +93,11 @@ Streaks are tracked separately, under **"Your progress"**: a `Daily streak` read
 28 days at capture time, plus a stamp card. So the rings are not streak counters
 either; they are today's completion gates.
 
-Consequently `DAILY_SEARCH_COUNT = 20` in `config.py`, and its comment claiming 3
-points each for 60 total, are **inherited guesswork with nothing on the page to
-support them** (see Q1).
+The allowance therefore cannot be read off the page — it has to be measured, and it
+was (Q6): **20 searches at 3 points each, 60 in total.** That is exactly what
+`DAILY_SEARCH_COUNT = 20` and its comment already said. Earlier revisions of this
+file called those numbers unfounded guesswork; they were correct, and the fault lay
+in how queries were issued (Q1), not in the parameters.
 
 ### Earnings land in "Ready to claim", not the balance
 
@@ -152,7 +154,7 @@ work queue** — an entry closes only when an experiment settles it.
 | [Q3](#q3) | When does the daily reset happen? | ✅ Resolved 2026-08-14 |
 | [Q4](#q4) | Does point crediting lag? | 🟡 Partly answered |
 | [Q5](#q5) | Why does `/earn` yield no counters? | ✅ Resolved 2026-08-13 |
-| [Q6](#q6) | What is the daily search allowance? | 🔴 **Open** — next experiment |
+| [Q6](#q6) | What is the daily search allowance? | ✅ Resolved 2026-08-16 |
 
 <a id="q1"></a>
 ### Q1 — Why did four searches earn only 3 points?
@@ -261,14 +263,28 @@ source of offers only.
 <a id="q6"></a>
 ### Q6 — What is the daily search allowance?
 
-**Status:** 🔴 Open. Next experiment.
+**Status:** Resolved 2026-08-16.
 
-`DAILY_SEARCH_COUNT = 20`, and its comment claiming 3 points each for 60 total, are
-inherited guesswork. The dashboard does not publish a search counter at all — the
-`Bing` ring is a binary gate — so the ceiling can only be found by measurement.
+**Answer: 20 searches at 3 points each, 60 points in total.** Searches 21, 22 and 23
+earned nothing, in a single run from a clean post-reset state with the balance read
+after every query.
 
-**Known:** three consecutive typed queries each paid 3, so the ceiling is **above
-three**.
+```
+#1 … #20   +3 each   cumulative 60
+#21 #22 #23   +0      run stopped
+```
+
+**This is exactly what `config.py` already said.** `DAILY_SEARCH_COUNT = 20` and its
+"3 pts each = 60 pts" comment were correct from the start. Earlier revisions of this
+document, the README and CLAUDE.md all called them unfounded guesswork on the strength
+of a four-search run that earned 3 — but that run was measuring the wrong thing, since
+three of its four queries were navigated and therefore uncredited (Q1). **The
+parameters were right; the execution was broken.** Worth remembering as a caution: a
+measurement taken through a broken method discredits the parameter rather than the
+method.
+
+The dashboard publishes no search counter — the `Bing` ring is a binary gate — so this
+number is only knowable by measurement, and it differs by market.
 
 **How to settle it:** from a clean post-reset state, run typed queries with
 `per_search_balance=True` and `stop_after_zero=3`. The index where the gain goes to

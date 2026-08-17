@@ -2,11 +2,12 @@
 
 > An automated agent for Microsoft Bing Rewards daily tasks, built with Python, Playwright and uv.
 
-> [!WARNING]
-> **This is an early skeleton.** Searches now measure what they actually earned,
-> but the Daily set and Explore tasks still report assumed point totals rather
-> than observed ones. Read [Current Limitations](#current-limitations) before
-> relying on it.
+> [!NOTE]
+> **Searches and the Daily Set are measured; Explore is not yet rewritten and is
+> skipped.** A verified run on 2026-08-17 earned 95 points with no errors: 3/3
+> daily-set cards (+50, each confirmed by its own `isCompleted` flipping) and
+> 15/15 searches (+45). Every figure the bot reports is observed — where a total
+> cannot be read it says so rather than assuming.
 >
 > Working notes, the reverse-engineered data contract, and the list of unsettled
 > questions live in [docs/DEVELOP.md](docs/DEVELOP.md).
@@ -143,8 +144,8 @@ seeded by the date, so consecutive days do not repeat the same strings.
 
 | # | Task | Module | Nominal reward |
 |---|---|---|---|
-| 1 | **Daily set** — completes the three daily cards, claims pending points | `task_daily_set.py` | varies |
-| 2 | **Explore on Bing** — works through the Explore activity cards | `task_explore.py` | 5/10/15 pts each (measured) |
+| 1 | **Daily set** — today's cards only, each verified individually | `task_daily_set.py` | 10–30 pts each (measured) |
+| 2 | **Explore on Bing** — *not rewritten; skipped by the runner* | `task_explore.py` | 5/10/15 pts each (measured) |
 | 3 | **Daily searches** — 8-15 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
 
 > [!NOTE]

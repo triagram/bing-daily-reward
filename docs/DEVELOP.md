@@ -407,6 +407,18 @@ after activating. Both read-only up to the activation itself.
 earn 500 points" offer, need the Bing mobile app. This project drives a desktop
 browser, so they are unreachable by architecture rather than merely unimplemented.
 
+### Known gap: the bot does not know what the account already did today
+
+`daily_search_count()` draws 8-15 without regard to searches made by hand earlier the
+same day. On 2026-08-17 the account holder searched 5 times and the draw was 15,
+landing on exactly 20 — the quota, which is the one number the varying count exists to
+avoid.
+
+Harmless once, but it defeats the purpose whenever manual use precedes a run. The fix
+is to derive the remaining allowance from observation rather than assume a clean start;
+the balance delta since the day's first sample is one route, and `monitor.py` already
+records what would be needed.
+
 ## Tooling
 
 Three things with similar-sounding jobs. The distinction is depth versus frequency.

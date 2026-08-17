@@ -452,8 +452,8 @@ noisiest activity in volume terms.
 
 ### Known gap: the bot does not know what the account already did today
 
-`daily_search_count()` draws 8-15 without regard to searches made by hand earlier the
-same day. On 2026-08-17 the account holder searched 5 times and the draw was 15,
+`daily_search_count()` drew 8-15 (now 8-12) without regard to searches made by hand
+earlier the same day. On 2026-08-17 the account holder searched 5 times and the draw was 15,
 landing on exactly 20 — the quota, which is the one number the varying count exists to
 avoid.
 

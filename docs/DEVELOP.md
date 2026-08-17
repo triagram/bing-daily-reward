@@ -153,19 +153,50 @@ allowance does nothing for it.
 That aligns with lowering the profile rather than trading against it: turning up every
 day, modestly, is both what the streak rewards and what looks least like a script.
 
-### The /earn page has more sections than the code knows about
+### The /earn sections, and why only two need code
 
-Section titles recovered from the `/earn` flight stream, 2026-08-16:
+Examined 2026-08-18. The page has seven headings, but they are presentation, not
+distinct task types:
+
+| Section | Status |
+|---|---|
+| **Explore on Bing** | covered by `run_explore` |
+| **Keep earning** | **already covered** — same offers, different heading |
+| **Quests** | multi-task bundles; progress is a by-product of the daily work |
+| **Level up activities** | long-running achievements, not clickable tasks |
+| **Streaks / Stamp Bonus** | earned by turning up daily; nothing to click |
+
+**Keep earning needed no work at all.** Its items on 2026-08-18 were Dinner delight,
+South African vistas, Complete this puzzle and Book Flights with Bing — precisely the
+four `run_explore` had completed the day before. Selecting offers by *having a point
+value and being incomplete*, rather than by which heading renders them, covers the
+page's sections without knowing they exist. Worth preserving: a section-anchored
+selector would have missed these and needed a module per heading.
+
+**Quests** are bundles like "Make this August more rewarding, +50, 0/4 tasks" and
+"Spotify playlists on the house, 0/6 tasks", with an expiry. Their sub-tasks are the
+daily activities themselves, so they advance by doing the ordinary work. Some reward
+perks rather than points.
+
+**Level up activities** read "Search with Bing for 7 days in a row" (in progress) and
+"Set Bing as your default search engine for 14 days" (completed) — conditions met by
+persistence, with nothing to automate.
+
+### Streak arithmetic, which favours consistency over extraction
+
+Read off `/earn` on 2026-08-18:
 
 ```
-Explore on Bing   ·   Keep earning   ·   Quests   ·   Level up activities
-Streaks           ·   Stamp Bonus    ·   Every day ways to earn rewards
+Bing Search Streak    Day 2 of 7 — complete the next day to earn 3 points    → 100 at 7
+Daily Set Streak      Day 1 of 7 — complete the next day to earn 30 points   → 100 at 7
+Stamp Bonus           5 of 12 stamps                                          → 1,000
 ```
 
-The code models one of these. **Keep earning** was pointed out by the account holder
-and appears to work like the Daily Set — click through — with a variable number of
-items, though neither has been verified. **Quests** and **Level up activities** have
-not been examined at all.
+A daily set is worth 30-50 points on its own; sustaining its streak is advertised at
+30 points for the next day alone, before the 100 at seven. Against that, the marginal
+value of squeezing the last searches out of a day is small — which is why the search
+count was narrowed rather than maximised, and why an unbroken run of modest days beats
+an occasional exhaustive one.
 
 Out of reach by architecture, not merely unimplemented: `Mobile App 0/1`, the "Download
 Bing app to earn 500 points" offer, and anything else needing the Bing phone app. This

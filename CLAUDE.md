@@ -115,9 +115,9 @@ across page navigations, so cards #2 and #3 can resolve to the wrong element aft
 updates. Re-query inside the loop; identify cards by offer id, not index — and note the
 page carries several days of offers at once, so filter by date.
 
-Before rewriting the Daily Set task, settle Q2 in `docs/DEVELOP.md`: the Daily Set counter
-and the cards disagree about what is complete, in both directions. Building on a
-completion test known to be wrong reproduces the failure the rewrite exists to fix.
+**The "Daily Set" activity ring shows *yesterday's* completions, not today's** (Q2,
+resolved 2026-08-17). Gate work on `isCompleted` on the cards and nothing else — reading
+the ring as today's progress skips every task on any day following a completed one.
 
 ## Constraints that look like waste but are not
 

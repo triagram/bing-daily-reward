@@ -187,7 +187,7 @@ work queue** — an entry closes only when an experiment settles it.
 | # | Question | Status |
 |---|---|---|
 | [Q1](#q1) | Why did four searches earn only 3 points? | ✅ Resolved 2026-08-14 |
-| [Q2](#q2) | The Daily Set ring disagrees with the cards | 🟠 Open — no longer blocking; treat cards as authoritative |
+| [Q2](#q2) | The Daily Set ring disagrees with the cards | ✅ Resolved 2026-08-17 |
 | [Q3](#q3) | When does the daily reset happen? | ✅ Resolved 2026-08-14 |
 | [Q4](#q4) | Does point crediting lag? | 🟡 Partly answered |
 | [Q5](#q5) | Why does `/earn` yield no counters? | ✅ Resolved 2026-08-13 |
@@ -230,44 +230,31 @@ today", so `run_daily_searches` takes a `terms` override.
 <a id="q2"></a>
 ### Q2 — The Daily Set ring disagrees with the Daily Set cards
 
-**Status:** 🟠 Open, but the weight of evidence now points one way.
+**Status:** Resolved 2026-08-17.
 
-**Third observation, 2026-08-16** — and the most informative, because the completions
-were done **by hand** rather than by this code, which removes "the automation clicked
-something wrongly" as an explanation. On a single dashboard render: all three Daily set
-cards carried a Completed badge, while the "Your activity" ring read `Activity: 0/3`.
+**Answer: the ring shows the *previous* day's completions, not today's.** It was never
+lagging or buggy — its meaning was being read wrongly. Four observations fit without
+exception:
 
-That agrees in direction with 08-11 (ring 0/3, one card Completed): **the ring lags the
-cards**. Of three observations, two show the ring behind and one showed it ahead
-(08-12, ring 1/3 against three incomplete cards), so it is not yet unanimous.
-
-Working conclusion: **treat the cards as authoritative and ignore the ring.** The
-planned experiment would still tighten this, but it is no longer a prerequisite —
-building on `isCompleted` is defensible on the evidence.
-
-**Originally blocked the Daily Set rewrite** — building on a completion test
-that is known to be wrong reproduces the failure the rewrite exists to fix.
-
-**What is known:** the disagreement runs in both directions, which rules out a fixed
-offset or a simple off-by-one.
-
-| Date | Ring | Cards | Direction |
+| Observed | Ring | Cards done **that** day | Cards done the **previous** day |
 |---|---|---|---|
-| 2026-08-11 | 0 / 3 | one card visibly marked **Completed** | ring undercounts |
-| 2026-08-12 | 1 / 3 | all three `isCompleted: false` | ring overcounts |
+| 08-11 | 0/3 | 1 | 0 (08-10) ✓ |
+| 08-12 | 1/3 | 0 | 1 (08-11) ✓ |
+| 08-16 23:39 | 0/3 | 3 | 0 (08-15) ✓ |
+| 08-17 02:13 | 3/3 | 0 | 3 (08-16) ✓ |
 
-**Not a parser artifact.** The 08-11 case is legible on the capture screenshot: the
-ring reads "Activity: 0/3" while the "Upcoming comedy events" card carries a
-Completed badge on the same page.
+The 08-16 pair is the decisive one, and it came free from adding `/earn` sampling
+rather than from the experiment written to chase it. At 23:39 the ring still read 0/3
+hours after three cards had been completed, which rules out a short delay; by 02:13,
+past the UTC reset, it read 3/3 while that day's cards were all untouched.
 
-**Candidate causes, none eliminated:** the ring updates on a lag or a different
-schedule; it counts a different notion of "done" than the cards; or it is scoped to a
-different day boundary than the offer ids are.
+**Consequence:** `isCompleted` on the cards is the only source for "is this done
+today". Never gate work on the ring — it is a summary of yesterday, and using it would
+skip today's tasks whenever yesterday's were finished.
 
-**How to settle it:** complete exactly one daily-set card from a clean post-reset
-state, then sample immediately, at +5 minutes and at +1 hour. If the ring trails the
-card, it is a lag; if it never agrees, the two count different things. Requires
-clicking a task, so it is the first experiment that is not read-only.
+`experiments/q2_daily_set_counter.py` was written to settle this by completing one card
+and watching both sources. It is unnecessary now and was never run; kept because it
+would still be the right instrument if the semantics change.
 
 <a id="q3"></a>
 ### Q3 — When does the daily reset happen, and in what timezone?

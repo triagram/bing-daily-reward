@@ -221,3 +221,50 @@ def test_outstanding_offers_ignores_banners_and_completed():
               points=10, is_completed=False),                        # daily set
     ])
     assert [o.offer_id for o in outstanding_offers(state)] == ["A"]
+
+
+# --------------------------------------------------------------------------- #
+# Shortfall detection
+# --------------------------------------------------------------------------- #
+
+
+def test_idle_run_is_not_a_failure():
+    from utils.shortfall import Verdict, assess
+
+    v = assess(expected=0, measured=0, attempted=0)
+    assert v.verdict is Verdict.NOTHING_TO_DO and not v.is_problem
+
+
+def test_earning_nothing_after_attempting_work_is_flagged():
+    from utils.shortfall import Verdict, assess
+
+    v = assess(expected=50, measured=0, attempted=3)
+    assert v.verdict is Verdict.ZERO and v.is_problem
+
+
+def test_unreadable_total_is_its_own_verdict():
+    """Not knowing is different from earning nothing, and must not be reported as it."""
+    from utils.shortfall import Verdict, assess
+
+    v = assess(expected=50, measured=None, attempted=3)
+    assert v.verdict is Verdict.UNKNOWN and v.is_problem
+
+
+def test_measuring_more_than_advertised_is_fine():
+    """An Explore run measured 50 against 40 advertised; that is not a fault."""
+    from utils.shortfall import Verdict, assess
+
+    assert assess(expected=40, measured=50, attempted=4).verdict is Verdict.OK
+
+
+def test_roughly_right_is_not_flagged():
+    from utils.shortfall import Verdict, assess
+
+    assert assess(expected=50, measured=40, attempted=3).verdict is Verdict.OK
+
+
+def test_well_under_is_flagged_as_short():
+    from utils.shortfall import Verdict, assess
+
+    v = assess(expected=50, measured=10, attempted=3)
+    assert v.verdict is Verdict.SHORT and v.is_problem

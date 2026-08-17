@@ -268,3 +268,37 @@ def test_well_under_is_flagged_as_short():
 
     v = assess(expected=50, measured=10, attempted=3)
     assert v.verdict is Verdict.SHORT and v.is_problem
+
+
+# --------------------------------------------------------------------------- #
+# Run history
+# --------------------------------------------------------------------------- #
+
+
+def test_run_log_survives_a_corrupt_line(tmp_path, monkeypatch):
+    """
+    The log is appended to at the end of every run, so a run killed mid-write leaves
+    a partial line. One bad line must not hide every good one.
+    """
+    import json as _json
+
+    import rewards_bot
+
+    log = tmp_path / "runs.jsonl"
+    log.write_text(
+        _json.dumps({"date": "2026-08-17", "overall_delta": 95}) + "\n"
+        + '{"date": "2026-08-18", "overall_de\n'          # truncated mid-write
+        + _json.dumps({"date": "2026-08-19", "overall_delta": 40}) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(rewards_bot, "RUN_LOG", log)
+
+    runs = rewards_bot.load_runs()
+    assert [r["date"] for r in runs] == ["2026-08-17", "2026-08-19"]
+
+
+def test_run_log_absent_is_empty_not_an_error(tmp_path, monkeypatch):
+    import rewards_bot
+
+    monkeypatch.setattr(rewards_bot, "RUN_LOG", tmp_path / "nope.jsonl")
+    assert rewards_bot.load_runs() == []

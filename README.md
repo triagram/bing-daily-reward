@@ -227,7 +227,9 @@ is a one-time step.
 ### Subsequent runs
 
 ```bash
-uv run python rewards_bot.py
+uv run python rewards_bot.py            # run today's tasks
+uv run python rewards_bot.py --dry-run  # report what it would do, change nothing
+uv run python rewards_bot.py --history  # what past runs earned, per task
 ```
 
 Tasks 1 → 2 → 3 run in sequence. A full run takes roughly 4–6 minutes, most of

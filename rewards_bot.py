@@ -7,6 +7,7 @@ observe: where a total could not be read it says so.
 
     uv run python rewards_bot.py            # run today's tasks
     uv run python rewards_bot.py --dry-run  # read state and report, change nothing
+    uv run python rewards_bot.py --history  # what past runs earned
 """
 
 import sys
@@ -41,6 +42,80 @@ logging.basicConfig(
 logger = logging.getLogger("bing_rewards")
 
 
+def load_runs() -> list[dict]:
+    if not RUN_LOG.exists():
+        return []
+    out = []
+    for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            try:
+                out.append(json.loads(line))
+            except ValueError:
+                pass
+    return out
+
+
+def print_history():
+    """
+    What each past run earned, per task.
+
+    Runs were already being recorded structurally and nothing read them back, so a
+    bad day was only visible to whoever happened to watch that run's console. The
+    question this answers is the one worth asking daily: did today fall short?
+    """
+    runs = load_runs()
+    if not runs:
+        console.print("[yellow]No runs recorded yet.[/yellow]")
+        return
+
+    table = Table(title=f"Runs ({len(runs)})")
+    table.add_column("Date", style="cyan", no_wrap=True)
+    table.add_column("Daily set", justify="right")
+    table.add_column("Searches", justify="right")
+    table.add_column("Explore", justify="right")
+    table.add_column("Claimed", justify="right")
+    table.add_column("Total", justify="right")
+    table.add_column("Flags", style="yellow")
+
+    for run in runs:
+        tasks = run.get("tasks", {})
+
+        def cell(name: str) -> str:
+            task = tasks.get(name)
+            if not task:
+                return "[dim]—[/dim]"
+            points = task.get("points")
+            done, attempted = task.get("done"), task.get("attempted")
+            if points is None:
+                return f"[yellow]?[/yellow] {done}/{attempted}"
+            colour = {"zero": "red", "short": "yellow", "unknown": "yellow"}.get(
+                task.get("verdict"), "green" if points else "dim")
+            return f"[{colour}]{points:+d}[/{colour}] {done}/{attempted}"
+
+        claim = run.get("claim") or {}
+        moved = claim.get("moved")
+        flags = " ".join(
+            f"{n}:{t['verdict']}" for n, t in tasks.items()
+            if t.get("verdict") in ("zero", "short", "unknown")
+        )
+        overall = run.get("overall_delta")
+        table.add_row(
+            run.get("date", "?"),
+            cell("daily_set"), cell("searches"), cell("explore"),
+            f"{moved:+d}" if moved else "[dim]—[/dim]",
+            f"[bold]{overall:+d}[/bold]" if overall is not None else "[yellow]?[/yellow]",
+            flags or "",
+        )
+    console.print(table)
+
+    earned = [r["overall_delta"] for r in runs if isinstance(r.get("overall_delta"), int)]
+    if earned:
+        console.print(
+            f"[dim]{len(earned)} measured runs · best {max(earned)} · "
+            f"worst {min(earned)} · mean {sum(earned) / len(earned):.0f} points[/dim]"
+        )
+
+
 def record_run(payload: dict):
     RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
     with RUN_LOG.open("a", encoding="utf-8") as fh:
@@ -49,6 +124,10 @@ def record_run(payload: dict):
 
 
 async def main():
+    if "--history" in sys.argv:
+        print_history()
+        return
+
     dry_run = "--dry-run" in sys.argv
 
     console.print("\n[bold cyan]Microsoft Rewards[/bold cyan]")
@@ -183,6 +262,7 @@ async def main():
             "tasks": {
                 name: {
                     "attempted": res.attempted,
+                    "done": getattr(res, "completed", getattr(res, "submitted", None)),
                     "done": getattr(res, "completed", getattr(res, "submitted", None)),
                     "points": res.points_earned,
                     "expected": res.expected_points,

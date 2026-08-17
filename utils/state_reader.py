@@ -15,6 +15,7 @@ from playwright.async_api import Page
 
 from config import REWARDS_URL, POINTS_PER_SEARCH
 from utils.dashboard_state import DashboardState, parse_dashboard
+from utils.retry import retry_async
 
 logger = logging.getLogger("bing_rewards")
 
@@ -27,7 +28,12 @@ async def fetch_state(page: Page, settle_seconds: float = 3.5) -> DashboardState
     read comes from the HTML document rather than from the rendered DOM, so this wait
     is a safety margin rather than a hard requirement.
     """
-    await page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
+    # Loading a page is idempotent, so retrying is free; a hydration hiccup here
+    # otherwise costs the caller its whole task.
+    await retry_async(
+        lambda: page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000),
+        what="dashboard load",
+    )
     await asyncio.sleep(settle_seconds)
     state = parse_dashboard(await page.content())
     if state.balance is None:

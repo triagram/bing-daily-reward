@@ -19,8 +19,11 @@ POINTS_PER_SEARCH = 3          # measured alongside the allowance
 
 # How many to actually run: deliberately short of the allowance, and different every
 # day. See daily_search_count() in utils/humanizer.py for why.
+# Searches are the lowest-yield action on the account at 3 points each, against
+# 5-15 for an Explore offer and 10-30 for a daily-set card. So when trading volume
+# for a lower profile, this is the number to cut — not the other tasks.
 DAILY_SEARCH_MIN = 8
-DAILY_SEARCH_MAX = 15
+DAILY_SEARCH_MAX = 12
 
 # Superseded by search_gap() in utils/humanizer.py, which draws from a heavy-tailed
 # mixture instead of a flat window. Kept only for the older task modules.

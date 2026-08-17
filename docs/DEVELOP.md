@@ -407,6 +407,18 @@ after activating. Both read-only up to the activation itself.
 earn 500 points" offer, need the Bing mobile app. This project drives a desktop
 browser, so they are unreachable by architecture rather than merely unimplemented.
 
+### Yield per action, and what to cut when trading volume for profile
+
+| Action | Points | Notes |
+|---|---|---|
+| One search | **3** | lowest yield on the account |
+| One Explore offer | **5–15** | |
+| One daily-set card | **10–30** | |
+
+Cutting searches costs the least per action removed, which is why the daily count was
+narrowed to 8-12 rather than trimming the other tasks. It also happens to be the
+noisiest activity in volume terms.
+
 ### Known gap: the bot does not know what the account already did today
 
 `daily_search_count()` draws 8-15 without regard to searches made by hand earlier the

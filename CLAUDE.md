@@ -124,7 +124,7 @@ the ring as today's progress skips every task on any day following a completed o
   move the daily search gate, while three typed ones earned 3 points each within seconds.
   `_search_once()` always types; do not "optimise" it back to navigation.
 - **The allowance is 20 searches at 3 points** on this UK account (measured 2026-08-16;
-  21-23 earned nothing), but the bot runs **8-15**, drawn per day by
+  21-23 earned nothing), but the bot runs **8-12**, drawn per day by
   `daily_search_count()`. Landing exactly on the quota daily is a signature, and so is a
   fixed count. Do not "fix" this back to the maximum — the shortfall is deliberate, and
   streaks do not depend on it since one search satisfies the daily gate.

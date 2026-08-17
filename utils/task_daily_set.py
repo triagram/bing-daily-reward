@@ -1,190 +1,218 @@
-import re
+"""
+Task 1 — the day's Daily Set cards.
+
+Rewritten around the dashboard's own state. The previous version collected card
+locators once, reused them across page navigations, and picked the first three matches
+from a fallback that could match 112 elements; it also had no notion of *which day* a
+card belonged to, on a page that carries three days at once.
+
+Two rules make this tractable, both established by measurement:
+
+- **`isCompleted` on the card is the only source of truth.** The "Daily Set" activity
+  ring shows the *previous* day's completions (Q2), so gating on it would skip every
+  task on any day following a completed one.
+- **Cards are located by the search term in their href.** Every destination points at
+  `bing.com/search`, so the path distinguishes nothing; the query does, and it is
+  recovered by `Offer.query` including from the `checkuser?ru=` redirect that two of
+  the three cards use.
+
+Each card is verified individually: after working it, state is re-read and the card's
+own `isCompleted` is checked. A card that does not flip is reported as failed rather
+than counted as done.
+"""
+
 import asyncio
 import logging
-from playwright.async_api import Page, BrowserContext
-from utils.humanizer import random_sleep, execute_action_and_cleanup_new_tab, dismiss_all_modals_and_drawers
-from config import REWARDS_URL, REWARDS_EARN_URL
+from dataclasses import dataclass, field
+from datetime import date
+
+from playwright.async_api import BrowserContext, Page
+
+from config import REWARDS_URL
+from utils.dashboard_state import Offer
+from utils.humanizer import (
+    dismiss_all_modals_and_drawers,
+    handle_quiz_or_poll_on_page,
+    human_scroll,
+    random_sleep,
+)
+from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
 
-async def claim_ready_points(page: Page):
+
+@dataclass
+class DailySetResult:
+    """What the run actually accomplished, verified card by card."""
+
+    attempted: int = 0
+    completed: int = 0            # confirmed by isCompleted flipping, not by clicking
+    total_before: int | None = None
+    total_after: int | None = None
+    per_card: list[dict] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def points_earned(self) -> int | None:
+        """Balance plus unclaimed, since earnings land in either."""
+        if self.total_before is None or self.total_after is None:
+            return None
+        return self.total_after - self.total_before
+
+    def summary(self) -> str:
+        earned = self.points_earned
+        measured = f"{earned:+d} points measured" if earned is not None else "points UNKNOWN"
+        return f"{self.completed}/{self.attempted} cards confirmed complete; {measured}"
+
+
+async def _open_card(page: Page, context: BrowserContext, offer: Offer) -> tuple[bool, str]:
     """
-    Deterministic Claim Points Protocol:
-    1. Check if 'Ready to claim' or 'Claim' buttons exist.
-    2. If present: Click to claim points, then close side drawer / modal.
-    3. If absent: Skip claim and close any open side drawer/modal to clear the view.
+    Click a card and work whatever it opens.
+
+    Clicking is preferred to loading the destination directly. Navigated Bing searches
+    are not credited at all (Q1); whether the same holds for daily-set offers has not
+    been tested, and clicking is what a person does, so it avoids depending on the
+    answer. Navigation stays as a fallback and is reported, because a run that fell
+    back is measuring something different from one that did not.
     """
-    logger.info("🔍 [Claim Protocol] Checking for Ready to Claim points & Claim buttons...")
-    try:
-        claimed_any = False
+    before = set(context.pages)
+    method = "none"
 
-        # 1. Target 'Ready to claim' top card Claim button
-        ready_card = page.locator("div, section").filter(has_text=re.compile(r"Ready\s+to\s+claim", re.I)).first
-        if await ready_card.is_visible(timeout=2000):
-            claim_btn = ready_card.locator("a, button, [role='button']").filter(has_text=re.compile(r"Claim", re.I)).first
-            if await claim_btn.is_visible(timeout=1500):
-                btn_txt = (await claim_btn.inner_text()).strip()
-                logger.info(f"🎁 Claiming points: Clicking '{btn_txt}' in Ready to Claim card...")
-                await claim_btn.click(force=True)
-                claimed_any = True
-                await random_sleep(2.0, 3.0)
-
-        # 2. Target 'Claim offer' under 'Your perks'
-        perk_claim = page.locator("button:has-text('Claim offer'), a:has-text('Claim offer')").first
-        if await perk_claim.is_visible(timeout=1500):
-            logger.info("🎁 Claiming Perk: Clicking 'Claim offer' button...")
-            await perk_claim.click(force=True)
-            claimed_any = True
-            await random_sleep(2.0, 3.0)
-
-        # 3. Target bottom claim buttons
-        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        await random_sleep(1.0, 1.5)
-        bottom_claims = page.locator("button:has-text('Claim points'), a:has-text('Claim points'), [aria-label*='Claim points' i]")
-        bcnt = await bottom_claims.count()
-        for idx in range(bcnt):
-            btn = bottom_claims.nth(idx)
-            if await btn.is_visible():
-                txt = (await btn.inner_text()).strip()
-                logger.info(f"🎁 Claiming footer points: Clicking '{txt}'...")
-                await btn.click(force=True)
-                claimed_any = True
-                await random_sleep(1.5, 2.5)
-
-        # Scroll back to top
-        await page.evaluate("window.scrollTo(0, 0)")
-        await random_sleep(1.0, 1.5)
-
-        if not claimed_any:
-            logger.info("No pending points to claim.")
-
-        # Always close side drawer/modal after claim (or if skipped)
-        await dismiss_all_modals_and_drawers(page)
-    except Exception as e:
-        logger.debug(f"Claim points note: {e}")
-        await dismiss_all_modals_and_drawers(page)
-
-async def locate_daily_set_individual_cards(page: Page):
-    """
-    Precision Daily Set locator targeting URL signatures (BTDSUOID, filters=BTEPOKey, REWARDSQUIZ)
-    and excluding section header containers or navigation links.
-    """
-    card_links = []
-    url_selectors = [
-        "a[href*='BTDSUOID']",
-        "a[href*='filters=BTEPOKey']",
-        "a[href*='REWARDSQUIZ']",
-        "a[href*='DailySet']",
-        "a[href*='bing.com/search']"
-    ]
-    
-    for sel in url_selectors:
+    if offer.query:
+        # href encoding varies (spaces as + or %20), so match on a stable slice.
+        needle = offer.query.split()[0]
+        anchor = page.locator(f'a[href*="q={needle}"], a[href*="q%3D{needle}"]').first
         try:
-            locs = page.locator(sel)
-            cnt = await locs.count()
-            if cnt > 0:
-                for i in range(cnt):
-                    node = locs.nth(i)
-                    txt = (await node.inner_text()).strip()
-                    if txt and txt not in ["Earn more", "Earn", "Dashboard"] and node not in card_links:
-                        card_links.append(node)
-                if len(card_links) >= 3:
-                    break
-        except Exception:
-            continue
-
-    # Fallback matching
-    if not card_links:
-        try:
-            daily_section = page.locator("div, section").filter(has_text=re.compile(r"^Daily set", re.I)).first
-            if await daily_section.is_visible(timeout=3000):
-                raw_nodes = daily_section.locator("a[href], div[class*='cursor-pointer']").filter(has_not_text=re.compile(r"^(Earn\s+more|Earn|Dashboard)$", re.I))
-                cnt = await raw_nodes.count()
-                for i in range(cnt):
-                    node = raw_nodes.nth(i)
-                    txt = (await node.inner_text()).strip()
-                    if txt and txt not in ["Earn more", "Earn", "Dashboard"] and node not in card_links:
-                        card_links.append(node)
-                logger.info(f"Found {len(card_links)} card container nodes inside Daily set section.")
+            if await anchor.is_visible(timeout=4000):
+                await anchor.click()
+                method = "anchor-click"
         except Exception as e:
-            logger.debug(f"Daily set section query note: {e}")
+            logger.debug(f"anchor click failed for {offer.slot}: {e}")
 
-    return card_links
+    if method == "none":
+        if not offer.destination:
+            return False, "no destination"
+        logger.warning(f"   {offer.slot}: no anchor matched, navigating directly")
+        await page.goto(offer.destination.replace("\\u0026", "&"),
+                        wait_until="domcontentloaded", timeout=30000)
+        method = "direct-navigation"
 
-async def run_daily_set_streak(context: BrowserContext, main_page: Page):
+    await asyncio.sleep(1.5)
+    opened = [p for p in context.pages if p not in before]
+    work = opened[0] if opened else page
+
+    try:
+        await work.wait_for_load_state("domcontentloaded", timeout=15000)
+        await human_scroll(work)
+        await handle_quiz_or_poll_on_page(work)
+        await random_sleep(3.0, 5.0)
+    except Exception as e:
+        logger.debug(f"while working {offer.slot}: {e}")
+
+    for p in opened:
+        try:
+            await p.close()
+        except Exception:
+            pass
+
+    return True, method
+
+
+async def run_daily_set(
+    context: BrowserContext,
+    state_page: Page | None = None,
+    day: date | None = None,
+) -> DailySetResult:
     """
-    Task 1: Daily Set Completion
-    1. Navigates to Rewards dashboard.
-    2. Runs Claim Protocol (claims pending points and dismisses side drawers).
-    3. Locates Card #1, Card #2, Card #3 distinctly via URL signatures, clicks uncompleted cards, and closes tabs.
+    Complete the outstanding Daily Set cards for `day` (today by default).
+
+    Only cards whose offer id carries that date are touched. The dashboard serves
+    yesterday's, today's and tomorrow's at once, so a run without this filter acts on
+    the wrong day — which is what the previous version did.
     """
-    logger.info("⚡ [Task 1] Starting Daily Set tasks...")
-    
-    # 1. Primary navigation
-    await main_page.goto(REWARDS_URL, wait_until="domcontentloaded")
-    await random_sleep(3.0, 4.0)
+    day = day or date.today()
+    result = DailySetResult()
+    owns_page = state_page is None
+    if owns_page:
+        state_page = await context.new_page()
 
-    # Claim points before starting & dismiss side drawers
-    await claim_ready_points(main_page)
+    logger.info("⚡ [Daily Set] Reading state ...")
+    try:
+        before = await fetch_state(state_page)
+        result.total_before = before.total_points
+        logger.info(
+            f"   Before: balance {before.balance}, unclaimed {before.ready_to_claim}, "
+            f"total {before.total_points}"
+        )
+    except Exception as e:
+        result.errors.append(f"state_before: {e}")
+        logger.warning(f"   Could not read starting state: {e}")
+        if owns_page:
+            await state_page.close()
+        return result
 
-    # Scroll slightly for hydration
-    await main_page.evaluate("window.scrollBy(0, 250)")
-    await random_sleep(1.5, 2.0)
+    todo = before.outstanding(day)
+    result.attempted = len(todo)
+    if not todo:
+        logger.info(f"✅ [Daily Set] Nothing outstanding for {day}.")
+        if owns_page:
+            await state_page.close()
+        result.total_after = result.total_before
+        return result
 
-    # 2. Query individual Daily Set card links
-    card_links = await locate_daily_set_individual_cards(main_page)
+    logger.info(f"   {len(todo)} outstanding for {day}: " +
+                ", ".join(f"{o.slot}({o.points}pts)" for o in todo))
 
-    # Fallback navigation to /earn if no cards found on main dashboard
-    if not card_links:
-        logger.info("Navigating to fallback URL https://rewards.bing.com/earn ...")
-        await main_page.goto(REWARDS_EARN_URL, wait_until="domcontentloaded")
-        await random_sleep(3.0, 4.0)
-        await main_page.evaluate("window.scrollBy(0, 250)")
-        card_links = await locate_daily_set_individual_cards(main_page)
+    for offer in todo:
+        logger.info(f"   → {offer.slot}: {offer.title!r} ({offer.points} pts)")
+        record = {"slot": offer.slot, "offer_id": offer.offer_id, "title": offer.title,
+                  "points": offer.points, "method": None, "confirmed": False}
+        try:
+            await state_page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
+            await asyncio.sleep(2.5)
+            await dismiss_all_modals_and_drawers(state_page)
 
-    logger.info(f"Identified total {len(card_links)} Daily Set activity links.")
+            opened, method = await _open_card(state_page, context, offer)
+            record["method"] = method
+            if not opened:
+                result.errors.append(f"{offer.slot}: {method}")
+                result.per_card.append(record)
+                continue
 
-    # 3. Process Card #1, Card #2, Card #3 distinctly
-    target_count = min(3, len(card_links))
-    for idx in range(target_count):
-        # Ensure no modal drawer is blocking pointer events
-        await dismiss_all_modals_and_drawers(main_page)
+            # Verify this specific card rather than assuming the click worked.
+            await asyncio.sleep(3.0)
+            check = await fetch_state(state_page)
+            now = next((o for o in check.daily_set(day) if o.offer_id == offer.offer_id), None)
+            record["confirmed"] = bool(now and now.is_completed)
+            if record["confirmed"]:
+                result.completed += 1
+                logger.info(f"     ✓ confirmed complete")
+            else:
+                logger.warning(f"     ✗ still incomplete after {method}")
+                result.errors.append(f"{offer.slot}: not marked complete after {method}")
+        except Exception as e:
+            result.errors.append(f"{offer.slot}: {e}")
+            logger.warning(f"     error: {e}")
+        finally:
+            result.per_card.append(record)
 
-        # Ensure main page is on Rewards dashboard
-        if "rewards.bing.com/dashboard" not in main_page.url and main_page.url != "https://rewards.bing.com/":
-            await main_page.goto(REWARDS_URL, wait_until="domcontentloaded")
-            await random_sleep(2.0, 3.0)
+        await random_sleep(3.0, 8.0)
 
-        # Re-query if index exceeds current list length
-        if idx >= len(card_links):
-            card_links = await locate_daily_set_individual_cards(main_page)
+    try:
+        after = await fetch_state(state_page)
+        result.total_after = after.total_points
+        logger.info(
+            f"   After: balance {after.balance}, unclaimed {after.ready_to_claim}, "
+            f"total {after.total_points}"
+        )
+    except Exception as e:
+        result.errors.append(f"state_after: {e}")
 
-        if idx < len(card_links):
-            card = card_links[idx]
-            try:
-                if not await card.is_visible():
-                    continue
+    if owns_page:
+        try:
+            await state_page.close()
+        except Exception:
+            pass
 
-                card_text = await card.inner_text()
-                card_html = await card.inner_html()
-
-                # Skip if already completed
-                if "Completed" in card_text or "check-mark" in card_html or "CheckMark" in card_html:
-                    logger.info(f"⏩ Daily Set Activity #{idx + 1} is already completed. Skipping.")
-                    continue
-
-                logger.info(f"Executing Daily Set Activity #{idx + 1} [{card_text.replace('\n', ' ')[:40]}...]...")
-
-                async def click_act():
-                    await card.click(force=True, timeout=4000)
-
-                await execute_action_and_cleanup_new_tab(context, click_act, stay_seconds=3.0)
-                logger.info(f"✓ Daily Set Activity #{idx + 1} completed & tab cleaned up.")
-            except Exception as e:
-                logger.warning(f"Note on Daily Set Activity #{idx + 1}: {e}")
-
-        await random_sleep(1.5, 2.5)
-
-    # Claim points again after completing Daily Set & dismiss drawers
-    await claim_ready_points(main_page)
-    logger.info("✅ [Task 1] Daily Set tasks finished.")
+    logger.info(f"✅ [Daily Set] {result.summary()}")
+    return result

@@ -24,6 +24,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Iterator, Any
+from urllib.parse import parse_qs, unquote, urlparse
 
 logger = logging.getLogger("bing_rewards")
 
@@ -77,6 +78,35 @@ class Offer:
     def is_daily_set(self) -> bool:
         m = OFFER_ID_PATTERN.match(self.offer_id)
         return bool(m) and m.group("kind").lower() == "dailyset"
+
+    @property
+    def query(self) -> str | None:
+        """
+        The search term this offer sends you to, if any.
+
+        Every daily-set destination points at bing.com/search, so the path identifies
+        nothing — the query does. Two shapes occur and both have to be handled: a
+        direct `…/search?q=Sport+events+near+me`, and a redirect
+        `…/rewards/checkuser?ru=%2Fsearch%3Fq%3DNelson+mandela…` that hides the real
+        target one level down. Without unwrapping `ru`, two of the three cards each
+        day have no distinguishing feature at all.
+
+        Used to locate a card's anchor by href, which beats matching on CSS classes
+        that the dashboard rewrites without notice.
+        """
+        if not self.destination:
+            return None
+        # The flight stream escapes ampersands; urlparse needs them real.
+        url = self.destination.replace("\\u0026", "&")
+        params = parse_qs(urlparse(url).query)
+        if params.get("q"):
+            return params["q"][0]
+        if params.get("ru"):
+            inner = unquote(params["ru"][0])
+            inner_params = parse_qs(urlparse(inner).query)
+            if inner_params.get("q"):
+                return inner_params["q"][0]
+        return None
 
 
 @dataclass

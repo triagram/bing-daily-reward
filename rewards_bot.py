@@ -1,88 +1,163 @@
+"""
+Entry point — runs the day's Rewards tasks and reports what they actually earned.
+
+Each task returns a structured result rather than only logging, and the run ends with
+a table of measured point deltas. Nothing here prints a point figure it did not
+observe: where a total could not be read it says so.
+
+    uv run python rewards_bot.py            # run today's tasks
+    uv run python rewards_bot.py --dry-run  # read state and report, change nothing
+"""
+
+import sys
+import json
 import asyncio
 import logging
-import sys
+from datetime import datetime, date
 from pathlib import Path
+
 from playwright.async_api import async_playwright
 from rich.console import Console
 from rich.logging import RichHandler
+from rich.table import Table
 
-from config import USER_DATA_DIR, HEADLESS, REWARDS_URL
-from utils.task_daily_set import run_daily_set_streak
-from utils.task_explore import run_explore_on_bing
+from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
+from utils.state_reader import fetch_state
+from utils.task_daily_set import run_daily_set
 from utils.task_searches import run_daily_searches
 
-# Setup Rich Console & Logger
+RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
+
 console = Console()
 logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
     datefmt="[%X]",
-    handlers=[RichHandler(console=console, rich_tracebacks=True)]
+    handlers=[RichHandler(console=console, rich_tracebacks=True, show_path=False)],
 )
 logger = logging.getLogger("bing_rewards")
 
-async def main():
-    console.print("\n[bold cyan]🚀 Microsoft Bing Rewards Automation Bot[/bold cyan]")
-    console.print("[dim]Powered by Python, Playwright & uv[/dim]\n")
 
-    # Ensure user data dir exists for session persistence
+def record_run(payload: dict):
+    RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with RUN_LOG.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"at": datetime.now().isoformat(timespec="seconds"),
+                             **payload}, ensure_ascii=False) + "\n")
+
+
+async def main():
+    dry_run = "--dry-run" in sys.argv
+
+    console.print("\n[bold cyan]Microsoft Rewards[/bold cyan]")
+    mode = "dry run — reading state only" if dry_run else "running today's tasks"
+    console.print(f"[dim]{mode}[/dim]\n")
+
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Using Session Data Dir: {USER_DATA_DIR}")
 
     async with async_playwright() as p:
-        logger.info(f"Launching Chromium (Headless: {HEADLESS})...")
         context = await p.chromium.launch_persistent_context(
             user_data_dir=str(USER_DATA_DIR),
             headless=HEADLESS,
             channel="chromium",
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox"
-            ],
-            viewport={"width": 1280, "height": 800}
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
+            viewport={"width": 1280, "height": 900},
         )
+        page = context.pages[0] if context.pages else await context.new_page()
 
-        main_page = context.pages[0] if context.pages else await context.new_page()
-
-        # Step 0: Check Rewards Login Session
-        logger.info("Opening Microsoft Rewards dashboard...")
-        await main_page.goto(REWARDS_URL, wait_until="domcontentloaded")
+        await page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3.0)
 
-        # Check if user is logged in
-        if "login.live.com" in main_page.url or "signin" in main_page.url:
-            console.print("\n[bold yellow]⚠️ Login Required![/bold yellow]")
-            console.print("Please sign in to your Microsoft Account in the opened browser window.")
-            console.print("Once signed in, press [bold green]ENTER[/bold green] in this terminal to continue...\n")
-            # Wait for user confirmation in interactive terminal
-            await asyncio.to_thread(input, "Press ENTER after completing login > ")
-            logger.info("Proceeding with tasks...")
+        if "login.live.com" in page.url or "signin" in page.url:
+            console.print("\n[bold yellow]Sign-in required.[/bold yellow]")
+            console.print("Sign in to the Microsoft account in the open browser window,")
+            console.print("then press [bold green]ENTER[/bold green] here to continue.\n")
+            await asyncio.to_thread(input, "ENTER once signed in > ")
 
-        # Step 1: Run Task 1 (Daily Set Streak)
+        opening = await fetch_state(page)
+        console.print(
+            f"  balance [bold]{opening.balance}[/bold]  ·  "
+            f"unclaimed [bold]{opening.ready_to_claim}[/bold]  ·  "
+            f"total [bold]{opening.total_points}[/bold]"
+        )
+        outstanding = opening.outstanding(date.today())
+        console.print(f"  daily set outstanding today: {len(outstanding)}\n")
+
+        if dry_run:
+            for offer in outstanding:
+                console.print(f"    would do  {offer.slot}  {offer.points}pts  {offer.title}")
+            await context.close()
+            return
+
+        results: dict[str, object] = {}
+
         try:
-            await run_daily_set_streak(context, main_page)
+            results["daily_set"] = await run_daily_set(context, state_page=page)
         except Exception as e:
-            logger.error(f"Error in Task 1 (Daily Set): {e}")
+            logger.error(f"Daily Set failed outright: {e}")
 
-        # Step 2: Run Task 2 (Explore on Bing)
         try:
-            await run_explore_on_bing(context, main_page)
+            results["searches"] = await run_daily_searches(context, state_page=page)
         except Exception as e:
-            logger.error(f"Error in Task 2 (Explore on Bing): {e}")
+            logger.error(f"Searches failed outright: {e}")
 
-        # Step 3: Run Task 3 (20 Bing Searches)
-        try:
-            await run_daily_searches(context, search_count=20)
-        except Exception as e:
-            logger.error(f"Error in Task 3 (20 Searches): {e}")
+        # Explore is deliberately not run. utils/task_explore.py is still the original
+        # version: it guesses selectors, has no completion check, and reports point
+        # totals it never measured. Running it would put fabricated figures back into
+        # a report whose whole purpose is that every number in it was observed.
+        console.print("\n[dim]Explore: skipped — module not yet rewritten.[/dim]")
 
-        logger.info("Cleaning up session...")
+        closing = await fetch_state(page)
+
+        table = Table(title="Measured this run")
+        table.add_column("Task", style="cyan")
+        table.add_column("Done", justify="right")
+        table.add_column("Points", justify="right")
+        table.add_column("Errors", justify="right")
+        for name, res in results.items():
+            earned = res.points_earned
+            done = (f"{res.completed}/{res.attempted}" if name == "daily_set"
+                    else f"{res.submitted}/{res.attempted}")
+            table.add_row(name, done,
+                          f"{earned:+d}" if earned is not None else "unknown",
+                          str(len(res.errors)))
+        overall = (closing.total_points - opening.total_points
+                   if closing.total_points is not None and opening.total_points is not None
+                   else None)
+        table.add_row("[bold]overall[/bold]", "",
+                      f"[bold]{overall:+d}[/bold]" if overall is not None else "unknown", "")
+        console.print()
+        console.print(table)
+
+        if closing.ready_to_claim:
+            console.print(
+                f"\n[yellow]{closing.ready_to_claim} points are waiting in "
+                f"'Ready to claim'.[/yellow] They do not move to the balance on their "
+                "own — claim them on the dashboard."
+            )
+
+        record_run({
+            "date": date.today().isoformat(),
+            "opening_total": opening.total_points,
+            "closing_total": closing.total_points,
+            "overall_delta": overall,
+            "tasks": {
+                name: {
+                    "attempted": res.attempted,
+                    "done": getattr(res, "completed", getattr(res, "submitted", None)),
+                    "points": res.points_earned,
+                    "errors": res.errors,
+                }
+                for name, res in results.items()
+            },
+        })
+        console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]\n")
+
         await context.close()
-        console.print("\n[bold green]🎉 All Bing Rewards tasks finished successfully![/bold green]\n")
+
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        console.print("\n[yellow]Execution interrupted by user.[/yellow]")
+        console.print("\n[yellow]Interrupted.[/yellow]")
         sys.exit(0)

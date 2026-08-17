@@ -30,6 +30,13 @@ DAILY_SEARCH_MAX = 12
 MIN_DELAY_BETWEEN_SEARCHES = 6.0
 MAX_DELAY_BETWEEN_SEARCHES = 9.0
 
+# Most Explore offers a run will do. Observed outstanding counts have been 1-6, so
+# this normally binds on nothing and every offer gets done — it exists only to stop a
+# day where a backlog has piled up from becoming an unusually long burst of activity.
+# Each offer is worth 5-15 points, several times a search, so trimming here is the
+# expensive place to economise; prefer cutting searches (see DAILY_SEARCH_MIN/MAX).
+EXPLORE_MAX_PER_RUN = 6
+
 # Headless mode: Set to False for visual browser, True for background
 HEADLESS = False
 

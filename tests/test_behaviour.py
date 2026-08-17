@@ -190,3 +190,34 @@ def test_retry_does_not_repeat_a_success():
 
     assert asyncio.run(retry_async(fine, attempts=3, base_delay=0)) == 42
     assert calls["n"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# Explore cap
+# --------------------------------------------------------------------------- #
+
+
+def test_explore_cap_covers_the_observed_range():
+    """
+    Outstanding counts of 1-6 have been seen, so the cap should normally bind on
+    nothing. A limit of 4 was in place on 2026-08-17 and silently dropped a
+    10-point offer.
+    """
+    from config import EXPLORE_MAX_PER_RUN
+
+    assert EXPLORE_MAX_PER_RUN >= 6
+
+
+def test_outstanding_offers_ignores_banners_and_completed():
+    from utils.dashboard_state import DashboardState, Offer
+    from utils.task_explore import outstanding_offers
+
+    state = DashboardState(offers=[
+        Offer(offer_id="A", points=15, is_completed=False),          # take
+        Offer(offer_id="B", points=5, is_completed=True),            # done
+        Offer(offer_id="C", points=None, is_completed=False),        # banner
+        Offer(offer_id="D", points=10, is_completed=None),           # unknown
+        Offer(offer_id="Gamification_DailySet_ENGB_20260817_Child1",
+              points=10, is_completed=False),                        # daily set
+    ])
+    assert [o.offer_id for o in outstanding_offers(state)] == ["A"]

@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 
 from playwright.async_api import BrowserContext, Page
 
-from config import REWARDS_EARN_URL
+from config import EXPLORE_MAX_PER_RUN, REWARDS_EARN_URL
 from utils.dashboard_state import Offer, parse_dashboard
 from utils.humanizer import (
     dismiss_all_modals_and_drawers,
@@ -146,9 +146,13 @@ async def run_explore(
     """
     Complete the outstanding Explore offers.
 
-    `limit` caps how many to do in one run. Outstanding counts have ranged from one to
-    six, and there is no daily boundary to lean on, so a cap keeps a day where several
-    have piled up from turning into an unusually long burst of activity.
+    `limit` caps how many to do in one run; `None` uses `EXPLORE_MAX_PER_RUN`. There is
+    no daily boundary to lean on here — Explore ids carry no date — so the cap is what
+    keeps a backlog day from becoming an unusually long burst.
+
+    It is set to cover the observed range rather than to ration: an arbitrary limit of
+    4 was in place on 2026-08-17 and silently left a 10-point offer undone out of six.
+    When a cap does bind, the highest-value offers go first.
     """
     result = ExploreResult()
     owns_page = state_page is None
@@ -167,10 +171,19 @@ async def run_explore(
             await state_page.close()
         return result
 
-    todo = outstanding_offers(earn)
-    if limit is not None:
-        todo = todo[:limit]
+    cap = EXPLORE_MAX_PER_RUN if limit is None else limit
+    available = outstanding_offers(earn)
+    # Highest value first, so a cap that binds costs the least.
+    available.sort(key=lambda o: o.points, reverse=True)
+    todo = available[:cap] if cap is not None else available
     result.attempted = len(todo)
+
+    if cap is not None and len(available) > cap:
+        skipped = available[cap:]
+        logger.info(
+            f"   {len(available)} outstanding; doing {cap} this run, leaving "
+            f"{len(skipped)} worth {sum(o.points for o in skipped)} pts for next time"
+        )
 
     if not todo:
         logger.info("✅ [Explore] Nothing outstanding.")

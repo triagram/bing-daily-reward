@@ -241,6 +241,7 @@ Everything tunable lives in `config.py`:
 |---|---|---|
 | `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the daily search count is drawn from |
 | `DAILY_SEARCH_ALLOWANCE` | `20` | The measured ceiling. Recorded, deliberately not used |
+| `EXPLORE_MAX_PER_RUN` | `6` | Most Explore offers per run. Covers the observed range |
 | `MIN_DELAY_BETWEEN_SEARCHES` | `6.0` | Lower bound of the inter-search wait, seconds |
 | `MAX_DELAY_BETWEEN_SEARCHES` | `9.0` | Upper bound |
 | `HEADLESS` | `False` | Run without a visible window. **See limitations.** |

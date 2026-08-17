@@ -16,3 +16,12 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The project is not a package (tool.uv package = false), so tests import from the
+# repository root rather than an installed distribution.
+pythonpath = ["."]

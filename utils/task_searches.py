@@ -11,7 +11,7 @@ from playwright.async_api import BrowserContext, Page
 
 from utils import keywords
 from utils.humanizer import daily_search_count, human_scroll, human_type, search_gap
-from utils.state_reader import fetch_state
+from utils.state_reader import fetch_search_progress, fetch_state, searches_remaining
 
 logger = logging.getLogger("bing_rewards")
 
@@ -129,15 +129,41 @@ async def run_daily_searches(
     same-terms comparison cannot tell "this input mode does not work" from "this
     query was already used today".
     """
+    owns_state_page = state_page is None
+    if owns_state_page:
+        state_page = await context.new_page()
+    result = SearchResult()
+
     # None means "however many today calls for" — a varying count short of the
     # allowance, rather than the same maximum every day.
     if search_count is None:
         search_count = daily_search_count()
         logger.info(f"⚡ [Searches] Today's count: {search_count}")
-    result = SearchResult(attempted=search_count)
-    owns_state_page = state_page is None
-    if owns_state_page:
-        state_page = await context.new_page()
+
+        # Then cap it by what the day has left. Drawing a count blind assumes a clean
+        # start, so manual searching earlier in the day pushes the total onto the
+        # quota — the one number the varying count exists to stay under. Observed
+        # rather than assumed: the points breakdown reports the real figure.
+        progress = await fetch_search_progress(state_page)
+        remaining = searches_remaining(progress)
+        if remaining is not None:
+            logger.info(
+                f"   Allowance so far today: {progress[0]}/{progress[1]} points "
+                f"— room for {remaining} more searches"
+            )
+            if remaining < search_count:
+                logger.info(f"   Trimming {search_count} → {remaining} to stay within it")
+                search_count = remaining
+        else:
+            logger.warning("   Could not read today's allowance; using the drawn count")
+
+    if search_count <= 0:
+        logger.info("✅ [Searches] Allowance already spent today — nothing to do.")
+        if owns_state_page:
+            await state_page.close()
+        return result
+
+    result.attempted = search_count
 
     logger.info(f"⚡ [Searches] Reading starting balance ...")
     try:

@@ -15,6 +15,7 @@ BING_SEARCH_URL = "https://www.bing.com"
 # searches 21-23 paid nothing). Differs by market — re-measure with
 # experiments/q6_allowance.py elsewhere.
 DAILY_SEARCH_ALLOWANCE = 20
+POINTS_PER_SEARCH = 3          # measured alongside the allowance
 
 # How many to actually run: deliberately short of the allowance, and different every
 # day. See daily_search_count() in utils/humanizer.py for why.

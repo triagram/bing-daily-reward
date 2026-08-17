@@ -52,6 +52,9 @@ class DailySetResult:
     total_after: int | None = None
     per_card: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    # What the page advertised for the work this run set out to do. Compared against
+    # what was actually measured, to tell a working run from a silently broken one.
+    expected_points: int = 0
 
     @property
     def points_earned(self) -> int | None:
@@ -165,6 +168,7 @@ async def run_daily_set(
 
     todo = before.outstanding(day)
     result.attempted = len(todo)
+    result.expected_points = sum(o.points or 0 for o in todo)
     if not todo:
         logger.info(f"✅ [Daily Set] Nothing outstanding for {day}.")
         if owns_page:

@@ -47,6 +47,9 @@ class ExploreResult:
     total_after: int | None = None
     per_offer: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    # What the page advertised for the work this run set out to do. Compared against
+    # what was actually measured, to tell a working run from a silently broken one.
+    expected_points: int = 0
 
     @property
     def points_earned(self) -> int | None:
@@ -177,6 +180,7 @@ async def run_explore(
     available.sort(key=lambda o: o.points, reverse=True)
     todo = available[:cap] if cap is not None else available
     result.attempted = len(todo)
+    result.expected_points = sum(o.points or 0 for o in todo)
 
     if cap is not None and len(available) > cap:
         skipped = available[cap:]

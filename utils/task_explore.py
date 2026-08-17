@@ -33,6 +33,7 @@ from utils.humanizer import (
     human_scroll,
     random_sleep,
 )
+from utils.retry import retry_async
 from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
@@ -61,7 +62,10 @@ class ExploreResult:
 
 async def _fetch_earn(page: Page):
     """Load /earn and parse it. Offers live here; counters and balance do not."""
-    await page.goto(REWARDS_EARN_URL, wait_until="domcontentloaded", timeout=30000)
+    await retry_async(
+        lambda: page.goto(REWARDS_EARN_URL, wait_until="domcontentloaded", timeout=30000),
+        what="/earn load",
+    )
     await asyncio.sleep(4.0)
     return parse_dashboard(await page.content())
 

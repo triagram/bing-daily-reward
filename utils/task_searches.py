@@ -11,6 +11,7 @@ from playwright.async_api import BrowserContext, Page
 
 from utils import keywords
 from utils.humanizer import daily_search_count, human_scroll, human_type, search_gap
+from utils.retry import retry_async
 from utils.state_reader import fetch_search_progress, fetch_state, searches_remaining
 
 logger = logging.getLogger("bing_rewards")
@@ -206,7 +207,12 @@ async def run_daily_searches(
             mode = "type" if use_box else "url"
             logger.info(f"   [{idx}/{search_count}] {mode}: {term!r}")
             try:
-                await _search_once(search_tab, term, use_box)
+                # A search that failed to load earned nothing and consumed no
+                # allowance, so repeating it is free.
+                await retry_async(
+                    lambda: _search_once(search_tab, term, use_box),
+                    attempts=2, base_delay=3.0, what=f"search {idx}",
+                )
                 result.submitted += 1
                 ok = True
             except Exception as e:

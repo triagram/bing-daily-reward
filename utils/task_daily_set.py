@@ -36,6 +36,7 @@ from utils.humanizer import (
     human_scroll,
     random_sleep,
 )
+from utils.retry import retry_async
 from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
@@ -118,6 +119,17 @@ async def _open_card(page: Page, context: BrowserContext, offer: Offer) -> tuple
     return True, method
 
 
+async def _is_complete(page: Page, offer: Offer, day: date) -> bool:
+    """Re-read state and report whether this specific card is now marked done."""
+    try:
+        state = await fetch_state(page)
+    except Exception as e:
+        logger.warning(f"     could not verify {offer.slot}: {e}")
+        return False
+    now = next((o for o in state.daily_set(day) if o.offer_id == offer.offer_id), None)
+    return bool(now and now.is_completed)
+
+
 async def run_daily_set(
     context: BrowserContext,
     state_page: Page | None = None,
@@ -168,7 +180,11 @@ async def run_daily_set(
         record = {"slot": offer.slot, "offer_id": offer.offer_id, "title": offer.title,
                   "points": offer.points, "method": None, "confirmed": False}
         try:
-            await state_page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
+            await retry_async(
+                lambda: state_page.goto(REWARDS_URL, wait_until="domcontentloaded",
+                                        timeout=30000),
+                what=f"dashboard load before {offer.slot}",
+            )
             await asyncio.sleep(2.5)
             await dismiss_all_modals_and_drawers(state_page)
 
@@ -181,15 +197,34 @@ async def run_daily_set(
 
             # Verify this specific card rather than assuming the click worked.
             await asyncio.sleep(3.0)
-            check = await fetch_state(state_page)
-            now = next((o for o in check.daily_set(day) if o.offer_id == offer.offer_id), None)
-            record["confirmed"] = bool(now and now.is_completed)
-            if record["confirmed"]:
+            confirmed = await _is_complete(state_page, offer, day)
+
+            if not confirmed:
+                # One more go, but only after re-reading state — a click that did
+                # land followed by a stale read must not be repeated. _is_complete
+                # already re-read, so reaching here means it is genuinely undone.
+                logger.info(f"     not registered yet; one more attempt")
+                await random_sleep(4.0, 7.0)
+                await retry_async(
+                    lambda: state_page.goto(REWARDS_URL, wait_until="domcontentloaded",
+                                            timeout=30000),
+                    what=f"dashboard reload for {offer.slot}",
+                )
+                await asyncio.sleep(2.5)
+                await dismiss_all_modals_and_drawers(state_page)
+                _, method = await _open_card(state_page, context, offer)
+                record["method"] = f"{record['method']}+retry:{method}"
+                await asyncio.sleep(3.0)
+                confirmed = await _is_complete(state_page, offer, day)
+
+            record["confirmed"] = confirmed
+            if confirmed:
                 result.completed += 1
                 logger.info(f"     ✓ confirmed complete")
             else:
-                logger.warning(f"     ✗ still incomplete after {method}")
-                result.errors.append(f"{offer.slot}: not marked complete after {method}")
+                logger.warning(f"     ✗ still incomplete after {record['method']}")
+                result.errors.append(
+                    f"{offer.slot}: not marked complete after {record['method']}")
         except Exception as e:
             result.errors.append(f"{offer.slot}: {e}")
             logger.warning(f"     error: {e}")

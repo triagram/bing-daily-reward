@@ -133,3 +133,60 @@ def test_a_day_count_is_reproducible():
 )
 def test_searches_remaining(progress, expected):
     assert searches_remaining(progress) == expected
+
+
+# --------------------------------------------------------------------------- #
+# Retry
+# --------------------------------------------------------------------------- #
+
+
+def test_retry_succeeds_after_transient_failures():
+    import asyncio
+    from utils.retry import retry_async
+
+    calls = {"n": 0}
+
+    async def flaky():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise TimeoutError("still hydrating")
+        return "ok"
+
+    assert asyncio.run(retry_async(flaky, attempts=3, base_delay=0, what="flaky")) == "ok"
+    assert calls["n"] == 3
+
+
+def test_retry_raises_once_attempts_are_exhausted():
+    import asyncio
+    from utils.retry import retry_async
+
+    async def always_fails():
+        raise TimeoutError("gone")
+
+    with pytest.raises(TimeoutError):
+        asyncio.run(retry_async(always_fails, attempts=2, base_delay=0, what="doomed"))
+
+
+def test_retry_or_none_swallows_the_failure():
+    import asyncio
+    from utils.retry import retry_or_none
+
+    async def always_fails():
+        raise RuntimeError("nope")
+
+    assert asyncio.run(retry_or_none(always_fails, attempts=2, base_delay=0)) is None
+
+
+def test_retry_does_not_repeat_a_success():
+    """An operation that works first time must be called exactly once."""
+    import asyncio
+    from utils.retry import retry_async
+
+    calls = {"n": 0}
+
+    async def fine():
+        calls["n"] += 1
+        return 42
+
+    assert asyncio.run(retry_async(fine, attempts=3, base_delay=0)) == 42
+    assert calls["n"] == 1

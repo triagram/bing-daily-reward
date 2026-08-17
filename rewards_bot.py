@@ -25,6 +25,7 @@ from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
 from utils.claim import claim_pending
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
+from utils.task_explore import run_explore
 from utils.task_searches import run_daily_searches
 
 RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
@@ -101,17 +102,16 @@ async def main():
         except Exception as e:
             logger.error(f"Searches failed outright: {e}")
 
+        try:
+            results["explore"] = await run_explore(context, state_page=page, limit=4)
+        except Exception as e:
+            logger.error(f"Explore failed outright: {e}")
+
         # Claiming goes last: the pot only stops growing once the tasks are done.
         try:
             results["claim"] = await claim_pending(page)
         except Exception as e:
             logger.error(f"Claim failed outright: {e}")
-
-        # Explore is deliberately not run. utils/task_explore.py is still the original
-        # version: it guesses selectors, has no completion check, and reports point
-        # totals it never measured. Running it would put fabricated figures back into
-        # a report whose whole purpose is that every number in it was observed.
-        console.print("\n[dim]Explore: skipped — module not yet rewritten.[/dim]")
 
         closing = await fetch_state(page)
 
@@ -129,8 +129,8 @@ async def main():
                               "1" if res.error else "0")
                 continue
             earned = res.points_earned
-            done = (f"{res.completed}/{res.attempted}" if name == "daily_set"
-                    else f"{res.submitted}/{res.attempted}")
+            done = (f"{res.submitted}/{res.attempted}" if name == "searches"
+                    else f"{res.completed}/{res.attempted}")
             table.add_row(name, done,
                           f"{earned:+d}" if earned is not None else "unknown",
                           str(len(res.errors)))

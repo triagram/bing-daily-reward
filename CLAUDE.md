@@ -90,15 +90,13 @@ close into one call; use it rather than hand-rolling tab handling.
 
 ## Measure; never assert
 
-Searches are closed-loop: `run_daily_searches()` reads the point total before and after
-and returns a `SearchResult` carrying the observed delta. **The two remaining tasks are
-not.** `task_explore.py` still logs `(+10 pts)` whenever a click did not raise, and
-`task_daily_set.py` is the same shape — neither has been touched since the initial commit,
-and between them they hold about a dozen `except Exception: pass` blocks that make a
-broken selector indistinguishable from a completed task.
+All three tasks are closed-loop, and each confirms items **individually**: after working
+a card or offer, state is re-read and that item's own `isCompleted` is checked, so
+anything that does not flip is reported failed rather than counted as done. Preserve that
+rule in anything new — it has caught real failures twice, including a claim
+implementation that clicked the right tile and moved nothing.
 
-Treat any point figure from those two as fiction. Do not cite them as evidence a change
-worked, and do not add more of them.
+Do not reintroduce a point figure that was not observed.
 
 Measure **balance + unclaimed**, never the balance alone: earnings land in the "Ready to
 claim" pot as often as in the balance, so a balance-only comparison reads zero for a run

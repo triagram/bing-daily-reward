@@ -3,11 +3,11 @@
 > An automated agent for Microsoft Bing Rewards daily tasks, built with Python, Playwright and uv.
 
 > [!NOTE]
-> **Searches and the Daily Set are measured; Explore is not yet rewritten and is
-> skipped.** A verified run on 2026-08-17 earned 95 points with no errors: 3/3
-> daily-set cards (+50, each confirmed by its own `isCompleted` flipping) and
-> 15/15 searches (+45). Every figure the bot reports is observed — where a total
-> cannot be read it says so rather than assuming.
+> **All three tasks are measured.** Verified on 2026-08-17: 3/3 daily-set cards
+> (+50), 15/15 searches (+45), 4/4 Explore offers (+50), and 121 points collected
+> from the "Ready to claim" pot. Every task confirms each item individually by
+> re-reading its `isCompleted` rather than trusting the click, and every figure
+> reported is observed — where a total cannot be read it says so.
 >
 > Working notes, the reverse-engineered data contract, and the list of unsettled
 > questions live in [docs/DEVELOP.md](docs/DEVELOP.md).
@@ -145,7 +145,7 @@ seeded by the date, so consecutive days do not repeat the same strings.
 | # | Task | Module | Nominal reward |
 |---|---|---|---|
 | 1 | **Daily set** — today's cards only, each verified individually | `task_daily_set.py` | 10–30 pts each (measured) |
-| 2 | **Explore on Bing** — *not rewritten; skipped by the runner* | `task_explore.py` | 5/10/15 pts each (measured) |
+| 2 | **Explore on Bing** — outstanding offers, each verified | `task_explore.py` | 5/10/15 pts each (measured) |
 | 3 | **Daily searches** — 8-15 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
 
 > [!NOTE]
@@ -159,8 +159,9 @@ seeded by the date, so consecutive days do not repeat the same strings.
 
 Supporting behaviour:
 
-- **Point claiming** — `claim_ready_points()` scans for "Ready to claim",
-  "Claim offer" and "Claim points" buttons before and after Task 1.
+- **Point claiming** — `utils/claim.py` collects the "Ready to claim" pot, which
+  does not drain on its own. It takes two clicks: the tile opens a panel, the panel
+  carries the control that actually claims. Success is judged by the pot shrinking.
 - **Quiz & poll handling** — `handle_quiz_or_poll_on_page()` distinguishes a
   one-click poll from a multi-question quiz. Note that it selects the *first*
   option rather than the correct one; see

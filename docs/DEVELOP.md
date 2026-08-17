@@ -135,6 +135,24 @@ Visible in the capture screenshot, absent from `DashboardState`:
 - **Monthly bonuses** — Bing Star bonus 2,100, monthly level-up 420, default search
   bonus 210, all shown as fully earned last month.
 
+### Streaks and the stamp card dwarf the daily tasks
+
+Visible on `/earn`, 2026-08-16, and absent from every value estimate made before then:
+
+| Source | Reward | Progress at capture |
+|---|---|---|
+| **Bing Search Streak** | **100 points** per 6 consecutive days | 3 of 6 |
+| **Stamp Bonus** | **1,000 points** for 12 stamps | 5 of 12 |
+| Daily streak | (feeds the above) | 34 days |
+
+Against 60 a day from searches and 30 from a daily set, these change what is worth
+optimising. **Consistency beats extraction**: the streak needs the daily activity gate
+satisfied, and that gate is `Search: 1/1` — *one* search. Running the full 20-search
+allowance does nothing for it.
+
+That aligns with lowering the profile rather than trading against it: turning up every
+day, modestly, is both what the streak rewards and what looks least like a script.
+
 ### The /earn page has more sections than the code knows about
 
 Section titles recovered from the `/earn` flight stream, 2026-08-16:
@@ -310,7 +328,8 @@ after every query.
 #21 #22 #23   +0      run stopped
 ```
 
-**This is exactly what `config.py` already said.** `DAILY_SEARCH_COUNT = 20` and its
+**This is exactly what `config.py` already said.** `DAILY_SEARCH_COUNT = 20` (since
+renamed `DAILY_SEARCH_ALLOWANCE`) and its
 "3 pts each = 60 pts" comment were correct from the start. Earlier revisions of this
 document, the README and CLAUDE.md all called them unfounded guesswork on the strength
 of a four-search run that earned 3 — but that run was measuring the wrong thing, since

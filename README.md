@@ -145,14 +145,16 @@ seeded by the date, so consecutive days do not repeat the same strings.
 |---|---|---|---|
 | 1 | **Daily set** — completes the three daily cards, claims pending points | `task_daily_set.py` | varies |
 | 2 | **Explore on Bing** — works through the Explore activity cards | `task_explore.py` | 5/10/15 pts each (measured) |
-| 3 | **Daily searches** — 20 Bing searches, variably spaced | `task_searches.py` | 3 pts each, 60 total (measured) |
+| 3 | **Daily searches** — 8-15 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
 
 > [!NOTE]
 > Measured on this UK account, 2026-08-16: **20 searches pay 3 points each, then
-> payment stops** — searches 21, 22 and 23 all earned nothing. That matches
-> `DAILY_SEARCH_COUNT = 20` exactly. Earlier notes here called those numbers
-> unfounded; they were right all along, and what was broken was the way queries
-> were issued (see below). Point values differ by market.
+> payment stops** — searches 21, 22 and 23 all earned nothing.
+>
+> The bot deliberately runs **8-15**, drawn per day, rather than the full 20.
+> Finishing exactly on the quota every day is a signature in itself, and so is a
+> fixed count. This forgoes 15-36 points a day; streaks are unaffected, since the
+> daily activity gate is satisfied by a single search. Point values differ by market.
 
 Supporting behaviour:
 
@@ -235,7 +237,8 @@ Everything tunable lives in `config.py`:
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `DAILY_SEARCH_COUNT` | `20` | Number of searches in Task 3 |
+| `DAILY_SEARCH_MIN` / `MAX` | `8` / `15` | Range the daily search count is drawn from |
+| `DAILY_SEARCH_ALLOWANCE` | `20` | The measured ceiling. Recorded, deliberately not used |
 | `MIN_DELAY_BETWEEN_SEARCHES` | `6.0` | Lower bound of the inter-search wait, seconds |
 | `MAX_DELAY_BETWEEN_SEARCHES` | `9.0` | Upper bound |
 | `HEADLESS` | `False` | Run without a visible window. **See limitations.** |

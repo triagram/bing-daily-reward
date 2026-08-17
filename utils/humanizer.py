@@ -2,8 +2,11 @@ import re
 import asyncio
 import random
 import logging
+from datetime import date
 from typing import Callable, Awaitable
 from playwright.async_api import BrowserContext, Page, Locator
+
+from config import DAILY_SEARCH_MIN, DAILY_SEARCH_MAX
 
 logger = logging.getLogger("bing_rewards")
 
@@ -11,6 +14,24 @@ async def random_sleep(min_seconds: float = 1.5, max_seconds: float = 3.0):
     """Sleep for a random float duration between min_seconds and max_seconds."""
     duration = random.uniform(min_seconds, max_seconds)
     await asyncio.sleep(duration)
+
+
+def daily_search_count(day: date | None = None) -> int:
+    """
+    How many searches to run today.
+
+    Stops well short of the 20-search allowance, and varies. Finishing exactly on the
+    quota is itself a signature — nobody searches until their allowance runs out and
+    then stops mid-afternoon — and a fixed count every day is another. Seeded by the
+    date, so a given day is reproducible while consecutive days differ.
+
+    This trades points for a lower profile: 8-15 searches earn 24-45 of the 60
+    available. Streaks are unaffected, because the daily activity gate is satisfied by
+    a single search, so the 100-point search streak and the stamp card do not depend on
+    running the full allowance.
+    """
+    rng = random.Random(f"count-{(day or date.today()).isoformat()}")
+    return rng.randint(DAILY_SEARCH_MIN, DAILY_SEARCH_MAX)
 
 
 def search_gap() -> float:

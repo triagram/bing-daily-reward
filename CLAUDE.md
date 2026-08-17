@@ -125,9 +125,11 @@ completion test known to be wrong reproduces the failure the rewrite exists to f
   credited at all — measured 2026-08-14, six navigated queries earned nothing and did not
   move the daily search gate, while three typed ones earned 3 points each within seconds.
   `_search_once()` always types; do not "optimise" it back to navigation.
-- **The allowance is 20 searches at 3 points, 60 total** on this UK account, measured
-  2026-08-16: searches 21, 22 and 23 all earned nothing. The dashboard publishes no search
-  counter, so this is only knowable by measurement, and it differs by market.
+- **The allowance is 20 searches at 3 points** on this UK account (measured 2026-08-16;
+  21-23 earned nothing), but the bot runs **8-15**, drawn per day by
+  `daily_search_count()`. Landing exactly on the quota daily is a signature, and so is a
+  fixed count. Do not "fix" this back to the maximum — the shortfall is deliberate, and
+  streaks do not depend on it since one search satisfies the daily gate.
 - **Inter-search gaps come from a heavy-tailed mixture** in `search_gap()` (median ~15 s,
   mean ~21 s), not the flat 6–9 s window `config.py` still describes. Real gaps are not
   uniform, and pacing is also a functional requirement: queries arriving too fast are not

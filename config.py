@@ -11,9 +11,15 @@ REWARDS_EARN_URL = "https://rewards.bing.com/earn"
 BING_SEARCH_URL = "https://www.bing.com"
 
 # Task Settings - Anti-bot & Points Registration Intervals
-# Measured on this UK account 2026-08-16: searches 1-20 paid 3 points each, 21-23 paid
-# nothing. Differs by market — re-measure with experiments/q6_allowance.py elsewhere.
-DAILY_SEARCH_COUNT = 20
+# The measured allowance on this UK account is 20 searches at 3 points (2026-08-16;
+# searches 21-23 paid nothing). Differs by market — re-measure with
+# experiments/q6_allowance.py elsewhere.
+DAILY_SEARCH_ALLOWANCE = 20
+
+# How many to actually run: deliberately short of the allowance, and different every
+# day. See daily_search_count() in utils/humanizer.py for why.
+DAILY_SEARCH_MIN = 8
+DAILY_SEARCH_MAX = 15
 
 # Superseded by search_gap() in utils/humanizer.py, which draws from a heavy-tailed
 # mixture instead of a flat window. Kept only for the older task modules.

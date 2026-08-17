@@ -9,9 +9,8 @@ from urllib.parse import quote_plus
 
 from playwright.async_api import BrowserContext, Page
 
-from config import DAILY_SEARCH_COUNT
 from utils import keywords
-from utils.humanizer import human_scroll, human_type, search_gap
+from utils.humanizer import daily_search_count, human_scroll, human_type, search_gap
 from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
@@ -90,7 +89,7 @@ async def _search_once(page: Page, term: str, use_search_box: bool) -> None:
 
 async def run_daily_searches(
     context: BrowserContext,
-    search_count: int = DAILY_SEARCH_COUNT,
+    search_count: int | None = None,
     state_page: Page | None = None,
     per_search_balance: bool = False,
     force_input_mode: str | None = None,
@@ -130,6 +129,11 @@ async def run_daily_searches(
     same-terms comparison cannot tell "this input mode does not work" from "this
     query was already used today".
     """
+    # None means "however many today calls for" — a varying count short of the
+    # allowance, rather than the same maximum every day.
+    if search_count is None:
+        search_count = daily_search_count()
+        logger.info(f"⚡ [Searches] Today's count: {search_count}")
     result = SearchResult(attempted=search_count)
     owns_state_page = state_page is None
     if owns_state_page:

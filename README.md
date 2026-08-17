@@ -146,7 +146,7 @@ seeded by the date, so consecutive days do not repeat the same strings.
 |---|---|---|---|
 | 1 | **Daily set** — today's cards only, each verified individually | `task_daily_set.py` | 10–30 pts each (measured) |
 | 2 | **Explore on Bing** — outstanding offers, each verified | `task_explore.py` | 5/10/15 pts each (measured) |
-| 3 | **Daily searches** — 8-15 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
+| 3 | **Daily searches** — 8-12 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
 
 > [!NOTE]
 > Measured on this UK account, 2026-08-16: **20 searches pay 3 points each, then

@@ -23,6 +23,7 @@ from rich.table import Table
 
 from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
 from utils.claim import claim_pending
+from utils.shortfall import Verdict, assess
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
 from utils.task_explore import run_explore
@@ -142,6 +143,26 @@ async def main():
         console.print()
         console.print(table)
 
+        # A broken run is otherwise indistinguishable from an idle one: both print
+        # zeros and exit successfully.
+        problems = []
+        for name, res in results.items():
+            if name == "claim":
+                continue
+            verdict = assess(res.expected_points, res.points_earned, res.attempted)
+            if verdict.is_problem:
+                problems.append((name, verdict))
+
+        if problems:
+            console.print()
+            for name, v in problems:
+                colour = "red" if v.verdict is Verdict.ZERO else "yellow"
+                console.print(f"[bold {colour}]⚠ {name}: {v.message}.[/bold {colour}]")
+            console.print(
+                "[dim]Check whether the page layout changed (run recon.py and compare "
+                "against an earlier capture) before assuming the account is limited.[/dim]"
+            )
+
         if closing.ready_to_claim:
             console.print(
                 f"\n[yellow]{closing.ready_to_claim} points are still in "
@@ -164,6 +185,9 @@ async def main():
                     "attempted": res.attempted,
                     "done": getattr(res, "completed", getattr(res, "submitted", None)),
                     "points": res.points_earned,
+                    "expected": res.expected_points,
+                    "verdict": assess(res.expected_points, res.points_earned,
+                                      res.attempted).verdict.value,
                     "errors": res.errors,
                 }
                 for name, res in results.items() if name != "claim"

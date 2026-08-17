@@ -10,6 +10,7 @@ from urllib.parse import quote_plus
 from playwright.async_api import BrowserContext, Page
 
 from utils import keywords
+from config import POINTS_PER_SEARCH
 from utils.humanizer import daily_search_count, human_scroll, human_type, search_gap
 from utils.retry import retry_async
 from utils.state_reader import fetch_search_progress, fetch_state, searches_remaining
@@ -35,6 +36,8 @@ class SearchResult:
     # issued, and what the balance did immediately afterwards. A batch measurement
     # cannot attribute its delta to any single search; this can.
     per_search: list[dict] = field(default_factory=list)
+    # Searches pay a flat rate, so what a run is worth is simply its length.
+    expected_points: int = 0
 
     @property
     def points_earned(self) -> int | None:
@@ -165,6 +168,7 @@ async def run_daily_searches(
         return result
 
     result.attempted = search_count
+    result.expected_points = search_count * POINTS_PER_SEARCH
 
     logger.info(f"⚡ [Searches] Reading starting balance ...")
     try:
@@ -182,6 +186,7 @@ async def run_daily_searches(
     terms = list(terms) if terms else keywords.generate(search_count)
     search_count = min(search_count, len(terms))
     result.attempted = search_count
+    result.expected_points = search_count * POINTS_PER_SEARCH
     search_tab = await context.new_page()
 
     try:

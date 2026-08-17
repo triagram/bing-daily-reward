@@ -103,7 +103,7 @@ async def main():
             logger.error(f"Searches failed outright: {e}")
 
         try:
-            results["explore"] = await run_explore(context, state_page=page, limit=4)
+            results["explore"] = await run_explore(context, state_page=page)
         except Exception as e:
             logger.error(f"Explore failed outright: {e}")
 

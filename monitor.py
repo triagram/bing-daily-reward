@@ -30,7 +30,7 @@ from playwright.async_api import async_playwright
 from rich.console import Console
 from rich.table import Table
 
-from config import USER_DATA_DIR
+from config import USER_DATA_DIR, REWARDS_EARN_URL
 from utils.dashboard_state import DashboardState, parse_dashboard
 
 BASE = Path(__file__).parent
@@ -41,7 +41,31 @@ console = Console()
 logging.basicConfig(level=logging.WARNING)
 
 
-def to_record(state: DashboardState, note: str = "") -> dict:
+def explore_summary(earn: DashboardState | None) -> dict:
+    """
+    Reduce the /earn page to the few numbers worth a time series.
+
+    Explore offer ids carry no date, so a single capture cannot say whether what is
+    outstanding is today's or accumulated (Q7). A series can: ids that persist across
+    days are a backlog, ids that vanish have rotated. Storing the ids, not just the
+    count, is what makes that diff possible later.
+    """
+    if earn is None:
+        return {"available": False}
+    offers = [o for o in earn.offers if not o.is_daily_set and o.points]
+    outstanding = [o for o in offers if o.is_completed is False]
+    return {
+        "available": True,
+        "offer_count": len(offers),
+        "outstanding": len(outstanding),
+        "outstanding_points": sum(o.points for o in outstanding),
+        "outstanding_ids": sorted(o.offer_id for o in outstanding),
+        "all_ids": sorted(o.offer_id for o in offers),
+    }
+
+
+def to_record(state: DashboardState, note: str = "",
+              earn: DashboardState | None = None) -> dict:
     today = date.today()
     return {
         "sampled_at": datetime.now().isoformat(timespec="seconds"),
@@ -66,6 +90,7 @@ def to_record(state: DashboardState, note: str = "") -> dict:
         ],
         "outstanding_today": len(state.outstanding(today)),
         "daily_set_dates": sorted({str(o.day) for o in state.offers if o.is_daily_set}),
+        "earn": explore_summary(earn),
     }
 
 
@@ -111,6 +136,20 @@ def show_diff(previous: dict | None, current: dict):
             console.print(
                 f"  counter  {label}: {old['value']}/{old['maxValue']} → [yellow]{now_text}[/yellow]"
             )
+
+    pe, ce = previous.get("earn", {}), current.get("earn", {})
+    if pe.get("available") and ce.get("available"):
+        if pe["outstanding_points"] != ce["outstanding_points"]:
+            console.print(
+                f"  /earn    {pe['outstanding']} outstanding ({pe['outstanding_points']} pts)"
+                f" → [yellow]{ce['outstanding']} ({ce['outstanding_points']} pts)[/yellow]"
+            )
+        gone = set(pe.get("all_ids", [])) - set(ce.get("all_ids", []))
+        new_ids = set(ce.get("all_ids", [])) - set(pe.get("all_ids", []))
+        for i in sorted(gone):
+            console.print(f"  [dim]  rotated out: {i[:54]}[/dim]")
+        for i in sorted(new_ids):
+            console.print(f"  [cyan]  appeared:    {i[:54]}[/cyan]")
 
     if previous.get("date") != current.get("date"):
         console.print(
@@ -188,6 +227,17 @@ async def take_sample(note: str) -> dict | None:
                 return None
 
             html = await page.content()
+
+            # The two pages are complementary, not nested: balance and the activity
+            # counters exist only on the dashboard, and Explore offers only on /earn.
+            # Sampling one and not the other is why Q7 had no series to work from.
+            earn_html = None
+            try:
+                await page.goto(REWARDS_EARN_URL, wait_until="domcontentloaded", timeout=30000)
+                await asyncio.sleep(4.0)
+                earn_html = await page.content()
+            except Exception as e:
+                console.print(f"[yellow]Could not sample /earn: {e}[/yellow]")
         finally:
             await context.close()
 
@@ -195,9 +245,18 @@ async def take_sample(note: str) -> dict | None:
     archive = ARCHIVE_DIR / f"dashboard-{stamp}.html.gz"
     archive.write_bytes(gzip.compress(html.encode("utf-8")))
 
+    earn_state = None
+    earn_archive = None
+    if earn_html:
+        earn_archive = ARCHIVE_DIR / f"earn-{stamp}.html.gz"
+        earn_archive.write_bytes(gzip.compress(earn_html.encode("utf-8")))
+        earn_state = parse_dashboard(earn_html)
+
     state = parse_dashboard(html)
-    record = to_record(state, note)
+    record = to_record(state, note, earn=earn_state)
     record["archive"] = str(archive.relative_to(BASE))
+    if earn_archive:
+        record["earn_archive"] = str(earn_archive.relative_to(BASE))
 
     with LOG_PATH.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -242,6 +301,13 @@ async def main():
     console.print("  counters:")
     for counter in record["counters"]:
         console.print(f"      {str(counter['label']):14} {counter['value']:>3} / {counter['maxValue']}")
+    e = record.get("earn", {})
+    if e.get("available"):
+        console.print(
+            f"  /earn      {e['offer_count']} offers  ·  "
+            f"[bold]{e['outstanding']}[/bold] outstanding worth "
+            f"[bold]{e['outstanding_points']}[/bold] pts"
+        )
     console.print(f"  today's daily set ({record['outstanding_today']} outstanding):")
     for item in record["daily_set_today"]:
         mark = "✓" if item["is_completed"] else "✗"

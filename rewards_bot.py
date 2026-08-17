@@ -22,6 +22,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
+from utils.claim import claim_pending
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
 from utils.task_searches import run_daily_searches
@@ -100,6 +101,12 @@ async def main():
         except Exception as e:
             logger.error(f"Searches failed outright: {e}")
 
+        # Claiming goes last: the pot only stops growing once the tasks are done.
+        try:
+            results["claim"] = await claim_pending(page)
+        except Exception as e:
+            logger.error(f"Claim failed outright: {e}")
+
         # Explore is deliberately not run. utils/task_explore.py is still the original
         # version: it guesses selectors, has no completion check, and reports point
         # totals it never measured. Running it would put fabricated figures back into
@@ -114,6 +121,13 @@ async def main():
         table.add_column("Points", justify="right")
         table.add_column("Errors", justify="right")
         for name, res in results.items():
+            if name == "claim":
+                moved = res.claimed
+                table.add_row("claim (moved, not earned)",
+                              "yes" if res.clicked else "—",
+                              f"{moved:+d}" if moved else "0",
+                              "1" if res.error else "0")
+                continue
             earned = res.points_earned
             done = (f"{res.completed}/{res.attempted}" if name == "daily_set"
                     else f"{res.submitted}/{res.attempted}")
@@ -130,9 +144,8 @@ async def main():
 
         if closing.ready_to_claim:
             console.print(
-                f"\n[yellow]{closing.ready_to_claim} points are waiting in "
-                f"'Ready to claim'.[/yellow] They do not move to the balance on their "
-                "own — claim them on the dashboard."
+                f"\n[yellow]{closing.ready_to_claim} points are still in "
+                f"'Ready to claim'.[/yellow] The pot does not drain on its own."
             )
 
         record_run({
@@ -140,6 +153,12 @@ async def main():
             "opening_total": opening.total_points,
             "closing_total": closing.total_points,
             "overall_delta": overall,
+            "claim": (
+                {"clicked": results["claim"].clicked,
+                 "moved": results["claim"].claimed,
+                 "error": results["claim"].error}
+                if "claim" in results else None
+            ),
             "tasks": {
                 name: {
                     "attempted": res.attempted,
@@ -147,7 +166,7 @@ async def main():
                     "points": res.points_earned,
                     "errors": res.errors,
                 }
-                for name, res in results.items()
+                for name, res in results.items() if name != "claim"
             },
         })
         console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]\n")

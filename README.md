@@ -42,11 +42,15 @@ This project drives a real Chromium browser through those tasks with
 [Playwright](https://playwright.dev/python/), reusing a persistent browser
 profile so you only sign in to your Microsoft account once.
 
-**Project status: early skeleton (v0.1.0).** The three task flows are
-implemented and the bot completes a full run without crashing. What it does
-*not* have yet is any way to confirm the run worked — see
-[Current Limitations](#current-limitations). Treat this version as a foundation
-to build on rather than something to leave unattended.
+**Project status: the three task flows are rewritten and closed-loop.** Each one
+reads the dashboard's own state, confirms every item individually, and reports the
+point delta it actually measured — or says "unknown" rather than inventing a number.
+All three have been verified against a live account, and the parser and the
+behavioural choices are covered by an offline test suite.
+
+It is still run by hand, on purpose. Unattended scheduling, headless mode and
+multi-account support are deliberately deferred until the daily run has been stable
+for a stretch — see [Current Limitations](#current-limitations).
 
 ---
 
@@ -62,12 +66,22 @@ bing-daily-reward/
 │   ├── task_daily_set.py       # Task 1 — the three "Daily set" cards, plus point claiming
 │   ├── task_explore.py         # Task 2 — the "Explore on Bing" activity cards
 │   ├── task_searches.py        # Task 3 — N Bing searches, closed-loop measured
+│   ├── claim.py                # Moves the "Ready to claim" pot into the balance
 │   ├── dashboard_state.py      # Pure parser: dashboard HTML → structured offers & counters
 │   ├── state_reader.py         # Thin layer that feeds the parser from a live page
+│   ├── retry.py                # Backoff for transient navigation and click failures
+│   ├── shortfall.py            # Judges a run: did it earn what the work was worth?
 │   └── keywords.py             # Date-seeded search-term generation
 │
 ├── monitor.py                  # Read-only daily sampler — records state, diffs against last run
 ├── recon.py                    # Read-only deep capture — screenshots, DOM, network log
+│
+├── tests/                      # Offline suite — no browser, no network, no account
+├── .github/workflows/tests.yml # Runs that suite on a clean machine (manual trigger for now)
+├── experiments/                # One-off measurements that settled an open question
+├── contrib/systemd/            # Timer units for the read-only monitor (not for the bot)
+├── logs/                       # Run records and state samples (git-ignored)
+├── captures/                   # Archived pages the parser is developed against
 │
 ├── docs/DEVELOP.md             # Data contract, open questions, tooling notes
 ├── scientific_diagnostics.py   # Diagnostic — dumps points, task states and claim buttons to JSON
@@ -166,8 +180,9 @@ Supporting behaviour:
   one-click poll from a multi-question quiz. Note that it selects the *first*
   option rather than the correct one; see
   [Current Limitations](#current-limitations).
-- **Skip-if-complete** — each task inspects card text and markup for a completed
-  state and skips those cards, so a partial re-run does not redo finished work.
+- **Skip-if-complete** — each task reads the day's outstanding work from the parsed
+  state before starting, so a partial re-run picks up where the last one stopped
+  instead of redoing finished work.
 - **Modal dismissal** — `dismiss_all_modals_and_drawers()` clears the slide-out
   drawers that otherwise intercept clicks on the dashboard.
 
@@ -194,17 +209,25 @@ uv run playwright install chromium
 > an "Executable doesn't exist" error at launch that does not obviously point at
 > the missing install step.
 
-Dependencies are just two:
+Dependencies are two, plus `pytest` for development:
 
 | Package | Version | Purpose |
 |---|---|---|
 | `playwright` | 1.61.0 (pinned) | Browser automation |
 | `rich` | >= 15.0.0 | Coloured console output and log formatting |
+| `pytest` | >= 8.0 (dev) | The offline test suite |
 
 `playwright` is pinned to an exact version deliberately. Each release expects a
 matching Chromium build, so upgrading it without also re-running
 `playwright install chromium` produces the "just installed or updated" error
 above. Exact versions for the whole tree are recorded in `uv.lock`.
+
+```bash
+uv run pytest -q     # the suite; parses a fixture, never opens a browser
+```
+
+Worth running before any change to `utils/dashboard_state.py` — but it proves
+nothing about a live run, which only a real run can.
 
 ---
 
@@ -253,9 +276,21 @@ Everything tunable lives in `config.py`:
 
 ## Logging & Diagnostics
 
-Normal runs log to the console through `rich`, with per-task progress and a
-summary line. **Nothing is written to disk yet** — when the terminal closes, the
-run history is gone.
+Normal runs log to the console through `rich`, and end with a table of measured
+point deltas per task. Each run also appends one JSON line to `logs/runs.jsonl`, so
+a bad day stays visible after the terminal has closed:
+
+```bash
+uv run python rewards_bot.py --history   # every recorded run, per task, with flags
+```
+
+The `Flags` column is the one to read. `zero`, `short` and `unknown` come from
+`utils/shortfall.py`, which compares what a task earned against what the work it did
+was worth — the distinction a bot cannot otherwise make between a quiet day and a
+broken one.
+
+`monitor.py` writes separately to `logs/state_samples.jsonl`. It is read-only, so it
+is the safe instrument to leave running. `logs/` is git-ignored.
 
 Three standalone diagnostic scripts are included. They are development tools
 rather than part of the daily flow, but they are the practical way to work out
@@ -272,65 +307,86 @@ uv run python step_by_step_debugger.py
 uv run python debug_task1.py
 ```
 
-`scientific_diagnostics.py` is the most useful of the three: its
-`extract_points()` function scrapes the account's available and ready-to-claim
-point totals, and promoting it into the main run loop is the next planned
-change (see [Roadmap](#roadmap)).
+These predate `utils/dashboard_state.py` and scrape the DOM, which the rest of the
+project no longer does — prefer `--dry-run`, or `recon.py` when a capture is needed
+for comparison. They are kept because after a Microsoft redesign, the DOM is what you
+have to go back to.
+
+> [!NOTE]
+> `scientific_diagnostics.py` writes `diagnostics_report.json`, which contains your
+> point balance. It is git-ignored, but it does land on disk.
 
 ---
 
 ## Current Limitations
 
-Known and honest, as of v0.1.0:
+Honest as of the closed-loop rewrite. The measurement problems that dominated this
+list are fixed; what is left is either a deliberate deferral or a genuine unknown.
 
-- **Point totals in the logs are fabricated.** Lines like
-  `✓ Search [3/20] completed (+3 pts)` are printed whenever a page navigation
-  did not raise an exception. The bot never reads your point balance, so a run
-  blocked by a captcha, a spent daily quota, or bot detection still reports
-  `✅ Completed 20/20 (~60 points earned)`. **This is the most important thing
-  to fix, and the reason for everything else on the roadmap.**
-- **Errors are swallowed.** Most failure paths are `except Exception: pass` or
-  log at debug level, so a broken selector looks identical to a completed task.
 - **Headless mode is untested.** `HEADLESS = True` will launch, but the anti-bot
-  posture is a single Chromium flag and Microsoft's detection of headless
-  sessions has not been checked. The default is `False` for a reason.
-- **The first run cannot be automated.** Login waits on a blocking `input()`
-  call, so an unattended scheduled run is not possible until that is reworked.
+  posture is a single Chromium flag and Microsoft's detection of headless sessions
+  has not been checked. The default is `False` for a reason.
+- **The first run cannot be automated.** Login waits on a blocking `input()` call,
+  so an unattended scheduled run is not possible until that is reworked. This is
+  the one blocker on scheduling.
 - **Quizzes are answered at random.** `handle_quiz_or_poll_on_page()` clicks the
   first available option. Quizzes award points for wrong answers too, but fewer.
-- **Selectors will break.** The Rewards dashboard is redesigned periodically. The
-  URL-signature strategy is more durable than class matching, but not immune.
-- **Cross-navigation locators are unstable.** Task 1 collects card locators once
-  and reuses them across page navigations, so the second and third cards can
-  resolve to the wrong element after the DOM updates.
+- **Selectors will break.** The Rewards dashboard is redesigned periodically.
+  Reading the page's own state is far more durable than class matching, but the
+  shape of that state is not a published contract either.
 - **Single account only.** `USER_DATA_DIR` is one fixed path in `config.py`.
-- **No tests, no CI.**
+- **The run history is thin.** `logs/runs.jsonl` holds only a handful of records,
+  so `--history` cannot yet tell an unusual day from a normal one. This resolves
+  itself with use.
+- **Two questions are still open.** The `Edge` 0/30 counter has never been
+  investigated, and how fast Explore offers replenish is unknown — so the bot
+  cannot predict what a day *should* be worth, only measure what it was. See
+  [Open questions](docs/DEVELOP.md#open-questions).
+- **CI is manual-only.** The workflow exists but runs on `workflow_dispatch`, not
+  on push. Deliberate, until the suite has proved stable.
 
 ---
 
 ## Roadmap
 
-Ordered by what unblocks the most. The first item comes before everything else,
-because until the bot can measure its own effect, none of the rest can be
-verified.
+**Done.** Listed because the shape of the solution differs from what was planned:
 
-- [ ] **Closed-loop point verification** — move `extract_points()` into `utils/`,
-      capture the balance before and after each task, and report the real delta
-      instead of an assumed one.
-- [ ] **Structured task results** — have each task return attempted / succeeded /
-      point delta / errors rather than only logging, and render a summary table
-      at the end of a run. This also delivers the self-updating logbook below.
-- [ ] **Fix cross-navigation locators** — re-query cards inside each loop
-      iteration; identify them by URL or text rather than by index.
-- [ ] **Idempotent re-runs** — read the day's completion state up front and only
-      run what is outstanding, so a failed run can simply be repeated.
-- [ ] **Retries with backoff** — wrap navigation and key clicks.
-- [ ] **Persistent logs** — one JSON-lines file per day under `logs/`.
-- [ ] **Unattended operation** — replace the blocking login prompt with an
-      explicit `--login` mode, make `HEADLESS` configurable by environment
-      variable, and schedule daily runs with a systemd timer.
-- [ ] **Failure notifications** — alert only when a run does not earn what it
-      should.
+- [x] **Closed-loop point verification** — the plan was to promote
+      `extract_points()` out of the diagnostics. The route taken instead was
+      `utils/dashboard_state.py`, which parses the state the page itself renders
+      from, making the whole thing a pure function that can be tested offline.
+      Totals are compared as balance **+** unclaimed, because earnings land in
+      either.
+- [x] **Structured task results** — each task returns attempted / completed /
+      point delta / errors, rendered as a table at the end of a run.
+- [x] **Verdicts on a run** — `utils/shortfall.py` compares what a task earned
+      against what its work was worth, so a broken run is distinguishable from an
+      idle one instead of both printing zeros and exiting successfully.
+- [x] **Fix cross-navigation locators** — cards are re-queried inside the loop and
+      identified by offer id, and the day's offers are filtered by date.
+- [x] **Idempotent re-runs** — state is read up front and only outstanding work is
+      done, so a failed run can simply be repeated.
+- [x] **Retries with backoff** — `utils/retry.py`, including a re-attempt of a card
+      whose completion flag did not flip.
+- [x] **Claim the pending pot** — points sitting in "Ready to claim" do not move on
+      their own.
+- [x] **Tests** — an offline suite over the parser and the behavioural choices.
+
+**Next**, roughly in order:
+
+- [ ] **Accumulate run history** — the immediate task is simply to run daily and
+      let `logs/runs.jsonl` fill, so "stable" becomes something the Flags column
+      can answer rather than an impression.
+- [ ] **Enable CI on push** — a one-line uncomment, once the suite has held.
+- [ ] **Answer Q8 — the `Edge` 0/30 counter** — the largest unexplored surface on
+      the account.
+- [ ] **Unattended operation** — replace the blocking login prompt with an explicit
+      `--login` mode, make `HEADLESS` configurable by environment variable, and
+      only then consider a systemd timer. `contrib/systemd/` already carries units
+      for the read-only monitor.
+- [ ] **Out-of-band failure alerts** — a shortfall currently only prints to a
+      console nobody is watching. This one is worth having *before* scheduling,
+      not after.
 - [ ] **Multi-account support** — `profiles/<account>/`, driven by config.
 - [ ] **Real quiz answering** — extract the correct option instead of guessing.
 

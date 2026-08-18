@@ -45,10 +45,24 @@ Once a day, at roughly the same time, at a consistent offset after the daily res
 ([Q3](DEVELOP.md#q3) settled when that is). A run at 23:50 and one at 00:10 are not
 comparable — "outstanding today" means different things.
 
+One-time setup:
+
 ```bash
 mkdir -p logs/observation
+```
+
+Then, once a day:
+
+```bash
 uv run python rewards_bot.py 2>&1 | tee -a logs/observation/$(date +%F).log
 ```
+
+Reading that: `2>&1` merges the error channel into the normal one so that a traceback
+reaches the log rather than only the screen — which is the whole point, since nobody is
+watching the screen. `tee -a` writes to the file *and* passes the output through, and
+appends rather than truncating, so a second run on a day does not erase the first one's
+failure. `$(date +%F)` expands to `2026-08-18`, giving one file per day that sorts
+chronologically by name.
 
 The `tee` is not optional. `runs.jsonl` captures the structured result, but the shortfall
 warning and the "compare against an earlier capture" hint are console-only — and the

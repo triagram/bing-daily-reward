@@ -41,12 +41,15 @@ uv run pytest -q                     # the offline suite; no browser, no account
 > `--dry-run` reads state and reports without touching anything — reach for it rather
 > than driving the task functions by hand.
 
-Diagnostics from the original version, kept for selector archaeology:
+Pre-rewrite DOM-scraping diagnostics now live in `legacy/`, kept for selector
+archaeology after a redesign. They must be run as modules from the repository root —
+they `from config import …`, and a file-path invocation puts `legacy/` on `sys.path`
+instead of the root, so the import fails. See `legacy/README.md`.
 
 ```bash
-uv run python scientific_diagnostics.py   # dump points/task states/claim buttons → diagnostics_report.json
-uv run python step_by_step_debugger.py    # interactive walkthrough, pauses and highlights at each step
-uv run python debug_task1.py              # screenshot dashboard, list every Daily set card found
+uv run python -m legacy.scientific_diagnostics   # points/task states/claim buttons → diagnostics_report.json
+uv run python -m legacy.step_by_step_debugger    # interactive walkthrough, pauses at each step
+uv run python -m legacy.debug_task1              # screenshot dashboard, list every Daily set card found
 ```
 
 `uv run pytest -q` runs the suite (51 tests, ~0.2 s). It parses a synthetic fixture and
@@ -85,8 +88,9 @@ and what evidence supports it — not a restatement of the diff.
 
 `rewards_bot.py` drives a real browser against the user's real Microsoft Rewards account,
 which holds a real point balance and is subject to Microsoft's anti-automation enforcement.
-Do not launch it casually to "check something" — reach for `scientific_diagnostics.py`
-first, and ask before doing a full run.
+Do not launch it casually to "check something" — `uv run python rewards_bot.py --dry-run`
+reads the state and changes nothing, and is the cheap first reach. Ask before doing a
+full run.
 
 `HEADLESS = False` in `config.py` is the working default. Headless mode launches but has
 never been validated against Microsoft's detection.

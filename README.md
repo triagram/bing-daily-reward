@@ -84,9 +84,8 @@ bing-daily-reward/
 ├── captures/                   # Archived pages the parser is developed against
 │
 ├── docs/DEVELOP.md             # Data contract, open questions, tooling notes
-├── scientific_diagnostics.py   # Diagnostic — dumps points, task states and claim buttons to JSON
-├── step_by_step_debugger.py    # Diagnostic — interactive walkthrough, pauses at each step
-├── debug_task1.py              # Diagnostic — screenshots the dashboard and scans for Daily set cards
+├── docs/OBSERVATION.md         # The stability window: daily routine, exit criterion, freeze list
+├── legacy/                     # Pre-rewrite DOM-scraping diagnostics, kept for selector archaeology
 │
 ├── browser_session/            # Persistent Chromium profile (git-ignored — see the note below)
 ├── pyproject.toml              # Dependencies
@@ -292,19 +291,20 @@ broken one.
 `monitor.py` writes separately to `logs/state_samples.jsonl`. It is read-only, so it
 is the safe instrument to leave running. `logs/` is git-ignored.
 
-Three standalone diagnostic scripts are included. They are development tools
-rather than part of the daily flow, but they are the practical way to work out
-why a task stopped finding its cards after a Microsoft redesign:
+Three standalone diagnostic scripts are kept in `legacy/`. They are not part of the
+daily flow, but they are the practical way to work out why a task stopped finding its
+cards after a Microsoft redesign. They must be run as modules from the repository
+root, because they import `config` (see `legacy/README.md`):
 
 ```bash
 # Dump current points, task states and claim buttons to diagnostics_report.json
-uv run python scientific_diagnostics.py
+uv run python -m legacy.scientific_diagnostics
 
 # Walk the whole flow with a pause and a highlighted element at each step
-uv run python step_by_step_debugger.py
+uv run python -m legacy.step_by_step_debugger
 
 # Screenshot the dashboard and list every Daily set card it can find
-uv run python debug_task1.py
+uv run python -m legacy.debug_task1
 ```
 
 These predate `utils/dashboard_state.py` and scrape the DOM, which the rest of the
@@ -313,8 +313,8 @@ for comparison. They are kept because after a Microsoft redesign, the DOM is wha
 have to go back to.
 
 > [!NOTE]
-> `scientific_diagnostics.py` writes `diagnostics_report.json`, which contains your
-> point balance. It is git-ignored, but it does land on disk.
+> `legacy/scientific_diagnostics.py` writes `diagnostics_report.json`, which contains
+> your point balance. It is git-ignored, but it does land on disk.
 
 ---
 

@@ -1,0 +1,37 @@
+# Runs the test suite on a clean machine.
+#
+# Deliberately manual-only for now: `workflow_dispatch` means it runs when you press
+# the button on the Actions tab, not on every push. Add the `push:` trigger below once
+# the suite has been stable for a while.
+#
+# What this catches that running pytest locally does not: a dependency used but never
+# declared, a Python version assumption, and anything else the development machine
+# happens to have. The local .venv has had packages installed and removed for weeks;
+# this proves a fresh clone works.
+#
+# It never touches a Microsoft account. The tests parse a synthetic fixture and make
+# no network requests — the browser is never launched.
+
+name: tests
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run tests
+        run: uv run pytest -q

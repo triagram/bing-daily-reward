@@ -23,16 +23,23 @@ stable a while.
 uv sync                              # create .venv and install deps
 uv run playwright install chromium   # download the browser — separate step, easy to miss
 
+uv run python rewards_bot.py             # run today's tasks
+uv run python rewards_bot.py --dry-run   # read state and report, change nothing
+uv run python rewards_bot.py --history   # what past runs earned, per task
+
 uv run python monitor.py             # read-only state sample, appends to logs/state_samples.jsonl
 uv run python monitor.py --history   # what has been collected so far
 uv run python recon.py               # read-only deep capture: screenshots, DOM, network log
+
+uv run pytest -q                     # the offline suite; no browser, no account
 ```
 
-> `rewards_bot.py` is **not** the way to run anything right now. It is untouched since
-> the initial commit and still calls the original Daily Set and Explore code, which
-> guesses at selectors, has no date filter, and swallows its errors. It also discards
-> the `SearchResult` it gets back, so nothing records what a run earned. Drive `run_daily_searches()` directly until the
-> orchestration layer is rewritten.
+> `rewards_bot.py` is the entry point again (repaired in 4f24d89). It reads dashboard
+> state up front and runs only what is outstanding, each task returning a structured
+> result; the run ends with a table of measured deltas, a warning for any task that
+> earned less than the work was worth, and a line appended to `logs/runs.jsonl`.
+> `--dry-run` reads state and reports without touching anything — reach for it rather
+> than driving the task functions by hand.
 
 Diagnostics from the original version, kept for selector archaeology:
 
@@ -42,8 +49,15 @@ uv run python step_by_step_debugger.py    # interactive walkthrough, pauses and 
 uv run python debug_task1.py              # screenshot dashboard, list every Daily set card found
 ```
 
-There are no tests, no linter and no CI. "Verifying a change" here means either running a
-diagnostic script, or a real run against a live Microsoft account — see below.
+`uv run pytest -q` runs the suite (51 tests, ~0.2 s). It parses a synthetic fixture and
+never opens a browser or touches the account, so it is free to run — and proves nothing
+about a live run. There is no linter. CI (`.github/workflows/tests.yml`) runs the same
+suite on a clean machine, but is `workflow_dispatch` only on purpose; enable its `push:`
+trigger once the suite has been stable a while.
+
+So "verifying a change" splits in two: anything in `dashboard_state.py` and the
+behavioural helpers is verifiable offline by test, while anything that touches the live
+dashboard still needs a diagnostic script or a real run — see below.
 
 Long experiments must run in the background: a foreground command is capped at ten
 minutes, and a run that exceeds it is killed. That is how the first attempt at

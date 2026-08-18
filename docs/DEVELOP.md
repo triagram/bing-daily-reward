@@ -462,6 +462,40 @@ is to derive the remaining allowance from observation rather than assume a clean
 the balance delta since the day's first sample is one route, and `monitor.py` already
 records what would be needed.
 
+## Unexplained observations
+
+Neither of these blocks anything, and neither has an explanation. Recorded so they are
+not rediscovered from scratch, and so a future sighting can be recognised as a repeat.
+
+### A points breakdown that read 0/60 while the same account read 60/60
+
+On 2026-08-16 the account holder saw, in their own browser:
+
+```
+Today's points 110 · Bing search 0/60 · Offers 110
+```
+
+At the same time, three reads from the automation profile — two pages, half an hour
+apart — all showed `Today's points 60 · Bing search 60/60 · Offers 0`. The History
+rows (month 3,925, year 40,160, lifetime 107,575) were **identical** in both, which is
+what makes it strange: same account, same data source, different "today".
+
+Never reproduced. It did not recur the following day, when searches credited normally
+in real time, so it was not a restriction — the 60 points that day had simply already
+been spent by an experiment before the manual searches. Candidates never eliminated:
+the History rows lag and so cannot date a reading; the modal distinguishes "Bing
+search" (combined) from "Desktop Bing search" and the two may render differently by
+context; or a stale client-side render.
+
+### An Explore run that measured more than it advertised
+
+2026-08-17: four offers stating 15+15+5+5 = 40 measured **+50**. The Daily Set run the
+same day matched its stated total exactly, so this is not a systematic offset. A
+single Explore offer the next day matched exactly too (10 stated, 10 measured).
+
+This is why the shortfall check tolerates a wide band: advertised values are a guide,
+not a contract.
+
 ## Tooling
 
 Three things with similar-sounding jobs. The distinction is depth versus frequency.
@@ -478,6 +512,21 @@ Three things with similar-sounding jobs. The distinction is depth versus frequen
 lets it be developed and tested offline against archived pages. Keep it that way;
 `utils/state_reader.py` exists to hold the part that touches a live page.
 
+`monitor.py` runs on a systemd user timer at 06:00, 12:00, 18:00 and 23:30, with
+`RandomizedDelaySec=5400`. The jitter is wide on purpose: four dashboard loads at the
+same four times every day is a pattern in itself, even though any individual load is
+something a person does. Ninety minutes keeps the morning/midday/evening/night
+coverage while scattering when they land. Units are in `contrib/systemd/`; the same
+consideration will matter far more if `rewards_bot.py` is ever scheduled, since that
+executes tasks rather than loading a page.
+
+`.github/workflows/tests.yml` exists but is **manual-only** (`workflow_dispatch`), by
+decision on 2026-08-18: written now, enabled once the suite has been stable for a
+while. Uncomment the `push:` trigger to turn it on. What it catches that a local
+`pytest` does not is the clean machine — a dependency used but never declared, or a
+version assumption the development box happens to satisfy. It never touches an
+account: the tests parse a synthetic fixture and make no network requests.
+
 `monitor.py` archives the raw HTML of every sample. When the parser turns out to have
 missed a field (see Q5), archived samples can be re-parsed rather than re-collected.
 Collect once, analyse many times.
@@ -489,6 +538,15 @@ Collect once, analyse many times.
 - **Anything that searches or clicks spends real account risk.** Automating Rewards
   violates Microsoft's terms and enforcement is account-level, so run live experiments
   deliberately, in small samples, one variable at a time.
+- **The code lives on Microsoft's infrastructure.** GitHub is Microsoft-owned, so a
+  tool for violating Microsoft's Rewards terms is stored on that same company's
+  servers. The repository is private and there is no known precedent for GitHub
+  content being correlated with Rewards enforcement — different products, different
+  organisations — but the structural fact is worth stating rather than discovering.
+  Two things follow. If the GitHub account is signed in with the *same* Microsoft
+  account used for Rewards, the association is direct rather than inferred. And if
+  this matters to you, the answer is to host the repository elsewhere, not to avoid
+  CI: CI runs the test suite, which never launches a browser or contacts Bing.
 - **Sample before acting, not after.** A sample taken after a run cannot serve as that
   run's baseline. The 2026-08-12 sample is contaminated this way: the searches had
   already happened, so `Bing 1/1` cannot be attributed.

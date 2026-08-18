@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Where to pick up
+
+The project is **not** in active feature development. All three tasks are rewritten,
+verified against a live account, and covered by tests; the account holder deliberately
+paused to watch stability before automating anything. Do not start new work unprompted.
+
+Read in this order when context is needed: this file for the rules that must not be
+broken, `docs/DEVELOP.md` for what the dashboard actually returns and which questions
+are settled, `README.md` for how to run it. Between them they carry everything — do
+not re-derive findings by experimenting on the account.
+
+Deferred by decision, not oversight: unattended scheduling, the Edge counter (Q8),
+multi-account, and packaging. CI is written but manual-only until the suite has been
+stable a while.
+
 ## Commands
 
 ```bash

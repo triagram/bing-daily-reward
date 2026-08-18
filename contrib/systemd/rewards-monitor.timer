@@ -9,8 +9,10 @@ OnCalendar=*-*-* 18:00:00
 OnCalendar=*-*-* 23:30:00
 # Catch up a sample missed while the machine was off.
 Persistent=true
-# Jitter so samples do not land on the same second every day.
-RandomizedDelaySec=600
+# Wide jitter. Four dashboard loads at the same four times every day is a pattern in
+# itself, even though each load is something any user does. 90 minutes keeps the
+# morning/midday/evening/night coverage while scattering when they actually land.
+RandomizedDelaySec=5400
 
 [Install]
 WantedBy=timers.target

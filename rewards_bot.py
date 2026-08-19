@@ -94,10 +94,22 @@ def print_history():
 
         claim = run.get("claim") or {}
         moved = claim.get("moved")
-        flags = " ".join(
-            f"{n}:{t['verdict']}" for n, t in tasks.items()
-            if t.get("verdict") in ("zero", "short", "unknown")
-        )
+
+        # Errors flag on their own, not only through the verdict. The 2026-08-19 run
+        # confirmed one card outright failed while shortfall returned "ok", because
+        # 20 of an advertised 30 clears the 0.6 tolerance. The tolerance is right —
+        # advertised values are a guide, not a contract — but a run with a recorded
+        # error is never clean, whatever it earned.
+        flags = []
+        for n, t in tasks.items():
+            if t.get("verdict") in ("zero", "short", "unknown"):
+                flags.append(f"{n}:{t['verdict']}")
+            elif t.get("errors"):
+                flags.append(f"{n}:{len(t['errors'])}err")
+            elif (t.get("done") is not None
+                  and t.get("done") != t.get("attempted")):
+                flags.append(f"{n}:{t['done']}/{t['attempted']}")
+        flags = " ".join(flags)
         overall = run.get("overall_delta")
         table.add_row(
             run.get("date", "?"),

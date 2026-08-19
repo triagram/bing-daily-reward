@@ -487,6 +487,49 @@ the History rows lag and so cannot date a reading; the modal distinguishes "Bing
 search" (combined) from "Desktop Bing search" and the two may render differently by
 context; or a stale client-side render.
 
+### Second sighting: the account holder's browser showed a different "today"
+
+2026-08-19, 22:41. A run measured +81 and the balance moved 107999 → 108080. Minutes
+later the account holder's own Chrome showed that same **108080 available**, and at the
+same time `Today's points 0` with no activity listed.
+
+The arithmetic reconciles exactly — 107999 + 20 + 33 + 28 = 108080 — so no points are
+missing; only the "today" panel disagrees between the two browsers, which is the same
+shape as the 2026-08-16 sighting above. Note it does not repeat that sighting's
+*direction*: there the account holder's browser read high (110) and the automation
+profile low (60); here the account holder's reads zero.
+
+Two candidates, neither eliminated:
+
+- **A stale client-side render.** Was that tab open before the run? Not checked at the
+  time. Cheapest to rule out — hard-refresh and re-read.
+- **A one-day lag in the panel.** [Q2](#q2) established the Daily Set *ring* shows
+  yesterday, not today. If this panel is in the same family, `0` is a correct reading of
+  2026-08-18 for that account — which had no run.
+
+**What would settle it:** look on 2026-08-20 and see whether the panel then reads 81.
+If it does, the lag explanation holds and this becomes a Q2 consequence rather than an
+unexplained observation. Costs nothing but waiting.
+
+### Hypothesis: a referral daily-set card may not be completable at all
+
+2026-08-19: `Child1`, "Turn referrals into rewards", destination
+`rewards.bing.com/referandearn`. It has no `?q=` — every other daily-set card points at
+a Bing search — so `_open_card` found no anchor, navigated directly, and the card did
+not register. The retry navigated again and it still did not register.
+
+The card recurs: the 2026-08-11 capture carries the same title in the 2026-08-12
+`Child1` slot, also with `query=None`.
+
+**Hypothesis:** a referral card is completed by somebody accepting a referral, not by
+visiting the page, and so is structurally uncompletable by any amount of automation.
+If so this is behaviour to recognise, not a bug to fix — and the follow-up is to detect
+the card type and skip the two wasted navigations rather than to try harder.
+
+**What would confirm it:** the next daily-set card whose destination is `referandearn`
+fails identically. One sighting is not enough to conclude it, and assuming it early
+would mean writing off a card that a different approach might complete.
+
 ### An Explore run that measured more than it advertised
 
 2026-08-17: four offers stating 15+15+5+5 = 40 measured **+50**. The Daily Set run the

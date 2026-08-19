@@ -218,7 +218,7 @@ work queue** — an entry closes only when an experiment settles it.
 | # | Question | Status |
 |---|---|---|
 | [Q1](#q1) | Why did four searches earn only 3 points? | ✅ Resolved 2026-08-14 |
-| [Q2](#q2) | The Daily Set ring disagrees with the cards | ✅ Resolved 2026-08-17 |
+| [Q2](#q2) | The Daily Set ring disagrees with the cards | 🔴 **Reopened 2026-08-19** |
 | [Q3](#q3) | When does the daily reset happen? | ✅ Resolved 2026-08-14 |
 | [Q4](#q4) | Does point crediting lag? | 🟡 Partly answered |
 | [Q5](#q5) | Why does `/earn` yield no counters? | ✅ Resolved 2026-08-13 |
@@ -261,11 +261,45 @@ today", so `run_daily_searches` takes a `terms` override.
 <a id="q2"></a>
 ### Q2 — The Daily Set ring disagrees with the Daily Set cards
 
-**Status:** Resolved 2026-08-17.
+**Status:** 🔴 **Reopened 2026-08-19.** The answer below fits every observation up to
+08-17 and none after it.
 
-**Answer: the ring shows the *previous* day's completions, not today's.** It was never
-lagging or buggy — its meaning was being read wrongly. Four observations fit without
-exception:
+**What reopened it.** `logs/state_samples.jsonl` records the ring tracking *today*, in
+near real time:
+
+| Sample | Ring | Cards done that day | Cards done previous day |
+|---|---|---|---|
+| 08-18 06:24 | 0/3 | 0 so far | 3 (08-17) |
+| 08-18 12:18 | **3/3** | 3, at 10:16 | 3 (08-17) |
+| 08-18 18:20 | 3/3 | 3 | 3 |
+| 08-19 06:40 | **0/3** | 0 so far | **3 (08-18)** |
+| 08-19 19:03 | 0/3 | 0 so far | 3 (08-18) |
+
+The 08-18 pair is decisive in the opposite direction from the pair below: the ring went
+0/3 → 3/3 within two hours of the cards being completed **on the same day**. And on
+08-19 it read 0/3 all day without carrying over 08-18's three, which "shows yesterday"
+requires it to do.
+
+So the ring is not a summary of yesterday, and it is not simply today either — the
+08-16/08-17 pair below is real and rules that out too. Neither model fits all seven
+observations. What differs about the later ones is that the completions were made by the
+rewritten task code; the earlier ones were not.
+
+**What does not change:** gate work on `isCompleted` on the cards, never on the ring.
+That rule was right for a reason that survives its justification being wrong — the ring
+has now been observed disagreeing with the cards in *both* directions, which is worse
+than lagging.
+
+**Possibly the same phenomenon:** the account holder's own browser showing "Today's
+points 0" on 2026-08-19 while the balance agreed exactly — see Unexplained observations.
+Both are summary widgets disagreeing with the ledger. The open measurement is what the
+automation profile's ring reads *after* a run, which no sample has ever captured: every
+08-19 sample predates the 22:31 run.
+
+---
+
+**Superseded answer (2026-08-17): the ring shows the *previous* day's completions.**
+Four observations fit it without exception at the time:
 
 | Observed | Ring | Cards done **that** day | Cards done the **previous** day |
 |---|---|---|---|
@@ -279,9 +313,8 @@ rather than from the experiment written to chase it. At 23:39 the ring still rea
 hours after three cards had been completed, which rules out a short delay; by 02:13,
 past the UTC reset, it read 3/3 while that day's cards were all untouched.
 
-**Consequence:** `isCompleted` on the cards is the only source for "is this done
-today". Never gate work on the ring — it is a summary of yesterday, and using it would
-skip today's tasks whenever yesterday's were finished.
+**Consequence (still stands, for a broader reason):** `isCompleted` on the cards is the
+only source for "is this done today".
 
 `experiments/q2_daily_set_counter.py` was written to settle this by completing one card
 and watching both sources. It is unnecessary now and was never run; kept because it

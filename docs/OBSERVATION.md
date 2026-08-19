@@ -1,6 +1,6 @@
 # The observation window
 
-Started 2026-08-18. Purpose: establish that a daily run is boring before anything is
+Start date: **not yet — see below.** Purpose: establish that a daily run is boring before anything is
 automated. Nothing here is about adding capability — it is about accumulating evidence.
 
 ## Why this is starting from zero, not continuing
@@ -18,6 +18,23 @@ postdates that run:
 So that record shows 15 searches and no Explore or claim columns — it does not describe
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
+
+## Status: not started
+
+2026-08-19, intended day 1. The `--dry-run` reported **six** outstanding daily-set
+cards for a three-card set: `Child1`, `Child2` and `Child3` each listed twice, once
+with its points and title and once with both `None`. The window does not start on a
+run whose `done == attempted` check is known in advance to fail — day 1 is held until
+the parser is understood and fixed.
+
+**This is the cheapest outcome the window can produce.** A discrepancy caught by a
+read-only `--dry-run`, before any task ran, cost zero account exposure. It is the
+argument for having a window at all.
+
+Next: `uv run python recon.py` for a fresh capture, then diagnose offline against it.
+The dry-run listing now prints `offer_id` per offer, because the slot alone could not
+distinguish the two candidate explanations — a parser double-count versus a second
+offer family matching `is_daily_set`.
 
 ## Exit criterion
 
@@ -79,7 +96,7 @@ Read three things, in this order:
 
 ## Day by day
 
-Days 3-13 are identical on purpose. Only these differ:
+Days 3(21)-13(31) are identical on purpose. Only these differ:
 
 | Day | In addition to the daily run |
 |---|---|

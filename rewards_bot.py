@@ -165,8 +165,23 @@ async def main():
         console.print(f"  daily set outstanding today: {len(outstanding)}\n")
 
         if dry_run:
+            # The offer id is printed because the slot alone cannot distinguish two
+            # entries for the same card: on 2026-08-19 a dry run listed six
+            # outstanding for a three-card set, and diagnosing it needed a second
+            # trip to the account purely to see the ids.
             for offer in outstanding:
-                console.print(f"    would do  {offer.slot}  {offer.points}pts  {offer.title}")
+                console.print(
+                    f"    would do  {offer.slot}  {offer.points}pts  {offer.title}\n"
+                    f"              [dim]{offer.offer_id}[/dim]"
+                )
+            ids = [o.offer_id for o in outstanding]
+            if len(set(ids)) != len(ids):
+                console.print("\n[bold red]⚠ The same offer id is listed more than "
+                              "once — the parser is double-counting.[/bold red]")
+            elif len(outstanding) > 3:
+                console.print(f"\n[bold yellow]⚠ {len(outstanding)} outstanding for a "
+                              "three-card set, with distinct ids — more than one offer "
+                              "family is matching is_daily_set.[/bold yellow]")
             await context.close()
             return
 

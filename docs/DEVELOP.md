@@ -341,7 +341,12 @@ this closed.
 <a id="q4"></a>
 ### Q4 — Does point crediting lag?
 
-**Status:** 🟡 Partly answered.
+**Status:** 🟡 Partly answered. New evidence 2026-08-19: a run closed at 22:41 measuring
+a total of 108,080, and a read-only sample at 23:26 read 108,083 — **3 points arrived
+after the run had finished measuring**. So a run's own `overall_delta` can understate
+what the day earned, and a small shortfall against expectation is not automatically a
+failure. Not enough to characterise the lag; enough to stop treating the closing read as
+final.
 
 **Settled:** crediting is **fast** — typed searches showed up within about fifteen
 seconds (Q1). And **nothing drifts on its own**: from 06:08 to 12:01 on 08-13 with no
@@ -532,17 +537,37 @@ shape as the 2026-08-16 sighting above. Note it does not repeat that sighting's
 *direction*: there the account holder's browser read high (110) and the automation
 profile low (60); here the account holder's reads zero.
 
-Two candidates, neither eliminated:
+Both first candidates are eliminated. A hard refresh changed nothing, so it is not a
+stale render; and a one-day lag would have shown 105, since 2026-08-18 earned that — not
+zero.
 
-- **A stale client-side render.** Was that tab open before the run? Not checked at the
-  time. Cheapest to rule out — hard-refresh and re-read.
-- **A one-day lag in the panel.** [Q2](#q2) established the Daily Set *ring* shows
-  yesterday, not today. If this panel is in the same family, `0` is a correct reading of
-  2026-08-18 for that account — which had no run.
+**Leading hypothesis: the daily widgets report what *that browser* earned, not what the
+account earned.** A `monitor.py` sample at 23:26 from the automation profile read
+`Bing 1/1` and `Daily Set 2/3` — it sees the run perfectly well. The same account in the
+account holder's Chrome, minutes earlier, showed nothing.
 
-**What would settle it:** look on 2026-08-20 and see whether the panel then reads 81.
-If it does, the lag explanation holds and this becomes a Q2 consequence rather than an
-unexplained observation. Costs nothing but waiting.
+This is the first hypothesis that explains the 2026-08-16 sighting too, including the
+direction that made it look strange. Re-read those figures as per-browser shares:
+
+| | Account holder's browser | Automation profile |
+|---|---|---|
+| Offers | **110** | 0 |
+| Bing search | 0/60 | **60/60** |
+
+Each browser reported exactly its own contribution. The offers were done by hand in one;
+the searches by the bot in the other. Nothing was disagreeing — the two were answering
+different questions, and "today" was never account-wide. The identical History rows fit:
+those *are* account-wide.
+
+**What would confirm it, at no cost:** compare the four rings themselves, not the
+"Today's points" panel, in both browsers at the same moment. The automation profile read
+`Bing 1/1 · Daily Set 2/3 · Edge 0/30 · Mobile App 0/1` at 23:26. If the account
+holder's Chrome reads `0/1` and `0/3` for the first two at that time, the same widget is
+demonstrably session-scoped and this closes.
+
+**If it holds, it probably also explains [Q2](#q2)** — ring readings would depend on what
+the sampling profile itself had done, not on what the account had done, which is why no
+account-level model ("today", "yesterday") fits all seven observations.
 
 ### Hypothesis: a referral daily-set card may not be completable at all
 

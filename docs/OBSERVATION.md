@@ -19,22 +19,27 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: not started
+## Status: ready to start, one day late
 
-2026-08-19, intended day 1. The `--dry-run` reported **six** outstanding daily-set
-cards for a three-card set: `Child1`, `Child2` and `Child3` each listed twice, once
-with its points and title and once with both `None`. The window does not start on a
-run whose `done == attempted` check is known in advance to fail — day 1 is held until
-the parser is understood and fixed.
+Day 1 was attempted on 2026-08-19 and held. The `--dry-run` reported **six**
+outstanding daily-set cards for a three-card set — `Child1`, `Child2` and `Child3`
+each listed twice, once populated and once with `None` for both points and title.
+A run would have recorded `daily_set 3/6` with three errors: a first data point known
+in advance to be bad.
 
-**This is the cheapest outcome the window can produce.** A discrepancy caught by a
-read-only `--dry-run`, before any task ran, cost zero account exposure. It is the
-argument for having a window at all.
+Cause, settled offline against a fresh `recon.py` capture: the dashboard ships each
+card as **two** objects, the rendered element and the data behind it, and the parser's
+dedup key was built from the very fields those two halves disagree on, so both
+survived. Fixed in `952f854`, with the shape now reproduced in the synthetic fixture.
 
-Next: `uv run python recon.py` for a fresh capture, then diagnose offline against it.
-The dry-run listing now prints `offer_id` per offer, because the slot alone could not
-distinguish the two candidate explanations — a parser double-count versus a second
-offer family matching `is_daily_set`.
+**This is the cheapest outcome the window can produce.** A read-only `--dry-run`
+caught it before any task ran — zero account exposure, and the fix arrived with a
+regression test rather than a guess. It is the argument for having a window at all.
+
+The dry-run listing now prints `offer_id` per offer and warns on an impossible count,
+because the slot alone could not distinguish the two candidate explanations.
+
+**Before starting: run `--dry-run` once more and confirm it reads three.**
 
 ## Exit criterion
 

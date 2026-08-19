@@ -143,6 +143,72 @@ class DashboardState:
 
 
 # --------------------------------------------------------------------------- #
+# Merging the copies of one offer
+# --------------------------------------------------------------------------- #
+
+# The fields an Offer actually reads. Used to rank copies, so that "richest" means
+# richest in the data we need rather than in incidental React bookkeeping.
+INFORMATIVE_KEYS = (
+    "title", "description", "points", "isCompleted", "date",
+    "destination", "ctaUrl", "ctaText", "href",
+)
+
+
+def is_present(value: Any) -> bool:
+    """
+    Whether a flight-stream field carries a value.
+
+    The stream writes an absent optional as the literal string `"$undefined"`, not as
+    null, so a plain `is not None` test counts it as data and lets it win a merge.
+    """
+    return value is not None and value != "$undefined"
+
+
+def merge_offer_objects(objs: list[dict]) -> dict:
+    """
+    Combine every object the stream ships for one offer id into a single dict.
+
+    A card is not one object. On 2026-08-19 each daily-set card arrived as two: the
+    rendered element, carrying `offerId`, `isCompleted`, `href` and `children`, and the
+    data behind it, carrying `title`, `points`, `destination` and `date`. Neither is
+    complete alone — the element has no points, the data has no children.
+
+    The previous version deduplicated on `(offerId, title, points, isCompleted)`. Since
+    the two copies disagree on exactly those fields, both survived, and a three-card
+    daily set parsed as six outstanding — three of them with no title, no points and no
+    destination to open. The comment there already said "keep the richest copy"; this is
+    that, implemented.
+
+    Richest wins per field, and earlier-ranked copies are not overwritten by poorer
+    ones, so a populated `title` is never replaced by a missing one.
+    """
+    ranked = sorted(
+        objs,
+        key=lambda o: sum(is_present(o.get(k)) for k in INFORMATIVE_KEYS),
+        reverse=True,
+    )
+    merged: dict = {}
+    for obj in ranked:
+        for key, value in obj.items():
+            if is_present(value):
+                merged.setdefault(key, value)
+
+    # Completion is the one field where disagreement must not be resolved by rank.
+    # Re-doing a finished card costs a wasted navigation; skipping an unfinished one
+    # loses the points silently, and the per-card confirmation catches the first case
+    # anyway. So when the copies disagree, treat the card as still to do.
+    flags = {o["isCompleted"] for o in objs if isinstance(o.get("isCompleted"), bool)}
+    if len(flags) > 1:
+        logger.warning(
+            "Offer %s reports both complete and incomplete; treating it as outstanding.",
+            merged.get("offerId"),
+        )
+        merged["isCompleted"] = False
+
+    return merged
+
+
+# --------------------------------------------------------------------------- #
 # Flight-stream extraction
 # --------------------------------------------------------------------------- #
 
@@ -284,20 +350,19 @@ def parse_dashboard(html: str) -> DashboardState:
         return DashboardState()
 
     state = DashboardState()
-    seen: set[tuple] = set()
 
+    # One card ships as more than one object, so group by id before building Offers.
+    grouped: dict[str, list[dict]] = {}
     for obj in iter_objects_containing(stream, "offerId"):
         offer_id = obj.get("offerId")
         if not isinstance(offer_id, str) or not offer_id:
             continue
+        grouped.setdefault(offer_id, []).append(obj)
+
+    for offer_id, objs in grouped.items():
+        obj = merge_offer_objects(objs)
         points = obj.get("points")
         completed = obj.get("isCompleted")
-        # The same offer can appear more than once (card plus a modal, say); keep the
-        # richest copy rather than the first one encountered.
-        fingerprint = (offer_id, obj.get("title"), points, completed)
-        if fingerprint in seen:
-            continue
-        seen.add(fingerprint)
 
         state.offers.append(
             Offer(
@@ -307,7 +372,10 @@ def parse_dashboard(html: str) -> DashboardState:
                 points=points if isinstance(points, int) else None,
                 is_completed=completed if isinstance(completed, bool) else None,
                 date_text=obj.get("date"),
-                destination=obj.get("destination") or obj.get("ctaUrl"),
+                # href is the element copy's name for the same URL; measured equal to
+                # destination on every card of the 2026-08-19 capture. Kept as a last
+                # fallback because a card with no destination cannot be opened at all.
+                destination=obj.get("destination") or obj.get("ctaUrl") or obj.get("href"),
                 cta_text=obj.get("ctaText"),
                 raw=obj,
             )

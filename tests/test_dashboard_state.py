@@ -28,7 +28,9 @@ import pytest
 from utils.dashboard_state import (
     Offer,
     extract_flight_stream,
+    is_present,
     iter_objects_containing,
+    merge_offer_objects,
     parse_dashboard,
 )
 
@@ -111,6 +113,75 @@ def test_query_is_recovered_from_both_destination_shapes(state, title, expected)
 
 def test_query_is_none_when_there_is_no_destination():
     assert Offer(offer_id="X", destination=None).query is None
+
+
+# --------------------------------------------------------------------------- #
+# One card, several objects
+# --------------------------------------------------------------------------- #
+#
+# Found live on 2026-08-19: a dry run reported six outstanding cards for a set that
+# has three. Each card shipped as two objects — the rendered element (offerId,
+# isCompleted, href) and the data behind it (title, points, destination) — and the
+# dedup key included the very fields the two copies disagree on, so both survived.
+# The fixture carries an element copy of Child1 to keep that shape covered.
+
+
+def test_one_offer_per_id_however_many_objects_ship_it(state):
+    """The count is the assertion: three daily-set cards must never parse as six."""
+    ids = [o.offer_id for o in state.offers]
+    assert len(ids) == len(set(ids)), f"duplicated offer ids: {ids}"
+
+
+def test_the_split_card_keeps_the_data_half(state):
+    """
+    Child1 arrives twice and only one copy has the points and the destination. Losing
+    them leaves a card that cannot be opened and cannot be valued — which is what the
+    live run produced.
+    """
+    card = next(o for o in state.offers if o.slot == "Child1" and o.day == TODAY)
+    assert card.title == "Direct query card"
+    assert card.points == 10
+    assert card.destination, "no destination — the card could not be opened"
+    assert card.query == "Sport events near me"
+
+
+def test_undefined_does_not_win_a_merge():
+    """The stream writes an absent optional as the string "$undefined", not as null."""
+    assert is_present("$undefined") is False
+    merged = merge_offer_objects([
+        {"offerId": "X", "title": "$undefined"},
+        {"offerId": "X", "title": "real", "points": 10},
+    ])
+    assert merged["title"] == "real"
+
+
+def test_richest_copy_wins_field_by_field():
+    merged = merge_offer_objects([
+        {"offerId": "X", "isCompleted": False, "href": "h"},
+        {"offerId": "X", "title": "t", "points": 10, "destination": "d"},
+    ])
+    assert merged["title"] == "t" and merged["points"] == 10
+    assert merged["href"] == "h", "a field only the poorer copy has must survive"
+
+
+def test_href_is_a_last_resort_destination():
+    """Without it, a card whose data half never shipped cannot be opened at all."""
+    state = parse_dashboard("")
+    state.offers.append(Offer(offer_id="X", destination="https://e.invalid/?q=abc"))
+    assert state.offers[0].query == "abc"
+
+
+def test_disagreement_about_completion_counts_as_outstanding():
+    """
+    Re-doing a finished card wastes a navigation and the per-card check catches it;
+    skipping an unfinished one loses the points with nothing to notice. So the
+    ambiguous case must fall on the side of doing the work.
+    """
+    merged = merge_offer_objects([
+        {"offerId": "X", "isCompleted": True, "title": "t", "points": 10},
+        {"offerId": "X", "isCompleted": False},
+    ])
+    assert merged["isCompleted"] is False
 
 
 # --------------------------------------------------------------------------- #

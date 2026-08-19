@@ -19,7 +19,20 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: ready to start, one day late
+## Status: counting, from 2026-08-18
+
+| Run | Result |
+|---|---|
+| 2026-08-17 | Pre-dates the verdict fields. Not counted. |
+| **2026-08-18** | **Clean.** 3/3, 9/9, 3/3, +105, no errors. **Counted: 1 of 14.** |
+| 2026-08-19 | `daily_set` 2/3 — `Child1` never registered. **Not counted; count restarts.** |
+
+Next counted run resets the sequence to 1. See `DEVELOP.md` for the `Child1`
+hypothesis: a `referandearn` card may not be completable by visiting it at all, in
+which case this is expected behaviour to recognise rather than a failure to fix — but
+that needs a second sighting before it can be concluded.
+
+## How day one went
 
 Day 1 was attempted on 2026-08-19 and held. The `--dry-run` reported **six**
 outstanding daily-set cards for a three-card set — `Child1`, `Child2` and `Child3`
@@ -48,9 +61,16 @@ Not a duration — a measurement, because the instrument already exists:
 > **14 consecutive recorded runs with an empty `Flags` column and no unexplained
 > `overall_delta`.**
 
-`utils/shortfall.py` emits `zero` / `short` / `unknown` per task and `--history` shows
-them in `Flags`. That makes "stable" machine-checkable, and distinguishes *nothing broke*
-from *I did not look* — which a calendar count cannot.
+`Flags` is empty only when every task cleared all three of: a verdict that is not
+`zero` / `short` / `unknown`, no recorded errors, and `done == attempted`.
+
+The last two were added on 2026-08-19, because the first alone was not enough. That
+run failed a daily-set card outright and still recorded `verdict: ok`, since 20 points
+of an advertised 30 clears the 0.6 tolerance in `utils/shortfall.py`. The tolerance is
+correct — advertised values are a guide, not a contract, and an Explore run has
+measured 50 against 40 stated — but a run carrying a recorded error is never clean,
+whatever it earned. Leaning on the verdict alone reintroduced exactly the silent
+failure this project exists to remove.
 
 **A missed day extends the window by a day; it does not restart the count.** Absence of
 evidence is not evidence of instability. Only an **unexplained** flag restarts it.

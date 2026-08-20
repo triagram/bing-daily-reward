@@ -231,7 +231,31 @@ padlock and the caption "Unlocks tomorrow". A run must therefore read
 `isLocked`/`isDisabled` and skip, or it will spend effort on tiles that cannot pay — and
 must not infer availability from what the section lists.
 
-**Sketch, when the window allows it:** select on `exploreonbing` and not locked; open the
+**First attempt failed, on a locked tile (2026-08-20).** The account holder opened
+`creditreport` — "Know your score", which renders first in the section — reported that
+it led to a blank Bing page requiring them to type the query themselves, and searched
+related terms. Captures either side, 20:54 and 21:11:
+
+- **No tile changed.** `isCompleted` False on all eight before and after; `isLocked` and
+  `isDisabled` unchanged; not one field differed on any tile.
+- **The balance rose 21 points** in the same window — seven ordinary searches at three.
+  So the searching did earn, through the normal allowance, and nothing reached the offer.
+
+`creditreport` was `isLocked: true` in both captures, so the simplest reading is that a
+locked tile cannot pay however it is searched, and the attempt tested nothing about the
+mechanism. Rendering order is not availability: it sits at the top of the section while
+locked, with "Unlocks tomorrow" beside it. **Retest on one of the four open tiles before
+concluding anything about how these credit.**
+
+**Reported unreliable by hand.** The account holder describes credit for this offer type
+as hit-and-miss with an apparent delay, across attempts predating this project. If that
+holds, it changes whether the task is worth building at all: a task that often does the
+work and earns nothing would drive `shortfall` to `zero`/`short` on ordinary days, and
+`Flags` is the instrument the observation window's exit criterion reads. Building it
+would mean giving it a best-effort verdict of its own rather than the standard
+comparison — otherwise the fix for silent failure becomes a source of false alarms.
+
+**Sketch, when the window allows it and the mechanism is confirmed:** select on `exploreonbing` and not locked; open the
 tile with `execute_action_and_cleanup_new_tab`; in the tab it opens, type a query derived
 from the topic in the offer id — typed, never navigated (Q1) — and confirm that tile's own
 `isCompleted` flipped before counting it, as every other task does. The topic comes from

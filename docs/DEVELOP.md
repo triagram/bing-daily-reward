@@ -607,7 +607,39 @@ records what would be needed.
 Neither of these blocks anything, and neither has an explanation. Recorded so they are
 not rediscovered from scratch, and so a future sighting can be recognised as a repeat.
 
-### CORRECTED 2026-08-20 — the automation profile reads account-wide; the account holder's Chrome under-reports
+### CLOSED 2026-08-20 — it was one local Chrome profile, not Rewards behaviour
+
+An incognito window on the same machine agrees with the automation profile. So the
+server serves one truth, the automation profile reads it correctly, and the account
+holder's ordinary Chrome profile is the only thing disagreeing. Nothing here was ever a
+Rewards behaviour, and nothing in this project was affected.
+
+**The symptom pair points at a wrong clock rather than a stale cache**, because a cache
+cannot run *fast*:
+
+| Symptom in that profile | Stale cache? |
+|---|---|
+| "Today's points 0" while the account had earned 120 | yes — old data |
+| Explore tiles showing **tomorrow's** unlocked four | **no** — a cache serves older, never newer |
+
+Both follow from the page computing "now" a day ahead: today's earnings bucket is empty,
+and the unlock comparison picks tomorrow's four. It also explains why mornings looked
+fine — shortly after the 00:00 UTC reset both buckets read zero, and `0 == 0` is not
+agreement. Prime suspects, in order: an extension that overrides `Date`/`Intl`
+(anti-fingerprinting and timezone-switching extensions do exactly this), a registered
+service worker, then site storage.
+
+**Consequence worth keeping.** Availability must be read from the payload's `isLocked`,
+never from what a browser renders. The account holder's failed attempt on `creditreport`
+is explained: their profile showed it unlocked while the server had it locked until the
+next day, so no amount of searching could have credited it.
+
+**And the machine's timezone is not involved:** `Europe/London` (BST, UTC+1), NTP
+synchronised, with both browsers on the same machine.
+
+---
+
+**Superseded 2026-08-20 — the automation profile reads account-wide; the account holder's Chrome under-reports**
 
 The entry below concluded that each browser reports its own share. **That is wrong**, and
 a screenshot taken 2026-08-20 21:17 from the automation profile shows why:

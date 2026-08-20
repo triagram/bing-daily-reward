@@ -217,11 +217,19 @@ a current run measures. This is the largest known gap in coverage, ahead of Q8.
 | nested image `alt` | the title — "Take off soon" |
 | `href` | the Bing home page with `rwAutoFlyout=exb` |
 
-**Tiles unlock progressively.** The page renders locked ones greyscale with a padlock and
-the caption "Unlocks tomorrow"; five were open on 08-20 and more were not. So a run must
-read `isLocked`/`isDisabled` and skip, or it will spend effort on tiles that cannot pay.
-That also explains `0/40` alongside five `+10` tiles: the cap and the visible count need
-not agree.
+**Tiles unlock progressively, and the lock state explains the cap.** Read off a capture
+taken 2026-08-20 20:54, before any of them was completed:
+
+| Topic | `isCompleted` | `isLocked` / `isDisabled` |
+|---|---|---|
+| `airlinetickets`, `airportparking`, `flowerdelivery`, `streamingservices` | False | **false — open** |
+| `creditreport`, `health`, `recipe`, `videogames` | False | true — locked |
+
+Four open at 10 points each is exactly the **`0/40`** the section header shows, so the cap
+counts the unlocked tiles rather than all eight. Locked ones render greyscale with a
+padlock and the caption "Unlocks tomorrow". A run must therefore read
+`isLocked`/`isDisabled` and skip, or it will spend effort on tiles that cannot pay — and
+must not infer availability from what the section lists.
 
 **Sketch, when the window allows it:** select on `exploreonbing` and not locked; open the
 tile with `execute_action_and_cleanup_new_tab`; in the tab it opens, type a query derived

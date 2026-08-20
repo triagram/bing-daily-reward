@@ -614,20 +614,27 @@ server serves one truth, the automation profile reads it correctly, and the acco
 holder's ordinary Chrome profile is the only thing disagreeing. Nothing here was ever a
 Rewards behaviour, and nothing in this project was affected.
 
-**The symptom pair points at a wrong clock rather than a stale cache**, because a cache
-cannot run *fast*:
+**A stale cache is ruled out, and so is a wrong clock.** The first because a cache
+serves older data and never newer, while that profile shows *tomorrow's* unlocked four.
+The second by measurement: `new Date()` returns the same correct
+`Thu Aug 20 2026 22:45 GMT+0100` in the ordinary profile and in incognito, so nothing is
+overriding the page's notion of now.
 
-| Symptom in that profile | Stale cache? |
-|---|---|
-| "Today's points 0" while the account had earned 120 | yes — old data |
-| Explore tiles showing **tomorrow's** unlocked four | **no** — a cache serves older, never newer |
+| Symptom in that profile | Stale cache | Fast clock |
+|---|---|---|
+| "Today's points 0" while the account had earned 120 | possible | possible |
+| Explore tiles showing **tomorrow's** unlocked four | **no** | possible |
+| `new Date()` identical to incognito | — | **no** |
 
-Both follow from the page computing "now" a day ahead: today's earnings bucket is empty,
-and the unlock comparison picks tomorrow's four. It also explains why mornings looked
-fine — shortly after the 00:00 UTC reset both buckets read zero, and `0 == 0` is not
-agreement. Prime suspects, in order: an extension that overrides `Date`/`Intl`
-(anti-fingerprinting and timezone-switching extensions do exactly this), a registered
-service worker, then site storage.
+What survives is per-profile *server-side* differentiation: a cookie in that profile —
+an experiment or flight assignment — putting it on a different build or a different
+offer rotation. Incognito carries no such cookie and lands on the default, which is what
+the automation profile also sees. That fits both symptoms without needing the client to
+be wrong about anything, and it predicts that clearing the site's storage restores
+agreement.
+
+The "mornings were fine" pattern dissolves either way: shortly after the 00:00 UTC reset
+both today and tomorrow read zero, and `0 == 0` is not agreement.
 
 **Consequence worth keeping.** Availability must be read from the payload's `isLocked`,
 never from what a browser renders. The account holder's failed attempt on `creditreport`

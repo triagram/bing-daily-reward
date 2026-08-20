@@ -19,18 +19,24 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: counting, from 2026-08-18
+## Status: counting, 1 of 14 (from 2026-08-20)
 
 | Run | Result |
 |---|---|
 | 2026-08-17 | Pre-dates the verdict fields. Not counted. |
-| **2026-08-18** | **Clean.** 3/3, 9/9, 3/3, +105, no errors. **Counted: 1 of 14.** |
-| 2026-08-19 | `daily_set` 2/3 — `Child1` never registered. **Not counted; count restarts.** |
+| 2026-08-18 | Clean, +105 — but the sequence it started was broken the next day. |
+| 2026-08-19 | `daily_set` 2/3, `Child1` never registered. **Broke the sequence.** |
+| **2026-08-20** | **Clean.** 3/3, 8/8, 3/3, +99, no errors. **1 of 14.** |
 
-Next counted run resets the sequence to 1. See `DEVELOP.md` for the `Child1`
-hypothesis: a `referandearn` card may not be completable by visiting it at all, in
-which case this is expected behaviour to recognise rather than a failure to fix — but
-that needs a second sighting before it can be concluded.
+2026-08-20 is the first run judged under the tightened criterion, and it is exactly
+what a counted run should look like: 50 + 24 + 25 = 99, every task matching its
+advertised value, nothing in `Flags`.
+
+Two things it also confirmed, incidentally: the parser fix holds on a live page for a
+second day (`3 outstanding`, not six), and the allowance read `0/60` on a fresh day.
+
+The `Child1` referral hypothesis is **still untested** — that slot held an ordinary
+search card today, so no `referandearn` card has appeared since. See `DEVELOP.md`.
 
 ## How day one went
 

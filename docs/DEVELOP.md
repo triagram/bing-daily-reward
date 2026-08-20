@@ -226,7 +226,20 @@ taken 2026-08-20 20:54, before any of them was completed:
 | `creditreport`, `health`, `recipe`, `videogames` | False | true — locked |
 
 Four open at 10 points each is exactly the **`0/40`** the section header shows, so the cap
-counts the unlocked tiles rather than all eight. Locked ones render greyscale with a
+counts the unlocked tiles rather than all eight.
+
+**The pool rotates daily, and "Unlocks tomorrow" is literal.** Captures a day apart:
+
+| Capture | Open | Locked |
+|---|---|---|
+| 08-19 22:19 | `bankaccounts`, `concerttickets`, `lyrics`, `rentalcars` | `airlinetickets`, `airportparking`, `flowerdelivery`, `streamingservices` |
+| 08-20 20:54 | **`airlinetickets`, `airportparking`, `flowerdelivery`, `streamingservices`** | `creditreport`, `health`, `recipe`, `videogames` |
+
+Yesterday's locked four are today's open four, and four fresh topics arrive locked. So
+the section is worth a steady **40 points a day**, not a backlog to clear, and a run
+should take exactly the unlocked four and leave the rest — they are tomorrow's work, not
+missed work. Four captures across 34 minutes on 08-20 were identical, so the rotation is
+not drifting within a day. Locked ones render greyscale with a
 padlock and the caption "Unlocks tomorrow". A run must therefore read
 `isLocked`/`isDisabled` and skip, or it will spend effort on tiles that cannot pay — and
 must not infer availability from what the section lists.

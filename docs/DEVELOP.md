@@ -594,7 +594,42 @@ records what would be needed.
 Neither of these blocks anything, and neither has an explanation. Recorded so they are
 not rediscovered from scratch, and so a future sighting can be recognised as a repeat.
 
-### RESOLVED — the daily widgets are scoped to the browser, not the account
+### CORRECTED 2026-08-20 — the automation profile reads account-wide; the account holder's Chrome under-reports
+
+The entry below concluded that each browser reports its own share. **That is wrong**, and
+a screenshot taken 2026-08-20 21:17 from the automation profile shows why:
+
+```
+Today's points  120
+```
+
+Today's account-wide earnings were the run's **+99** (108,083 → 108,182) plus **+21** the
+account holder earned afterwards by searching **in their own Chrome** (108,182 →
+108,203). 99 + 21 = 120. So the automation profile counts activity performed in the
+*other* browser — it is reading account-wide, not its own share.
+
+The same reading is already in an earlier measurement that was noted and not followed
+up: the points-breakdown modal read `Bing search 39/60` from the automation profile on
+08-19 while the bot itself had done 33 points of searching. The extra 6 was not its own.
+
+**So the divergence is one-sided.** The automation profile shows the truth; the account
+holder's Chrome showed `0` for a day in which the account earned 81. What is wrong with
+that browser is unknown — a hard refresh did not fix it, and it renders the balance
+correctly, so it is not a stale page.
+
+**Consequence, and it reverses the earlier advice:** the bot's allowance guard in
+`fetch_search_progress` reads the same modal, so it **does** see manual searching done
+elsewhere and will trim its count accordingly. That was the mechanism's whole purpose
+and it works. The account holder is free to search by hand without confusing the run's
+measurement, and the "search only after the run" habit is a convenience, not a
+requirement.
+
+**Still unexplained:** the 08-16 pair below, where the two browsers showed *different
+non-zero* figures. If the automation profile is account-wide it should have read 170
+that day, and it read 60. The reads were half an hour apart, which may or may not
+account for it.
+
+### Superseded — the daily widgets are scoped to the browser, not the account
 
 Confirmed 2026-08-19, 23:30ish, by reading the same widget in both browsers at once:
 

@@ -196,19 +196,39 @@ Two reasons it is skipped, and the second is the interesting one:
 2. **They are not links to a search result.** Every offer `run_explore` completes points
    at `bing.com/search?q=…`; these point at
    `https://www.bing.com/?…&rwAutoFlyout=exb` — the Bing **home page**, with a flyout
-   parameter. Combined with copy that reads "Search on Bing to book affordable flights
-   for your next trip", the strong reading is that credit comes from performing a real
-   search on that topic, not from opening the tile. `execute_action_and_cleanup_new_tab`
-   would open the page and earn nothing.
+   parameter.
+
+**Mechanism, from the account holder who has completed these by hand (2026-08-20): the
+tile must be opened *and* the topic searched — both, together.** Not the tile alone, and
+not a search on its own either. `rwAutoFlyout=exb` reads as arming the offer for the
+session it opens; the search then has to happen in that context. This supersedes the
+inference recorded first, which had it as a search *instead of* opening the tile.
 
 **Worth roughly 40 points a day** — comparable to an entire daily set, against the ~99
 a current run measures. This is the largest known gap in coverage, ahead of Q8.
 
-**What would confirm the mechanism, at no cost:** do the five searches by hand and watch
-whether the counter moves off `0/40`. If it does, the follow-up is a task that reads the
-tile's topic and issues a typed search for it — reusing `_search_once`, which already
-types rather than navigates for exactly this reason (Q1). If it does not, the credit
-comes from something else and the tile needs studying before any code is written.
+**Structure to build on**, from the 2026-08-19 `/earn` capture:
+
+| Where | What |
+|---|---|
+| `instrument.name` | `"ExploreOnBing_Card"` — a clean family marker, steadier than an id substring |
+| `offerId` | carries the topic: `airlinetickets`, `airportparking`, `flowerdelivery`, `streamingservices`, `bankaccounts`, `concerttickets`, `lyrics`, `rentalcars` |
+| `isLocked` / `isDisabled` | **both `true` on the airlinetickets tile on 08-19** |
+| nested image `alt` | the title — "Take off soon" |
+| `href` | the Bing home page with `rwAutoFlyout=exb` |
+
+**Tiles unlock progressively.** The page renders locked ones greyscale with a padlock and
+the caption "Unlocks tomorrow"; five were open on 08-20 and more were not. So a run must
+read `isLocked`/`isDisabled` and skip, or it will spend effort on tiles that cannot pay.
+That also explains `0/40` alongside five `+10` tiles: the cap and the visible count need
+not agree.
+
+**Sketch, when the window allows it:** select on `exploreonbing` and not locked; open the
+tile with `execute_action_and_cleanup_new_tab`; in the tab it opens, type a query derived
+from the topic in the offer id — typed, never navigated (Q1) — and confirm that tile's own
+`isCompleted` flipped before counting it, as every other task does. The topic comes from
+the id rather than from the description prose, on the same reasoning that anchors
+selectors on URL signatures rather than CSS.
 
 **Quests** are bundles like "Make this August more rewarding, +50, 0/4 tasks" and
 "Spotify playlists on the house, 0/6 tasks", with an expiry. Their sub-tasks are the

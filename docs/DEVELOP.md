@@ -160,7 +160,7 @@ distinct task types:
 
 | Section | Status |
 |---|---|
-| **Explore on Bing** | covered by `run_explore` |
+| **Explore on Bing** | ❌ **not covered** — corrected 2026-08-20, see below |
 | **Keep earning** | **already covered** — same offers, different heading |
 | **Quests** | multi-task bundles; progress is a by-product of the daily work |
 | **Level up activities** | long-running achievements, not clickable tasks |
@@ -172,6 +172,43 @@ four `run_explore` had completed the day before. Selecting offers by *having a p
 value and being incomplete*, rather than by which heading renders them, covers the
 page's sections without knowing they exist. Worth preserving: a section-anchored
 selector would have missed these and needed a module per heading.
+
+**Correction, 2026-08-20: "Explore on Bing" was never covered.** The claim above was
+made by matching titles across headings and it matched the wrong ones. What
+`run_explore` actually does is `WW_Bing_MonthlyFeaturedTopic_*` and
+`ENstar_Rewards_DailyGlobalOffer_*` — Gong instrument music, Explore the reef, Quote of
+the day — which render under other headings. The literal "Explore on Bing" section is a
+different offer family and the bot has never touched one.
+
+Observed on the live page, 2026-08-20: the section reads **`0/40`** and carries tiles
+worth **+10 each** — Take off soon, Park with ease, Send a smile, Stream your
+favourites, Know your score, plus others marked "Unlocks tomorrow".
+
+Two reasons it is skipped, and the second is the interesting one:
+
+1. **`outstanding_offers()` filters them out.** Their payload has no `points` field at
+   all, and that selector treats a missing point value as the signature of a banner.
+   The rendered `+10` comes from somewhere other than the object the parser reads.
+   Their ids are `ENUS_<topic>_exploreonbing_activation_Evergreen…`, and their payload
+   keys are `children, hash, href, isCompleted, isDisabled, isLocked, successToast` —
+   a different shape from every offer the bot handles.
+
+2. **They are not links to a search result.** Every offer `run_explore` completes points
+   at `bing.com/search?q=…`; these point at
+   `https://www.bing.com/?…&rwAutoFlyout=exb` — the Bing **home page**, with a flyout
+   parameter. Combined with copy that reads "Search on Bing to book affordable flights
+   for your next trip", the strong reading is that credit comes from performing a real
+   search on that topic, not from opening the tile. `execute_action_and_cleanup_new_tab`
+   would open the page and earn nothing.
+
+**Worth roughly 40 points a day** — comparable to an entire daily set, against the ~99
+a current run measures. This is the largest known gap in coverage, ahead of Q8.
+
+**What would confirm the mechanism, at no cost:** do the five searches by hand and watch
+whether the counter moves off `0/40`. If it does, the follow-up is a task that reads the
+tile's topic and issues a typed search for it — reusing `_search_once`, which already
+types rather than navigates for exactly this reason (Q1). If it does not, the credit
+comes from something else and the tile needs studying before any code is written.
 
 **Quests** are bundles like "Make this August more rewarding, +50, 0/4 tasks" and
 "Spotify playlists on the house, 0/6 tasks", with an expiry. Their sub-tasks are the

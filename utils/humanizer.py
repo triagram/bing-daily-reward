@@ -146,6 +146,104 @@ async def handle_quiz_or_poll_on_page(page: Page):
     except Exception as e:
         logger.debug(f"Quiz/Poll solver note: {e}")
 
+
+async def find_offer_anchor(page: Page, destination: str | None,
+                            query: str | None) -> Locator | None:
+    """
+    Locate a card's own anchor on the page, or return None to let the caller fall back.
+
+    Matches the **whole** destination URL rather than a fragment of it. Both failures
+    seen on 2026-08-21 came from matching a fragment:
+
+    - The first word of the query is not unique. "How crystals form" and "How do
+      magnets work" were both on the page, both reduced to the needle `How`, and
+      `.first` clicked the same card twice — so the second offer reported a successful
+      `anchor-click` while never being opened, and never completed.
+    - Percent-encoding case varies between cards. One card rendered
+      `ru=%2fsearch%3fq%3dweekly+quiz` and another `%2Fsearch%3Fq%3Dtechnology`, on the
+      same page. A selector written for `q%3D` misses the lowercase one entirely, which
+      is why a perfectly ordinary daily-set card fell through to direct navigation and
+      did not register.
+
+    The whole URL fixes both: it is unique per card, and the `i` flag absorbs the
+    encoding case. Measured against the 2026-08-21 capture, every daily-set card and
+    every outstanding Explore offer matched exactly one anchor this way, including the
+    two the needle approach got wrong.
+
+    The needle remains as a fallback for a page whose anchors differ from the payload's
+    destination, but only when it identifies **one** anchor — an ambiguous needle is
+    the bug above, so clicking its first match is worse than not clicking at all.
+    """
+    if destination:
+        url = destination.replace("\\u0026", "&")
+        # URLs do not normally carry either, but a selector broken by one would be
+        # indistinguishable from a card that is simply absent.
+        escaped = url.replace("\\", "\\\\").replace('"', '\\"')
+        anchor = page.locator(f'a[href="{escaped}" i]')
+        try:
+            if await anchor.count() >= 1:
+                return anchor.first
+        except Exception as e:
+            logger.debug(f"destination match failed for {url[:60]}: {e}")
+
+    if query:
+        needle = query.split()[0]
+        loose = page.locator(f'a[href*="q={needle}" i], a[href*="q%3D{needle}" i]')
+        try:
+            n = await loose.count()
+            if n == 1:
+                return loose.first
+            if n > 1:
+                logger.debug(f"needle {needle!r} matched {n} anchors; not guessing")
+        except Exception as e:
+            logger.debug(f"needle match failed for {needle!r}: {e}")
+
+    return None
+
+
+async def reconcile_late_completions(
+    unconfirmed: dict[str, str],
+    recheck: Callable[[], Awaitable[set[str]]],
+    wait_seconds: float = 25.0,
+) -> set[str]:
+    """
+    Re-check items that looked unfinished, once, after giving credit time to land.
+
+    Crediting lags. On 2026-08-21 an Explore offer was checked about twenty seconds
+    after its card was worked, reported as failed, and was marked complete on the next
+    read ten minutes later — with the balance up by exactly its five points. The run had
+    already recorded an error and a `short` verdict for work that succeeded.
+
+    That matters more than the miscount. `Flags` fires on a recorded error, and the
+    observation window's exit criterion reads `Flags`, so a late credit turns a clean
+    run dirty. A check that cries wolf is the same failure as one that stays silent,
+    pointed the other way.
+
+    One pass, after the loop rather than inside it: a per-item wait would slow every run
+    to fix an occasional case, and the items still have the rest of the run to settle in.
+
+    Returns the keys that turned out complete, for the caller to subtract from its own
+    errors — leaving the error behind would defeat the point of asking again.
+    """
+    if not unconfirmed:
+        return set()
+
+    logger.info(
+        f"   {len(unconfirmed)} not confirmed; waiting {wait_seconds:.0f}s and "
+        "re-reading before calling them failed"
+    )
+    await asyncio.sleep(wait_seconds)
+    try:
+        completed = await recheck()
+    except Exception as e:
+        logger.warning(f"   reconciliation read failed: {e}")
+        return set()
+
+    late = set(unconfirmed) & completed
+    for key in late:
+        logger.info(f"     ✓ {key} completed after all — credit was late")
+    return late
+
 async def execute_action_and_cleanup_new_tab(
     context: BrowserContext, 
     action_coro: Callable[[], Awaitable[None]], 

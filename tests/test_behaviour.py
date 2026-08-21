@@ -302,3 +302,51 @@ def test_run_log_absent_is_empty_not_an_error(tmp_path, monkeypatch):
 
     monkeypatch.setattr(rewards_bot, "RUN_LOG", tmp_path / "nope.jsonl")
     assert rewards_bot.load_runs() == []
+
+
+# --------------------------------------------------------------------------- #
+# Late completions
+# --------------------------------------------------------------------------- #
+
+
+def test_reconciliation_returns_only_the_pending_items_that_finished():
+    """
+    An offer checked twenty seconds after its card was worked reported failed on
+    2026-08-21 and was complete on the next read, with the balance up by its points.
+    The re-check must claim that one and nothing else.
+    """
+    import asyncio
+    from utils.humanizer import reconcile_late_completions
+
+    pending = {"news_quiz": "news_quiz: not marked complete after anchor-click",
+               "magnet": "magnet: not marked complete after anchor-click"}
+
+    async def recheck():
+        # `crystals` finished during the run and is not pending; it must not be counted.
+        return {"news_quiz", "crystals"}
+
+    late = asyncio.run(reconcile_late_completions(pending, recheck, wait_seconds=0))
+    assert late == {"news_quiz"}
+
+
+def test_reconciliation_of_nothing_does_not_wait():
+    import asyncio
+    from utils.humanizer import reconcile_late_completions
+
+    async def recheck():
+        raise AssertionError("must not re-read when nothing is pending")
+
+    assert asyncio.run(reconcile_late_completions({}, recheck, wait_seconds=999)) == set()
+
+
+def test_a_failed_reconciliation_read_leaves_the_failures_standing():
+    """Unable to re-check is not evidence of success; the errors must survive."""
+    import asyncio
+    from utils.humanizer import reconcile_late_completions
+
+    async def recheck():
+        raise RuntimeError("page gone")
+
+    late = asyncio.run(reconcile_late_completions(
+        {"a": "a: failed"}, recheck, wait_seconds=0))
+    assert late == set()

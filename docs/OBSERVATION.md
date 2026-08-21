@@ -19,18 +19,34 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: counting, 1 of 14 (from 2026-08-20)
+## Status: 0 of 14 — restarted 2026-08-21
 
 | Run | Result |
 |---|---|
 | 2026-08-17 | Pre-dates the verdict fields. Not counted. |
 | 2026-08-18 | Clean, +105 — but the sequence it started was broken the next day. |
 | 2026-08-19 | `daily_set` 2/3, `Child1` never registered. **Broke the sequence.** |
-| **2026-08-20** | **Clean.** 3/3, 8/8, 3/3, +99, no errors. **1 of 14.** |
+| 2026-08-20 | Clean, +99 — broken the next day. |
+| **2026-08-21** | `daily_set` 2/3, `explore` 1/3 `short`, +57. **Broke the sequence. Count is 0.** |
 
-2026-08-20 is the first run judged under the tightened criterion, and it is exactly
-what a counted run should look like: 50 + 24 + 25 = 99, every task matching its
-advertised value, nothing in `Flags`.
+**2026-08-21 paid for the window a second time.** It surfaced three defects that had
+been costing points silently, all fixed in `6992da7` with regression tests:
+
+1. A daily-set card whose URL used lowercase percent-encoding matched no anchor, so it
+   fell through to direct navigation and never registered. The page mixes both cases.
+2. Two Explore offers whose queries began with the same word both resolved to the first
+   card, so the second reported a successful click while never being opened.
+3. A five-point offer reported failed at 11:21 was complete at 11:31. The per-item check
+   runs before credit lands, so the run recorded an error and a `short` verdict for work
+   that had succeeded.
+
+The third is the one that threatens this document directly: `Flags` fires on a recorded
+error, and the exit criterion reads `Flags`. Left alone it would have made clean runs
+look dirty and the count unreachable.
+
+Note what the fixes do **not** do. Two of the three failures were real — the card and
+the offer genuinely did not complete — so 08-21 stays a broken run. A change that made
+it look clean in hindsight would have been over-reaching.
 
 Two things it also confirmed, incidentally: the parser fix holds on a live page for a
 second day (`3 outstanding`, not six), and the allowance read `0/60` on a fresh day.

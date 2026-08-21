@@ -31,6 +31,8 @@ from playwright.async_api import BrowserContext, Page
 from config import REWARDS_URL
 from utils.dashboard_state import Offer
 from utils.humanizer import (
+    find_offer_anchor,
+    reconcile_late_completions,
     dismiss_all_modals_and_drawers,
     handle_quiz_or_poll_on_page,
     human_scroll,
@@ -82,10 +84,8 @@ async def _open_card(page: Page, context: BrowserContext, offer: Offer) -> tuple
     before = set(context.pages)
     method = "none"
 
-    if offer.query:
-        # href encoding varies (spaces as + or %20), so match on a stable slice.
-        needle = offer.query.split()[0]
-        anchor = page.locator(f'a[href*="q={needle}"], a[href*="q%3D{needle}"]').first
+    anchor = await find_offer_anchor(page, offer.destination, offer.query)
+    if anchor is not None:
         try:
             if await anchor.is_visible(timeout=4000):
                 await anchor.click()
@@ -236,6 +236,24 @@ async def run_daily_set(
             result.per_card.append(record)
 
         await random_sleep(3.0, 8.0)
+
+    pending = {r["slot"]: f"{r['slot']}: not marked complete after {r['method']}"
+               for r in result.per_card if not r["confirmed"] and r["method"]}
+    by_slot = {r["slot"]: r["offer_id"] for r in result.per_card}
+
+    async def _recheck() -> set[str]:
+        state = await fetch_state(state_page)
+        done = {o.offer_id for o in state.offers if o.is_completed}
+        return {slot for slot, oid in by_slot.items() if oid in done}
+
+    late = await reconcile_late_completions(pending, _recheck)
+    for slot in late:
+        result.completed += 1
+        result.errors = [e for e in result.errors if e != pending[slot]]
+        for r in result.per_card:
+            if r["slot"] == slot:
+                r["confirmed"] = True
+                r["late"] = True
 
     try:
         after = await fetch_state(state_page)

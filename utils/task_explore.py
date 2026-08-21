@@ -28,6 +28,8 @@ from playwright.async_api import BrowserContext, Page
 from config import EXPLORE_MAX_PER_RUN, REWARDS_EARN_URL
 from utils.dashboard_state import Offer, parse_dashboard
 from utils.humanizer import (
+    find_offer_anchor,
+    reconcile_late_completions,
     dismiss_all_modals_and_drawers,
     handle_quiz_or_poll_on_page,
     human_scroll,
@@ -91,9 +93,8 @@ async def _open_offer(page: Page, context: BrowserContext, offer: Offer) -> tupl
     before = set(context.pages)
     method = "none"
 
-    if offer.query:
-        needle = offer.query.split()[0]
-        anchor = page.locator(f'a[href*="q={needle}"], a[href*="q%3D{needle}"]').first
+    anchor = await find_offer_anchor(page, offer.destination, offer.query)
+    if anchor is not None:
         try:
             if await anchor.is_visible(timeout=4000):
                 await anchor.click()
@@ -231,6 +232,25 @@ async def run_explore(
 
         await random_sleep(4.0, 10.0)
 
+    # Ask again about anything that looked unfinished before calling it a failure.
+    pending = {r["offer_id"]: f"{r['offer_id']}: not marked complete after {r['method']}"
+               for r in result.per_offer if not r["confirmed"] and r["method"]}
+
+    async def _recheck() -> set[str]:
+        state = await _fetch_earn(state_page)
+        return {o.offer_id for o in state.offers if o.is_completed}
+
+    late = await reconcile_late_completions(pending, _recheck)
+    for offer_id in late:
+        result.completed += 1
+        result.errors = [e for e in result.errors if e != pending[offer_id]]
+        for r in result.per_offer:
+            if r["offer_id"] == offer_id:
+                r["confirmed"] = True
+                r["late"] = True
+
+    # Totals last, so a credit that arrived during the wait is counted rather than
+    # leaving the run short against its own corrected completion count.
     try:
         after = await fetch_state(state_page)
         result.total_after = after.total_points

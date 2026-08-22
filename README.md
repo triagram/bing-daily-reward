@@ -66,6 +66,7 @@ bing-daily-reward/
 │   ├── task_daily_set.py       # Task 1 — the three "Daily set" cards, plus point claiming
 │   ├── task_keep_earning.py    # Task 2 — the point-bearing offers under "Keep earning"
 │   ├── task_searches.py        # Task 3 — N Bing searches, closed-loop measured
+│   ├── task_explore_on_bing.py # Task 4 — the "Explore on Bing" tiles (run separately)
 │   ├── claim.py                # Moves the "Ready to claim" pot into the balance
 │   ├── dashboard_state.py      # Pure parser: dashboard HTML → structured offers & counters
 │   ├── state_reader.py         # Thin layer that feeds the parser from a live page
@@ -73,6 +74,7 @@ bing-daily-reward/
 │   ├── shortfall.py            # Judges a run: did it earn what the work was worth?
 │   └── keywords.py             # Date-seeded search-term generation
 │
+├── explore_on_bing.py          # Entry point for task 4, deliberately outside the daily run
 ├── monitor.py                  # Read-only daily sampler — records state, diffs against last run
 ├── recon.py                    # Read-only deep capture — screenshots, DOM, network log
 │
@@ -260,6 +262,9 @@ is a one-time step.
 uv run python rewards_bot.py            # run today's tasks
 uv run python rewards_bot.py --dry-run  # report what it would do, change nothing
 uv run python rewards_bot.py --history  # what past runs earned, per task
+
+uv run python explore_on_bing.py            # the Explore on Bing tiles, after the daily run
+uv run python explore_on_bing.py --dry-run  # which are open today, and what it would search
 ```
 
 Tasks 1 → 2 → 3 run in sequence. A full run takes roughly 4–6 minutes, most of

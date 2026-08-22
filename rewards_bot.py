@@ -27,7 +27,7 @@ from utils.claim import claim_pending
 from utils.shortfall import Verdict, assess
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
-from utils.task_explore import run_explore
+from utils.task_keep_earning import run_keep_earning
 from utils.task_searches import run_daily_searches
 
 RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
@@ -49,9 +49,16 @@ def load_runs() -> list[dict]:
     for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
         if line.strip():
             try:
-                out.append(json.loads(line))
+                run = json.loads(line)
             except ValueError:
-                pass
+                continue
+            # Runs recorded before 2026-08-22 call this task "explore". The name was
+            # dropped because the page has a differently-named section that this task
+            # does not do; the old records are still perfectly good measurements.
+            tasks = run.get("tasks") or {}
+            if "explore" in tasks and "keep_earning" not in tasks:
+                tasks["keep_earning"] = tasks.pop("explore")
+            out.append(run)
     return out
 
 
@@ -72,7 +79,7 @@ def print_history():
     table.add_column("Date", style="cyan", no_wrap=True)
     table.add_column("Daily set", justify="right")
     table.add_column("Searches", justify="right")
-    table.add_column("Explore", justify="right")
+    table.add_column("Keep earning", justify="right")
     table.add_column("Claimed", justify="right")
     table.add_column("Total", justify="right")
     table.add_column("Flags", style="yellow")
@@ -113,7 +120,7 @@ def print_history():
         overall = run.get("overall_delta")
         table.add_row(
             run.get("date", "?"),
-            cell("daily_set"), cell("searches"), cell("explore"),
+            cell("daily_set"), cell("searches"), cell("keep_earning"),
             f"{moved:+d}" if moved else "[dim]—[/dim]",
             f"[bold]{overall:+d}[/bold]" if overall is not None else "[yellow]?[/yellow]",
             flags or "",
@@ -210,9 +217,9 @@ async def main():
             logger.error(f"Searches failed outright: {e}")
 
         try:
-            results["explore"] = await run_explore(context, state_page=page)
+            results["keep_earning"] = await run_keep_earning(context, state_page=page)
         except Exception as e:
-            logger.error(f"Explore failed outright: {e}")
+            logger.error(f"Keep earning failed outright: {e}")
 
         # Claiming goes last: the pot only stops growing once the tasks are done.
         try:

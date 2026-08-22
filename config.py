@@ -20,7 +20,7 @@ POINTS_PER_SEARCH = 3          # measured alongside the allowance
 # How many to actually run: deliberately short of the allowance, and different every
 # day. See daily_search_count() in utils/humanizer.py for why.
 # Searches are the lowest-yield action on the account at 3 points each, against
-# 5-15 for an Explore offer and 10-30 for a daily-set card. So when trading volume
+# 5-15 for a Keep-earning offer and 10-30 for a daily-set card. So when trading volume
 # for a lower profile, this is the number to cut — not the other tasks.
 DAILY_SEARCH_MIN = 8
 DAILY_SEARCH_MAX = 12
@@ -30,12 +30,12 @@ DAILY_SEARCH_MAX = 12
 MIN_DELAY_BETWEEN_SEARCHES = 6.0
 MAX_DELAY_BETWEEN_SEARCHES = 9.0
 
-# Most Explore offers a run will do. Observed outstanding counts have been 1-6, so
+# Most Keep-earning offers a run will do. Observed outstanding counts have been 1-6, so
 # this normally binds on nothing and every offer gets done — it exists only to stop a
 # day where a backlog has piled up from becoming an unusually long burst of activity.
 # Each offer is worth 5-15 points, several times a search, so trimming here is the
 # expensive place to economise; prefer cutting searches (see DAILY_SEARCH_MIN/MAX).
-EXPLORE_MAX_PER_RUN = 6
+KEEP_EARNING_MAX_PER_RUN = 6
 
 # Headless mode: Set to False for visual browser, True for background
 HEADLESS = False

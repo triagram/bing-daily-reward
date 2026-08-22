@@ -161,21 +161,22 @@ distinct task types:
 | Section | Status |
 |---|---|
 | **Explore on Bing** | ❌ **not covered** — corrected 2026-08-20, see below |
-| **Keep earning** | **already covered** — same offers, different heading |
+| **Keep earning** | covered by `run_keep_earning`, which is named for it |
 | **Quests** | multi-task bundles; progress is a by-product of the daily work |
 | **Level up activities** | long-running achievements, not clickable tasks |
 | **Streaks / Stamp Bonus** | earned by turning up daily; nothing to click |
 
 **Keep earning needed no work at all.** Its items on 2026-08-18 were Dinner delight,
 South African vistas, Complete this puzzle and Book Flights with Bing — precisely the
-four `run_explore` had completed the day before. Selecting offers by *having a point
+four `run_keep_earning` had completed the day before. Selecting offers by *having a point
 value and being incomplete*, rather than by which heading renders them, covers the
 page's sections without knowing they exist. Worth preserving: a section-anchored
 selector would have missed these and needed a module per heading.
 
 **Correction, 2026-08-20: "Explore on Bing" was never covered.** The claim above was
 made by matching titles across headings and it matched the wrong ones. What
-`run_explore` actually does is `WW_Bing_MonthlyFeaturedTopic_*` and
+`run_keep_earning` — called `run_explore` until 2026-08-22, which is how the confusion
+started — actually does is `WW_Bing_MonthlyFeaturedTopic_*` and
 `ENstar_Rewards_DailyGlobalOffer_*` — Gong instrument music, Explore the reef, Quote of
 the day — which render under other headings. The literal "Explore on Bing" section is a
 different offer family and the bot has never touched one.
@@ -193,7 +194,7 @@ Two reasons it is skipped, and the second is the interesting one:
    keys are `children, hash, href, isCompleted, isDisabled, isLocked, successToast` —
    a different shape from every offer the bot handles.
 
-2. **They are not links to a search result.** Every offer `run_explore` completes points
+2. **They are not links to a search result.** Every offer `run_keep_earning` completes points
    at `bing.com/search?q=…`; these point at
    `https://www.bing.com/?…&rwAutoFlyout=exb` — the Bing **home page**, with a flyout
    parameter.

@@ -104,6 +104,13 @@ never been validated against Microsoft's detection.
 
 `rewards_bot.py` only orchestrates: launch persistent browser → check login → run three
 tasks in sequence, each in its own `try`/`except` so one failure does not abort the rest.
+
+Task 2 is `utils/task_keep_earning.py`, renamed from `task_explore.py` on 2026-08-22.
+The page has a section headed **"Explore on Bing"** that this task does not do and cannot
+complete as written; the old name made `docs/DEVELOP.md` claim it was covered for two
+days, and made a clean run read as a failure. Do not reintroduce "explore" as a name for
+this task. `runs.jsonl` records written before the rename use the old key and are
+remapped on read.
 Each `utils/task_*.py` owns exactly one Rewards activity and knows nothing about the
 others, so a fourth task is additive. `utils/humanizer.py` is the shared toolbox all tasks
 draw on.

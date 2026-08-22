@@ -1,15 +1,24 @@
 """
-Task 2 — the "Explore on Bing" offers on /earn.
+Task 2 — the point-bearing offers that render under "Keep earning".
 
-Rewritten around the parsed state, like the Daily Set. The previous version anchored
-on an `<h2>Explore on Bing</h2>` heading and a `div[class*='cursor-pointer']` fallback
-that matches 147 elements on that page, then reported `(+10 pts)` for every click that
-did not raise.
+Named for the heading most of them appear under, and deliberately **not** "Explore",
+because that name was wrong twice over. The page has a section literally headed
+"Explore on Bing" holding a different offer family — `ENUS_<topic>_exploreonbing_*`
+tiles that this module has never touched and cannot complete, since they credit only
+when a search is made in the session the tile opens. Calling this task Explore led the
+notes to claim that section was covered when it was not, and led the account holder to
+read a clean run as a failure. See docs/DEVELOP.md.
 
-Three things differ from the Daily Set and shape this module:
+What it actually completes: `WW_Bing_MonthlyFeaturedTopic_*` and
+`ENstar_Rewards_DailyGlobalOffer_*` — quizzes, polls, puzzles and single-search offers
+worth 5-15 points each.
+
+Selection is by *having a point value and being incomplete*, never by which heading
+renders an offer, so the same code covers "Keep earning" and any other section the
+dashboard invents. Two consequences of the offer ids to know:
 
 - **Offer ids carry no date.** Daily-set ids embed one, which is what makes filtering
-  by day possible; Explore ids look like `WW_Rewards_locked_level2_Aug26w2_offer1` or
+  by day possible; these look like `WW_Rewards_locked_level2_Aug26w2_offer1` or
   `ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday`. So "today's offers" cannot be
   selected — only "outstanding" ones, which rotate rather than accumulate (Q7).
 - **Point values vary**: 5, 10 and 15 have all been seen, so what a run is worth is
@@ -25,7 +34,7 @@ from dataclasses import dataclass, field
 
 from playwright.async_api import BrowserContext, Page
 
-from config import EXPLORE_MAX_PER_RUN, REWARDS_EARN_URL
+from config import KEEP_EARNING_MAX_PER_RUN, REWARDS_EARN_URL
 from utils.dashboard_state import Offer, parse_dashboard
 from utils.humanizer import (
     find_offer_anchor,
@@ -42,7 +51,7 @@ logger = logging.getLogger("bing_rewards")
 
 
 @dataclass
-class ExploreResult:
+class KeepEarningResult:
     attempted: int = 0
     completed: int = 0            # confirmed by isCompleted flipping
     total_before: int | None = None
@@ -77,7 +86,7 @@ async def _fetch_earn(page: Page):
 
 def outstanding_offers(state) -> list[Offer]:
     """
-    Explore offers still to do: point-bearing, not a daily-set card, not complete.
+    Offers still to do: point-bearing, not a daily-set card, not complete.
 
     `points` being set is what separates a real offer from a banner. Banners report
     `None` there and lead to app installs and referral pages.
@@ -103,7 +112,7 @@ async def _open_offer(page: Page, context: BrowserContext, offer: Offer) -> tupl
             logger.debug(f"anchor click failed for {offer.offer_id}: {e}")
 
     if method == "none" and offer.title:
-        # Explore cards are not all searches, so some have no query to match on. The
+        # These offers are not all searches, so some have no query to match on. The
         # title is the next most specific handle the parsed offer gives us.
         try:
             card = page.locator(f'a:has-text("{offer.title[:40]}")').first
@@ -142,15 +151,15 @@ async def _open_offer(page: Page, context: BrowserContext, offer: Offer) -> tupl
     return True, method
 
 
-async def run_explore(
+async def run_keep_earning(
     context: BrowserContext,
     state_page: Page | None = None,
     limit: int | None = None,
-) -> ExploreResult:
+) -> KeepEarningResult:
     """
     Complete the outstanding Explore offers.
 
-    `limit` caps how many to do in one run; `None` uses `EXPLORE_MAX_PER_RUN`. There is
+    `limit` caps how many to do in one run; `None` uses `KEEP_EARNING_MAX_PER_RUN`. There is
     no daily boundary to lean on here — Explore ids carry no date — so the cap is what
     keeps a backlog day from becoming an unusually long burst.
 
@@ -158,12 +167,12 @@ async def run_explore(
     4 was in place on 2026-08-17 and silently left a 10-point offer undone out of six.
     When a cap does bind, the highest-value offers go first.
     """
-    result = ExploreResult()
+    result = KeepEarningResult()
     owns_page = state_page is None
     if owns_page:
         state_page = await context.new_page()
 
-    logger.info("⚡ [Explore] Reading state ...")
+    logger.info("⚡ [Keep earning] Reading state ...")
     try:
         before = await fetch_state(state_page)
         result.total_before = before.total_points
@@ -175,7 +184,7 @@ async def run_explore(
             await state_page.close()
         return result
 
-    cap = EXPLORE_MAX_PER_RUN if limit is None else limit
+    cap = KEEP_EARNING_MAX_PER_RUN if limit is None else limit
     available = outstanding_offers(earn)
     # Highest value first, so a cap that binds costs the least.
     available.sort(key=lambda o: o.points, reverse=True)
@@ -191,7 +200,7 @@ async def run_explore(
         )
 
     if not todo:
-        logger.info("✅ [Explore] Nothing outstanding.")
+        logger.info("✅ [Keep earning] Nothing outstanding.")
         result.total_after = result.total_before
         if owns_page:
             await state_page.close()
@@ -263,5 +272,5 @@ async def run_explore(
         except Exception:
             pass
 
-    logger.info(f"✅ [Explore] {result.summary()}")
+    logger.info(f"✅ [Keep earning] {result.summary()}")
     return result

@@ -36,6 +36,7 @@ what the observation window's exit criterion reads. The result type matches the 
 tasks so that merging it later is three lines.
 """
 
+import re
 import asyncio
 import logging
 import random
@@ -58,24 +59,15 @@ from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
 
-# The topic is the second field of the offer id, which is the only structured handle
-# these tiles offer: their payload carries no title and no points, both of which the
-# page renders from somewhere the parser does not read. Queries are ordinary phrases a
-# person might type — the tile asks for a topic, not for an exact string.
-TOPIC_QUERIES = {
-    "airlinetickets": "cheap flights",
-    "airportparking": "airport parking",
-    "bankaccounts": "compare bank accounts",
-    "concerttickets": "concert tickets near me",
-    "creditreport": "check my credit report",
-    "flowerdelivery": "flower delivery",
-    "health": "flu symptoms",
-    "lyrics": "song lyrics",
-    "recipe": "easy dinner recipe",
-    "rentalcars": "car rental deals",
-    "streamingservices": "streaming service comparison",
-    "videogames": "best video games",
-}
+# Phrasings learned to work, keyed on the topic in the offer id. The pool rotates and
+# new topics keep arriving, so this is not meant to cover them — it is where a better
+# wording goes once one is actually known. Everything else comes off the tile itself.
+TOPIC_QUERIES: dict[str, str] = {}
+
+# A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
+# The instruction is not part of the query; what follows it is.
+PROMPT_PREFIX = re.compile(r"^\s*search\s+on\s+bing\s+(?:to|for)\s+", re.I)
+LEADING_VERB = re.compile(r"^(?:see|find|check|discover|learn\s+about|explore)\s+", re.I)
 
 
 def topic_of(offer: Offer) -> str | None:
@@ -83,18 +75,33 @@ def topic_of(offer: Offer) -> str | None:
     return parts[1] if len(parts) > 1 else None
 
 
+def query_from_description(description: str | None) -> str | None:
+    """Turn a tile's prompt into something a person would plausibly type."""
+    if not description:
+        return None
+    text = PROMPT_PREFIX.sub("", description.strip()).strip()
+    text = LEADING_VERB.sub("", text).strip().rstrip(".").strip()
+    return text or None
+
+
 def query_for(offer: Offer) -> str | None:
     """
-    The phrase to search for this tile.
+    What to search for this tile, best source first.
 
-    An unknown topic falls back to the topic token itself rather than being skipped:
-    the pool rotates and a new topic is expected, and `airlinetickets` as a query is a
-    worse search than "cheap flights" but is still on the subject.
+    The first run searched the topic token out of the offer id, because these tiles
+    parsed with no title and no description. That produced `timezonedates` and
+    `financemarket` — strings nobody would ever type — and completed none of four. The
+    text was in the tile the whole time, one level down in its rendered children:
+    "Search on Bing to see what time it is in a different time zone."
+
+    So the tile's own prompt is the authority. The curated map overrides it only where a
+    better wording has been learned, and the topic token survives as a last resort
+    rather than as the first guess.
     """
     topic = topic_of(offer)
-    if not topic:
-        return None
-    return TOPIC_QUERIES.get(topic, topic)
+    if topic and topic in TOPIC_QUERIES:
+        return TOPIC_QUERIES[topic]
+    return query_from_description(offer.description) or offer.title or topic
 
 
 def outstanding_tiles(state) -> list[Offer]:
@@ -253,6 +260,7 @@ async def run_explore_on_bing(
         topic = topic_of(offer)
         logger.info(f"   → {topic} — searching {query_for(offer)!r}")
         record = {"offer_id": offer.offer_id, "topic": topic,
+                  "query": query_for(offer), "title": offer.title,
                   "method": None, "confirmed": False}
         try:
             await _fetch_earn(state_page)

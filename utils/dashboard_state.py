@@ -164,6 +164,57 @@ def is_present(value: Any) -> bool:
     return value is not None and value != "$undefined"
 
 
+
+# Zero-width spaces are baked into the rendered strings; they break equality and make a
+# query nonsense if it is typed with them still in.
+ZERO_WIDTH = "\u200b\u200c\u200d\ufeff"
+
+
+def strings_in(node: Any, out: list[str] | None = None) -> list[str]:
+    """Every human-readable string under a React children tree, in document order."""
+    out = [] if out is None else out
+    if isinstance(node, str):
+        text = node.strip().strip(ZERO_WIDTH).strip()
+        # React's own placeholders ($L13, $undefined, $5f:props:...) are not text.
+        if text and not text.startswith("$"):
+            out.append(text)
+    elif isinstance(node, list):
+        # A React element is ["$", tag, key, props]: the tag and key are markup, not
+        # text, and including them made every tile's title come out as "div".
+        items = node[3:] if len(node) >= 4 and node[0] == "$" else node
+        for item in items:
+            strings_in(item, out)
+    elif isinstance(node, dict):
+        for key in ("alt", "children"):
+            if key in node:
+                strings_in(node[key], out)
+        for key, value in node.items():
+            if key not in ("alt", "children") and isinstance(value, (list, dict)):
+                strings_in(value, out)
+    return out
+
+
+def text_from_children(obj: dict) -> tuple[str | None, str | None]:
+    """
+    Recover an offer's title and description from its rendered subtree.
+
+    Some offer families ship no `title` and no `description` of their own — the
+    "Explore on Bing" tiles are the case that forced this — and render both inside
+    `children`, the title as an image `alt` and the description as a text node. Guessing
+    what such a tile is about from its id produced searches like `timezonedates`, which
+    is not something a person would type; the page had "Search on Bing to see what time
+    it is in a different time zone" written on it the whole time.
+
+    Returns (title, description), either of which may be None.
+    """
+    texts = strings_in(obj.get("children"))
+    if not texts:
+        return None, None
+    title = texts[0]
+    description = next((t for t in texts[1:] if len(t) > len(title)), None)
+    return title, description
+
+
 def merge_offer_objects(objs: list[dict]) -> dict:
     """
     Combine every object the stream ships for one offer id into a single dict.
@@ -364,11 +415,19 @@ def parse_dashboard(html: str) -> DashboardState:
         points = obj.get("points")
         completed = obj.get("isCompleted")
 
+        # A tile with neither renders both inside its children; without this it parses
+        # as a nameless, valueless card that looks exactly like a banner.
+        title, description = obj.get("title"), obj.get("description")
+        if title is None or description is None:
+            from_children = text_from_children(obj)
+            title = title if title is not None else from_children[0]
+            description = description if description is not None else from_children[1]
+
         state.offers.append(
             Offer(
                 offer_id=offer_id,
-                title=obj.get("title"),
-                description=obj.get("description"),
+                title=title,
+                description=description,
                 points=points if isinstance(points, int) else None,
                 is_completed=completed if isinstance(completed, bool) else None,
                 date_text=obj.get("date"),

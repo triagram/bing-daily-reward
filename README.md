@@ -64,7 +64,7 @@ bing-daily-reward/
 │   ├── humanizer.py            # Shared browser primitives: random delays, typing, modal dismissal,
 │   │                           #   new-tab capture/cleanup, quiz & poll interaction
 │   ├── task_daily_set.py       # Task 1 — the three "Daily set" cards, plus point claiming
-│   ├── task_explore.py         # Task 2 — the "Explore on Bing" activity cards
+│   ├── task_keep_earning.py    # Task 2 — the point-bearing offers under "Keep earning"
 │   ├── task_searches.py        # Task 3 — N Bing searches, closed-loop measured
 │   ├── claim.py                # Moves the "Ready to claim" pot into the balance
 │   ├── dashboard_state.py      # Pure parser: dashboard HTML → structured offers & counters
@@ -158,7 +158,7 @@ seeded by the date, so consecutive days do not repeat the same strings.
 | # | Task | Module | Nominal reward |
 |---|---|---|---|
 | 1 | **Daily set** — today's cards only, each verified individually | `task_daily_set.py` | 10–30 pts each (measured) |
-| 2 | **Explore on Bing** — outstanding offers, each verified | `task_explore.py` | 5/10/15 pts each (measured) |
+| 2 | **Keep earning** — outstanding point-bearing offers, each verified | `task_keep_earning.py` | 5/10/15 pts each (measured) |
 | 3 | **Daily searches** — 8-12 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
 
 > [!NOTE]
@@ -169,6 +169,14 @@ seeded by the date, so consecutive days do not repeat the same strings.
 > Finishing exactly on the quota every day is a signature in itself, and so is a
 > fixed count. This forgoes 15-36 points a day; streaks are unaffected, since the
 > daily activity gate is satisfied by a single search. Point values differ by market.
+
+> [!NOTE]
+> Task 2 is **not** the page's "Explore on Bing" section. That heading holds a separate
+> family of tiles (`ENUS_<topic>_exploreonbing_*`, four unlocked a day at 10 points) which
+> this project does not yet do — they credit only when a search is made in the session the
+> tile opens. The task was called `explore` until 2026-08-22 and the collision misled both
+> the notes and the account holder, so it is named for the heading its offers actually
+> appear under.
 
 Supporting behaviour:
 
@@ -265,7 +273,7 @@ Everything tunable lives in `config.py`:
 |---|---|---|
 | `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the daily search count is drawn from |
 | `DAILY_SEARCH_ALLOWANCE` | `20` | The measured ceiling. Recorded, deliberately not used |
-| `EXPLORE_MAX_PER_RUN` | `6` | Most Explore offers per run. Covers the observed range |
+| `KEEP_EARNING_MAX_PER_RUN` | `6` | Most Keep-earning offers per run. Covers the observed range |
 | `MIN_DELAY_BETWEEN_SEARCHES` | `6.0` | Lower bound of the inter-search wait, seconds |
 | `MAX_DELAY_BETWEEN_SEARCHES` | `9.0` | Upper bound |
 | `HEADLESS` | `False` | Run without a visible window. **See limitations.** |

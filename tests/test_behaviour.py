@@ -193,24 +193,24 @@ def test_retry_does_not_repeat_a_success():
 
 
 # --------------------------------------------------------------------------- #
-# Explore cap
+# Keep-earning cap
 # --------------------------------------------------------------------------- #
 
 
-def test_explore_cap_covers_the_observed_range():
+def test_keep_earning_cap_covers_the_observed_range():
     """
     Outstanding counts of 1-6 have been seen, so the cap should normally bind on
     nothing. A limit of 4 was in place on 2026-08-17 and silently dropped a
     10-point offer.
     """
-    from config import EXPLORE_MAX_PER_RUN
+    from config import KEEP_EARNING_MAX_PER_RUN
 
-    assert EXPLORE_MAX_PER_RUN >= 6
+    assert KEEP_EARNING_MAX_PER_RUN >= 6
 
 
 def test_outstanding_offers_ignores_banners_and_completed():
     from utils.dashboard_state import DashboardState, Offer
-    from utils.task_explore import outstanding_offers
+    from utils.task_keep_earning import outstanding_offers
 
     state = DashboardState(offers=[
         Offer(offer_id="A", points=15, is_completed=False),          # take

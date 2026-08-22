@@ -808,6 +808,23 @@ the card type and skip the two wasted navigations rather than to try harder.
 fails identically. One sighting is not enough to conclude it, and assuming it early
 would mean writing off a card that a different approach might complete.
 
+### A per-task figure is only as clean as the window it was measured over
+
+2026-08-22: `searches` reported **+121** against 24 advertised, from eight searches. The
+balance moved 108,311 → 108,332, which is +21 — seven searches credited, the eighth
+late. The other hundred appeared in "Ready to claim" during the same minutes: a streak
+bonus, unrelated to searching, landing inside the task's before/after window and
+attributed to it.
+
+The day's total was right. The split was not, and the error is structural: any task's
+delta absorbs whatever else credits while it runs.
+
+Inflation is the harmless direction, and it is the one seen here. The dangerous one is
+the same mechanism inverted — a task that earns nothing while a bonus lands would be
+judged `ok`, which is precisely the silent failure `shortfall.py` exists to catch. Not
+worth solving on one sighting, but worth knowing before trusting a per-task number in
+isolation. The per-item `isCompleted` checks are unaffected: they never look at points.
+
 ### An Explore run that measured more than it advertised
 
 2026-08-17: four offers stating 15+15+5+5 = 40 measured **+50**. The Daily Set run the

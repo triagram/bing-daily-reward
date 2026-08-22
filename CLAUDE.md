@@ -32,6 +32,9 @@ uv run python rewards_bot.py             # run today's tasks
 uv run python rewards_bot.py --dry-run   # read state and report, change nothing
 uv run python rewards_bot.py --history   # what past runs earned, per task
 
+uv run python explore_on_bing.py             # the Explore on Bing tiles — separate on purpose
+uv run python explore_on_bing.py --dry-run   # which tiles are open today, and what it would search
+
 uv run python monitor.py             # read-only state sample, appends to logs/state_samples.jsonl
 uv run python monitor.py --history   # what has been collected so far
 uv run python recon.py               # read-only deep capture: screenshots, DOM, network log
@@ -104,6 +107,13 @@ never been validated against Microsoft's detection.
 
 `rewards_bot.py` only orchestrates: launch persistent browser → check login → run three
 tasks in sequence, each in its own `try`/`except` so one failure does not abort the rest.
+
+`utils/task_explore_on_bing.py` is a fourth task and is **not** in that sequence. It runs
+from `explore_on_bing.py` because the mechanism it assumes — open the tile, then search
+its topic in what the tile opens — has never been confirmed, and an unproven task inside
+the daily run would put its verdict into the Flags column the observation window reads.
+Run it after the daily run. Its result type matches the others so merging it later is
+three lines.
 
 Task 2 is `utils/task_keep_earning.py`, renamed from `task_explore.py` on 2026-08-22.
 The page has a section headed **"Explore on Bing"** that this task does not do and cannot

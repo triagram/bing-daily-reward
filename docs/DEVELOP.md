@@ -269,7 +269,23 @@ work and earns nothing would drive `shortfall` to `zero`/`short` on ordinary day
 would mean giving it a best-effort verdict of its own rather than the standard
 comparison — otherwise the fix for silent failure becomes a source of false alarms.
 
-**Sketch, when the window allows it and the mechanism is confirmed:** select on `exploreonbing` and not locked; open the
+**Built 2026-08-22, unproven by design.** `utils/task_explore_on_bing.py`, run from
+`explore_on_bing.py` rather than from the daily run, so an assumption that may be wrong
+cannot put a verdict into the Flags column the observation window reads.
+
+It encodes everything settled above: select on `exploreonbing`, skip anything `isLocked`
+or `isDisabled`, take the topic from the offer id, open the tile, and type the query into
+whatever the tile opened **without navigating first** — navigating would discard the
+session `rwAutoFlyout=exb` establishes, which is the one thing this offer type appears to
+need. Verified against every capture on disk: it picks exactly the four open tiles each
+day, and follows the rotation across 08-20 to 08-21 without being told about it.
+
+What it cannot do is prove the mechanism. That comes from the first real run: because
+each tile is confirmed by its own `isCompleted`, a wrong assumption shows up as an honest
+`0/4`, not as a fabricated success. The entry point says so in as many words when nothing
+completes.
+
+**Original sketch, before it was written:** select on `exploreonbing` and not locked; open the
 tile with `execute_action_and_cleanup_new_tab`; in the tab it opens, type a query derived
 from the topic in the offer id — typed, never navigated (Q1) — and confirm that tile's own
 `isCompleted` flipped before counting it, as every other task does. The topic comes from

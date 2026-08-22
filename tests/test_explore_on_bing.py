@@ -9,8 +9,10 @@ was learned and no points were earned. Everything here is about not repeating th
 from utils.dashboard_state import Offer
 from utils.task_explore_on_bing import (
     ExploreOnBingResult,
+    TOPIC_QUERIES,
     outstanding_tiles,
     query_for,
+    query_from_description,
     topic_of,
 )
 
@@ -20,11 +22,14 @@ class FakeState:
         self.offers = offers
 
 
-def tile(topic, *, completed=False, locked=False, disabled=None):
-    """One tile in the shape captures show: no points and no title in the payload."""
+def tile(topic, *, completed=False, locked=False, disabled=None,
+         title=None, description=None):
+    """One tile in the shape captures show: no points of its own in the payload."""
     return Offer(
         offer_id=f"ENUS_{topic}_exploreonbing_activation_Evergreen",
         is_completed=completed,
+        title=title,
+        description=description,
         destination="https://www.bing.com/?form=ML2PCR&rwAutoFlyout=exb",
         raw={"isLocked": locked,
              "isDisabled": locked if disabled is None else disabled,
@@ -70,21 +75,46 @@ def test_other_offer_families_are_not_picked_up():
     assert [topic_of(o) for o in outstanding_tiles(state)] == ["airlinetickets"]
 
 
-def test_a_known_topic_becomes_a_phrase_a_person_would_type():
-    assert query_for(tile("airlinetickets")) == "cheap flights"
-    assert query_for(tile("flowerdelivery")) == "flower delivery"
+# The prompts below are verbatim from captures/20260822-183438.
 
 
-def test_an_unknown_topic_falls_back_to_the_topic_itself():
+def test_the_query_comes_from_the_tiles_own_prompt():
     """
-    The pool rotates, so a topic nobody has mapped yet is expected. Searching the raw
-    token is a worse query than a phrase but is still on the subject, which beats
-    skipping a tile that is worth ten points.
+    The first run guessed from the offer id and searched `timezonedates`, which is not
+    a thing anyone types. The tile said what to search all along.
     """
+    t = tile("timezonedates", title="What time is it?",
+             description="Search on Bing to see what time it is in a different time zone.")
+    assert query_for(t) == "what time it is in a different time zone"
+
+
+def test_the_instruction_is_stripped_but_the_subject_is_not():
+    assert (query_from_description("Search on Bing for the latest price of a specific stock.")
+            == "the latest price of a specific stock")
+    assert (query_from_description("Search on Bing to find top-rated mattresses at great prices")
+            == "top-rated mattresses at great prices")
+
+
+def test_the_title_carries_a_tile_whose_prompt_did_not_parse():
+    """`dictionary` rendered a title and no description on 2026-08-22."""
+    assert query_for(tile("dictionary", title="Expand your vocabulary")) == "Expand your vocabulary"
+
+
+def test_a_learned_phrasing_overrides_the_prompt():
+    """The map exists for wordings found to work; nothing is in it on evidence yet."""
+    TOPIC_QUERIES["mattress"] = "best mattress 2026"
+    try:
+        t = tile("mattress", description="Search on Bing to find top-rated mattresses")
+        assert query_for(t) == "best mattress 2026"
+    finally:
+        TOPIC_QUERIES.pop("mattress")
+
+
+def test_the_topic_token_is_the_last_resort_not_the_first_guess():
     assert query_for(tile("astronomygear")) == "astronomygear"
 
 
-def test_an_id_with_no_topic_yields_no_query():
+def test_an_id_with_no_topic_and_no_text_yields_no_query():
     assert query_for(Offer(offer_id="nounderscores", raw={})) is None
 
 

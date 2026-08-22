@@ -15,9 +15,11 @@ that tile's own isCompleted, and no point figure is printed that was not observe
 """
 
 import sys
+import json
 import asyncio
 import logging
-from datetime import date
+from datetime import date, datetime
+from pathlib import Path
 
 from playwright.async_api import async_playwright
 from rich.console import Console
@@ -33,6 +35,8 @@ from utils.task_explore_on_bing import (
     run_explore_on_bing,
     topic_of,
 )
+
+RUN_LOG = Path(__file__).parent / "logs" / "explore_on_bing.jsonl"
 
 console = Console()
 logging.basicConfig(
@@ -102,6 +106,24 @@ async def main():
 
         for err in result.errors:
             console.print(f"  [yellow]{err}[/yellow]")
+
+        # The first run of this task completed none of four and left nothing behind to
+        # examine — the console was the only record and it scrolled away. For a task
+        # whose point is to find out how these credit, per-tile detail is the output
+        # that matters, not the total.
+        RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with RUN_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({
+                "at": datetime.now().isoformat(timespec="seconds"),
+                "date": date.today().isoformat(),
+                "attempted": result.attempted,
+                "completed": result.completed,
+                "points": result.points_earned,
+                "expected": result.expected_points,
+                "tiles": result.per_tile,
+                "errors": result.errors,
+            }, ensure_ascii=False) + "\n")
+        console.print(f"[dim]Recorded in {RUN_LOG}[/dim]")
 
         if result.attempted and not result.completed:
             console.print(

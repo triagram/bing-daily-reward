@@ -309,12 +309,39 @@ had all three still `isCompleted: false`, so this is not crediting lag.
 Measured points corroborate the one success: +22 for the run is the tile's 10 plus four
 ordinary searches at 3.
 
-**Experiment now running.** The three failures are still incomplete and therefore
-retryable *the same day*, which allows a single-variable test: same tiles, same
-mechanism, same day, only the query changed. `TOPIC_QUERIES` holds `hotels in London`,
-`houses for sale in Manchester` and `buy running shoes`. If they complete, the
-placeholder is the cause. If they do not, the hypothesis is wrong and those entries come
-out rather than get tuned.
+**2026-08-23, later — the placeholder hypothesis was never tested, and the real cause is
+found.** The retry with concrete queries returned 0 of 3. Not a falsification: those
+three tiles had never been activated in either run.
+
+**Every tile in the section shares one href.** Seven tiles,
+`…bing.com/?…&rwAutoFlyout=exb` for all seven. The task located tiles the way everything
+else in this project does — match the whole destination URL — which here resolves to
+whichever card the page renders first, every time.
+
+So what actually happened both runs:
+
+| Attempt | Asked for | Clicked | Result |
+|---|---|---|---|
+| 11:42 #1 | `couponcodes` | `couponcodes` — first in the DOM | ✓ |
+| 11:42 #2-4 | hotel, realestate, shopping | `couponcodes` again, already finished | ✗✗✗ |
+| 15:30 #1-3 | hotel, realestate, shopping | `couponcodes` again | ✗✗✗ |
+
+One success, and it is the one tile that happened to be first. Nothing about queries was
+ever measured.
+
+**The mechanism was right from the start.** The completed tile's `successToast` reads
+**"Activated! · Search on Bing to complete this activity"** — click to activate, search
+to complete, exactly as the account holder described.
+
+**Fixed by locating on the tile's own title**, which is unique where the URL is not:
+measured against the same capture, each open tile matched exactly one anchor by its
+text and each locked tile matched none, a locked tile not being a link. Exactly one
+match is required, since clicking the first of several is precisely how this looked from
+the outside.
+
+Worth generalising: *matching the whole URL is the strongest signature only while URLs
+distinguish things.* This family is the counter-example, and it produced a failure that
+imitated a wrong hypothesis about crediting for a full day.
 
 **How this gets answered at all.** Microsoft's crediting rules are not observable; only
 behaviour is. What makes the question tractable is that each tile is its own trial with

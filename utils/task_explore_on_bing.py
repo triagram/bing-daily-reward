@@ -59,10 +59,32 @@ from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
 
-# Phrasings learned to work, keyed on the topic in the offer id. The pool rotates and
-# new topics keep arriving, so this is not meant to cover them — it is where a better
-# wording goes once one is actually known. Everything else comes off the tile itself.
-TOPIC_QUERIES: dict[str, str] = {}
+# Phrasings that override a tile's own prompt, keyed on the topic in the offer id. The
+# pool rotates and new topics keep arriving, so this is not meant to cover them.
+#
+# **Currently an experiment, entered 2026-08-23.** On that day all four tiles ran the
+# identical mechanism — every one recorded `tile-click+search:...`, so each was opened,
+# typed into and submitted — and exactly one completed:
+#
+#   couponcodes  "the latest coupon codes and discounts"       ✓
+#   hotel        "hotels to stay at on your next adventure"    ✗
+#   realestate   "real-estate available in your dream town"    ✗
+#   shopping     "items on your shopping list"                 ✗
+#
+# The one that worked is the one with no placeholder in it. "your next adventure",
+# "your dream town" and "your shopping list" are instructions to substitute something,
+# not text to type — and hotels, property and shopping are Bing verticals that need a
+# concrete entity before they render anything. Three and a half hours later the three
+# were still incomplete, so this is not crediting lag.
+#
+# These three entries test exactly that, changing the query and nothing else, on the
+# same tiles and the same day. If they complete, the cause is the placeholder. If they
+# do not, the hypothesis is wrong and the entries should be deleted rather than tuned.
+TOPIC_QUERIES: dict[str, str] = {
+    "hotel": "hotels in London",
+    "realestate": "houses for sale in Manchester",
+    "shopping": "buy running shoes",
+}
 
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
 # The instruction is not part of the query; what follows it is.

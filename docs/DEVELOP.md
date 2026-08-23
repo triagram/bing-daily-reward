@@ -285,6 +285,44 @@ each tile is confirmed by its own `isCompleted`, a wrong assumption shows up as 
 `0/4`, not as a fabricated success. The entry point says so in as many words when nothing
 completes.
 
+**2026-08-23 — the mechanism is right; the query is what fails.** First run with queries
+taken from the tiles' own prompts: **1 of 4**, up from 0 of 4 the day before.
+
+Every tile recorded `tile-click+search:'…'`, meaning all four were opened, found a search
+box, were typed into and submitted. So the assumed mechanism — open the tile, then search
+its topic inside what it opens — **executed identically on all four**, and something
+other than the mechanism decides whether it pays.
+
+| Topic | Query typed | Result |
+|---|---|---|
+| `couponcodes` | the latest coupon codes and discounts | **✓ +10** |
+| `hotel` | hotels to stay at on **your next adventure** | ✗ |
+| `realestate` | real-estate available in **your dream town** | ✗ |
+| `shopping` | items on **your shopping list** | ✗ |
+
+The one that paid is the only one whose prompt contains no placeholder. "your next
+adventure", "your dream town" and "your shopping list" are instructions to substitute
+something concrete, not strings to type — and hotels, property and shopping are Bing
+verticals that need a real entity before they render anything. A capture 3½ hours later
+had all three still `isCompleted: false`, so this is not crediting lag.
+
+Measured points corroborate the one success: +22 for the run is the tile's 10 plus four
+ordinary searches at 3.
+
+**Experiment now running.** The three failures are still incomplete and therefore
+retryable *the same day*, which allows a single-variable test: same tiles, same
+mechanism, same day, only the query changed. `TOPIC_QUERIES` holds `hotels in London`,
+`houses for sale in Manchester` and `buy running shoes`. If they complete, the
+placeholder is the cause. If they do not, the hypothesis is wrong and those entries come
+out rather than get tuned.
+
+**How this gets answered at all.** Microsoft's crediting rules are not observable; only
+behaviour is. What makes the question tractable is that each tile is its own trial with
+`isCompleted` as ground truth, four arrive daily, a failed one can be retried the same
+day, and `logs/explore_on_bing.jsonl` now records the query and method per tile. So the
+method is ordinary: change one thing, keep the rest fixed, write down what happened, and
+prefer a hypothesis that survives several days of it over one that explains a single day.
+
 **Original sketch, before it was written:** select on `exploreonbing` and not locked; open the
 tile with `execute_action_and_cleanup_new_tab`; in the tab it opens, type a query derived
 from the topic in the offer id — typed, never navigated (Q1) — and confirm that tile's own

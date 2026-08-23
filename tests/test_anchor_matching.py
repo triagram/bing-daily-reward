@@ -109,3 +109,68 @@ def test_an_unambiguous_needle_is_still_usable(browser):
 
 def test_no_destination_and_no_query_yields_nothing(browser):
     assert _match(browser, COLLIDING, None, None) is None
+
+
+# --------------------------------------------------------------------------- #
+# Explore on Bing tiles, which all share one URL
+# --------------------------------------------------------------------------- #
+#
+# Measured 2026-08-23 against a live capture: seven tiles, one distinct href between
+# them. Matching the destination — the right answer for every other card on the site —
+# picks the same card every time, which is what made three tiles look like a broken
+# mechanism when they had simply never been clicked.
+
+from utils.dashboard_state import Offer  # noqa: E402
+from utils.task_explore_on_bing import _find_tile_anchor  # noqa: E402
+
+SHARED = "https://www.bing.com/?form=ML2PCR&rwAutoFlyout=exb"
+TILES = (
+    f'<a href="{SHARED}"><img alt="Save more today">'
+    '<p>Save more today</p><p>Search on Bing for the latest coupon codes</p></a>'
+    f'<a href="{SHARED}"><img alt="Find places to stay">'
+    '<p>Find places to stay</p><p>Search on Bing for hotels</p></a>'
+    f'<a href="{SHARED}"><img alt="Houses near you">'
+    '<p>Houses near you</p><p>Search on Bing for real-estate</p></a>'
+)
+
+
+def _tile_anchor(browser, html: str, title: str | None) -> str | None:
+    """Return the text of the anchor _find_tile_anchor picks, or None."""
+    loop, b = browser
+
+    async def run():
+        page = await b.new_page()
+        try:
+            await page.set_content(html)
+            offer = Offer(offer_id="ENUS_x_exploreonbing_activation_Evergreen",
+                          title=title, destination=SHARED, raw={})
+            anchor = await _find_tile_anchor(page, offer)
+            return None if anchor is None else (await anchor.inner_text())
+        finally:
+            await page.close()
+
+    return loop.run_until_complete(run())
+
+
+def test_each_tile_is_found_by_its_own_title(browser):
+    assert "Find places to stay" in _tile_anchor(browser, TILES, "Find places to stay")
+    assert "Houses near you" in _tile_anchor(browser, TILES, "Houses near you")
+
+
+def test_the_shared_href_never_decides_which_tile_is_clicked(browser):
+    """
+    The bug, stated as a test: with one href across every tile, a destination match
+    resolves to the first card no matter which tile was asked for.
+    """
+    picked = _tile_anchor(browser, TILES, "Houses near you")
+    assert "Save more today" not in picked, "clicked the first card instead of the asked-for one"
+
+
+def test_a_tile_with_no_title_is_not_guessed_at(browser):
+    assert _tile_anchor(browser, TILES, None) is None
+
+
+def test_an_ambiguous_title_is_refused(browser):
+    """Two cards carrying the same text is how this defect looked from outside."""
+    dup = TILES + f'<a href="{SHARED}"><p>Houses near you</p></a>'
+    assert _tile_anchor(browser, dup, "Houses near you") is None

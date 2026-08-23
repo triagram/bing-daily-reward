@@ -48,7 +48,6 @@ from config import REWARDS_EARN_URL
 from utils.dashboard_state import Offer, parse_dashboard
 from utils.humanizer import (
     dismiss_all_modals_and_drawers,
-    find_offer_anchor,
     human_scroll,
     human_type,
     random_sleep,
@@ -59,32 +58,15 @@ from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
 
-# Phrasings that override a tile's own prompt, keyed on the topic in the offer id. The
-# pool rotates and new topics keep arriving, so this is not meant to cover them.
+# Phrasings that override a tile's own prompt, keyed on the topic in the offer id.
 #
-# **Currently an experiment, entered 2026-08-23.** On that day all four tiles ran the
-# identical mechanism — every one recorded `tile-click+search:...`, so each was opened,
-# typed into and submitted — and exactly one completed:
-#
-#   couponcodes  "the latest coupon codes and discounts"       ✓
-#   hotel        "hotels to stay at on your next adventure"    ✗
-#   realestate   "real-estate available in your dream town"    ✗
-#   shopping     "items on your shopping list"                 ✗
-#
-# The one that worked is the one with no placeholder in it. "your next adventure",
-# "your dream town" and "your shopping list" are instructions to substitute something,
-# not text to type — and hotels, property and shopping are Bing verticals that need a
-# concrete entity before they render anything. Three and a half hours later the three
-# were still incomplete, so this is not crediting lag.
-#
-# These three entries test exactly that, changing the query and nothing else, on the
-# same tiles and the same day. If they complete, the cause is the placeholder. If they
-# do not, the hypothesis is wrong and the entries should be deleted rather than tuned.
-TOPIC_QUERIES: dict[str, str] = {
-    "hotel": "hotels in London",
-    "realestate": "houses for sale in Manchester",
-    "shopping": "buy running shoes",
-}
+# Empty, and it should stay empty until something is actually learned. Three entries
+# lived here briefly on 2026-08-23 to test whether the placeholders in prompts like
+# "real-estate available in your dream town" were what stopped a tile completing. That
+# test was void: every tile shares one href, so all three attempts re-clicked a
+# different card and those tiles were never activated at all. No evidence was produced
+# either way, which is not a reason to keep the guesses.
+TOPIC_QUERIES: dict[str, str] = {}
 
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
 # The instruction is not part of the query; what follows it is.
@@ -197,6 +179,45 @@ async def _search_in_place(page: Page, term: str) -> bool:
     return True
 
 
+async def _find_tile_anchor(page: Page, offer: Offer):
+    """
+    Locate a tile by its own title, never by its href.
+
+    **Every tile in this section shares one URL.** Measured 2026-08-23: seven tiles,
+    one distinct `href`, `…bing.com/?…&rwAutoFlyout=exb` for all of them. So matching
+    the whole destination — the strongest signature everywhere else in this project,
+    and what `find_offer_anchor` is built on — degenerates here into always clicking
+    whichever card the page happens to render first.
+
+    That is the whole of what looked like a mechanism failure. On 08-23 the first tile
+    attempted was `couponcodes`, which was also first in the DOM, so it was clicked and
+    completed; the three attempted after it re-clicked that same finished card and were
+    never activated. A retry that hour, starting with `hotel`, clicked the same card
+    again and completed nothing. The queries were never the variable, and the
+    activation flow was right all along — `successToast` on the completed tile reads
+    "Activated! · Search on Bing to complete this activity".
+
+    The title is unique: measured against the same capture, each of the four open tiles
+    matched exactly one anchor by its own text, and the locked three matched none,
+    since a locked tile is not a link.
+
+    Exactly one match is required. Two would mean the title is no longer distinguishing,
+    and clicking the first of them is how this bug looked from the outside.
+    """
+    if not offer.title:
+        return None
+    anchor = page.locator("a", has_text=offer.title)
+    try:
+        n = await anchor.count()
+    except Exception as e:
+        logger.debug(f"title lookup failed for {offer.offer_id}: {e}")
+        return None
+    if n == 1:
+        return anchor.first
+    logger.warning(f"     title {offer.title!r} matched {n} anchors; not guessing")
+    return None
+
+
 async def _work_tile(page: Page, context: BrowserContext, offer: Offer) -> tuple[bool, str]:
     """Open the tile and search its topic in whatever it opens."""
     term = query_for(offer)
@@ -204,7 +225,7 @@ async def _work_tile(page: Page, context: BrowserContext, offer: Offer) -> tuple
         return False, "no topic in the offer id"
 
     before = set(context.pages)
-    anchor = await find_offer_anchor(page, offer.destination, None)
+    anchor = await _find_tile_anchor(page, offer)
     if anchor is None:
         return False, "tile anchor not found"
 

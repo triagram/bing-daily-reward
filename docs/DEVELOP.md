@@ -365,9 +365,36 @@ completes on "search this topic" plausibly wants that vertical experience to app
 split held on 08-23 too: `couponcodes` paid; `hotel` and `realestate`, both of which need
 a place, did not.
 
-If it holds, the shape of the fix is a per-topic map of concrete queries, grown one
-verified entry at a time — not a rule over the prompt text, since the prompt is not what
-decides.
+**Confirmed the same day, 2/2.** `flights from London to Paris` and
+`buy wireless headphones` both completed, on the same two tiles that had just failed on
+their prompt text, with nothing else changed. +26 reconciles as two tiles at ten plus two
+searches at three. The day finished 4 of 4 — the full 40.
+
+### How an Explore on Bing tile actually credits
+
+Settled, after four days and four wrong turns:
+
+1. **Click the tile.** This *activates* it — the toast says so: "Activated! · Search on
+   Bing to complete this activity". Locate it by its own title; all tiles share one href
+   and matching that clicks whichever renders first.
+2. **Search its topic in what the tile opened**, typed, without navigating away first —
+   navigating discards the session the tile established.
+3. **The search has to produce the experience the topic names.** Informational topics
+   complete on the tile's own wording. Verticals do not: Bing renders nothing for flights
+   without a route or shopping without a product, and the tile stays incomplete.
+4. Only unlocked tiles can pay, and four unlock a day.
+
+So the default query is the tile's prompt, and `VERIFIED_QUERIES` is the exception list
+for verticals — grown one measured entry at a time, not a rule over prompt text, since
+the prompt is not what decides. An unmapped vertical costs one tile once before it can be
+added, which is the right price for not guessing.
+
+**What was wrong along the way, and worth remembering.** The mechanism was doubted for a
+day when it had been right from the start; crediting lag was suspected and ruled out; the
+placeholder wording was blamed twice and is not the cause; and the whole picture was
+obscured by clicking the wrong tile, which produced results that imitated a plausible
+theory about crediting rules. Every one of those was settled by the same move — change
+one thing, keep the rest fixed, and let the per-tile `isCompleted` answer.
 
 **How this gets answered at all.** Microsoft's crediting rules are not observable; only
 behaviour is. What makes the question tractable is that each tile is its own trial with

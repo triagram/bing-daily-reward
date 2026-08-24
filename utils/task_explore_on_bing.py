@@ -58,28 +58,42 @@ from utils.state_reader import fetch_state
 
 logger = logging.getLogger("bing_rewards")
 
-# Phrasings that override a tile's own prompt, keyed on the topic in the offer id.
+# Queries that override a tile's own prompt, keyed on the topic in the offer id.
 #
-# **An experiment, entered 2026-08-24, and the first valid one** — earlier attempts were
-# void because every tile shares one href and the wrong card was being clicked. With that
-# fixed, the day's four tiles split cleanly:
+# **Why any override is needed.** A tile completes when the search actually produces the
+# experience its topic names. Informational topics need no help — "credit cards with top
+# rewards and rates" and "the best insurance plans for your needs" both completed with
+# the wording lifted straight off the tile. Vertical topics do: Bing renders nothing for
+# flights without a route, or for shopping without a product, and those tiles stayed
+# incomplete on the prompt text alone.
 #
-#   creditcards  "credit cards with top rewards and rates"        ✓
-#   insurance    "the best insurance plans for your needs"        ✓
-#   flight       "a flight to your perfect vacation"              ✗
-#   shopping     "items on your shopping list"                    ✗
+# Measured 2026-08-24, same tiles, same day, changing only the query:
 #
-# That kills the placeholder idea outright: `insurance` carries "your needs" and paid.
-# What separates them looks like the topic rather than the wording. Credit cards and
-# insurance are informational searches Bing answers as they stand; flights and shopping
-# are verticals that render nothing without a concrete entity — a route, a product. The
-# same split held yesterday, where couponcodes paid and hotel and realestate did not.
+#   flight    "a flight to your perfect vacation"    ✗  ->  "flights from London to Paris"   ✓
+#   shopping  "items on your shopping list"          ✗  ->  "buy wireless headphones"        ✓
 #
-# These two supply the entity and change nothing else, on the same tiles, the same day.
-TOPIC_QUERIES: dict[str, str] = {
+# Note what this is *not*: the placeholder in the prompt. `insurance` searched "…for your
+# needs", placeholder intact, and completed. The topic decides, not the wording.
+#
+# So the default stays the tile's own prompt, and this map is the exception list. It
+# grows one entry at a time, and an unmapped vertical topic costs one tile once before
+# it can be added — which is the right price for not guessing.
+
+# Completed with this exact query. Do not change these without re-measuring.
+VERIFIED_QUERIES: dict[str, str] = {
     "flight": "flights from London to Paris",
     "shopping": "buy wireless headphones",
 }
+
+# Same reasoning applied to topics that need a place, but not yet observed completing.
+# Both failed on 2026-08-23, though that day's clicks were landing on the wrong card, so
+# they have never really been tried. Their next appearance is the test.
+PREDICTED_QUERIES: dict[str, str] = {
+    "hotel": "hotels in Edinburgh",
+    "realestate": "houses for sale in Bristol",
+}
+
+TOPIC_QUERIES: dict[str, str] = {**PREDICTED_QUERIES, **VERIFIED_QUERIES}
 
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
 # The instruction is not part of the query; what follows it is.

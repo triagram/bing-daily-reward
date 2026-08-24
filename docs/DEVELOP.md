@@ -343,6 +343,32 @@ Worth generalising: *matching the whole URL is the strongest signature only whil
 distinguish things.* This family is the counter-example, and it produced a failure that
 imitated a wrong hypothesis about crediting for a full day.
 
+**2026-08-24 — 2 of 4, and the first data about queries that means anything.** With the
+right tile being clicked, the day split cleanly:
+
+| Topic | Query | Result |
+|---|---|---|
+| `creditcards` | credit cards with top rewards and rates | **✓** |
+| `insurance` | the best insurance plans for **your needs** | **✓** |
+| `flight` | a flight to **your perfect vacation** | ✗ |
+| `shopping` | items on **your shopping list** | ✗ |
+
+Points reconcile exactly: +32 is two tiles at 10 plus four ordinary searches at 3.
+
+**The placeholder hypothesis is now properly dead.** `insurance` carries "your needs"
+and paid. Wording is not the variable.
+
+**What replaces it: whether the topic needs a concrete entity.** Credit cards and
+insurance are informational searches Bing answers as they stand. Flights and shopping
+are verticals that render nothing without a route or a product — and a tile that
+completes on "search this topic" plausibly wants that vertical experience to appear. The
+split held on 08-23 too: `couponcodes` paid; `hotel` and `realestate`, both of which need
+a place, did not.
+
+If it holds, the shape of the fix is a per-topic map of concrete queries, grown one
+verified entry at a time — not a rule over the prompt text, since the prompt is not what
+decides.
+
 **How this gets answered at all.** Microsoft's crediting rules are not observable; only
 behaviour is. What makes the question tractable is that each tile is its own trial with
 `isCompleted` as ground truth, four arrive daily, a failed one can be retried the same

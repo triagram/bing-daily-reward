@@ -60,13 +60,26 @@ logger = logging.getLogger("bing_rewards")
 
 # Phrasings that override a tile's own prompt, keyed on the topic in the offer id.
 #
-# Empty, and it should stay empty until something is actually learned. Three entries
-# lived here briefly on 2026-08-23 to test whether the placeholders in prompts like
-# "real-estate available in your dream town" were what stopped a tile completing. That
-# test was void: every tile shares one href, so all three attempts re-clicked a
-# different card and those tiles were never activated at all. No evidence was produced
-# either way, which is not a reason to keep the guesses.
-TOPIC_QUERIES: dict[str, str] = {}
+# **An experiment, entered 2026-08-24, and the first valid one** — earlier attempts were
+# void because every tile shares one href and the wrong card was being clicked. With that
+# fixed, the day's four tiles split cleanly:
+#
+#   creditcards  "credit cards with top rewards and rates"        ✓
+#   insurance    "the best insurance plans for your needs"        ✓
+#   flight       "a flight to your perfect vacation"              ✗
+#   shopping     "items on your shopping list"                    ✗
+#
+# That kills the placeholder idea outright: `insurance` carries "your needs" and paid.
+# What separates them looks like the topic rather than the wording. Credit cards and
+# insurance are informational searches Bing answers as they stand; flights and shopping
+# are verticals that render nothing without a concrete entity — a route, a product. The
+# same split held yesterday, where couponcodes paid and hotel and realestate did not.
+#
+# These two supply the entity and change nothing else, on the same tiles, the same day.
+TOPIC_QUERIES: dict[str, str] = {
+    "flight": "flights from London to Paris",
+    "shopping": "buy wireless headphones",
+}
 
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
 # The instruction is not part of the query; what follows it is.

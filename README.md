@@ -42,7 +42,7 @@ This project drives a real Chromium browser through those tasks with
 [Playwright](https://playwright.dev/python/), reusing a persistent browser
 profile so you only sign in to your Microsoft account once.
 
-**Project status: the three task flows are rewritten and closed-loop.** Each one
+**Project status: four task flows, all rewritten and closed-loop.** Each one
 reads the dashboard's own state, confirms every item individually, and reports the
 point delta it actually measured — or says "unknown" rather than inventing a number.
 All three have been verified against a live account, and the parser and the
@@ -162,6 +162,7 @@ seeded by the date, so consecutive days do not repeat the same strings.
 | 1 | **Daily set** — today's cards only, each verified individually | `task_daily_set.py` | 10–30 pts each (measured) |
 | 2 | **Keep earning** — outstanding point-bearing offers, each verified | `task_keep_earning.py` | 5/10/15 pts each (measured) |
 | 3 | **Daily searches** — 8-12 typed searches, variably spaced | `task_searches.py` | 3 pts each; 20 available, fewer taken |
+| 4 | **Explore on Bing** — the unlocked tiles, activated then searched | `task_explore_on_bing.py` | 10 pts each; 4 unlock daily |
 
 > [!NOTE]
 > Measured on this UK account, 2026-08-16: **20 searches pay 3 points each, then
@@ -173,12 +174,16 @@ seeded by the date, so consecutive days do not repeat the same strings.
 > daily activity gate is satisfied by a single search. Point values differ by market.
 
 > [!NOTE]
-> Task 2 is **not** the page's "Explore on Bing" section. That heading holds a separate
-> family of tiles (`ENUS_<topic>_exploreonbing_*`, four unlocked a day at 10 points) which
-> this project does not yet do — they credit only when a search is made in the session the
-> tile opens. The task was called `explore` until 2026-08-22 and the collision misled both
-> the notes and the account holder, so it is named for the heading its offers actually
-> appear under.
+> Tasks 2 and 4 are different sections of the same page and are easy to confuse. Task 2 was
+> called `explore` until 2026-08-22, and that collision misled both the notes and the
+> account holder, so it is now named for the heading its offers appear under.
+>
+> **Task 4 runs from `explore_on_bing.py`, not from the daily run.** Its tiles credit in two
+> steps — clicking one *activates* it, and a search inside what it opens *completes* it —
+> and a topic the query map has not learned yet will fail once before it can be added.
+> Keeping it separate means such a failure cannot dirty a daily run that was otherwise
+> clean. It returns the same result type as the others, so folding it in is three lines
+> once the map has settled.
 
 Supporting behaviour:
 

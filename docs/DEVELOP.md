@@ -379,15 +379,26 @@ Settled, after four days and four wrong turns:
    and matching that clicks whichever renders first.
 2. **Search its topic in what the tile opened**, typed, without navigating away first —
    navigating discards the session the tile established.
-3. **The search has to produce the experience the topic names.** Informational topics
-   complete on the tile's own wording. Verticals do not: Bing renders nothing for flights
-   without a route or shopping without a product, and the tile stays incomplete.
-4. Only unlocked tiles can pay, and four unlock a day.
+3. **Search the tile's own prompt.** This is usually enough — 2026-08-25 completed 4 of
+   4 on prompt text alone, placeholders and all.
+4. **A few topics need more, and which ones is not understood.** `flight` and `shopping`
+   both stayed incomplete on their prompts and completed once given a concrete entity —
+   a route, a product. The obvious generalisation, that Bing verticals need an entity
+   before they render anything, **is false**: `rentalcars`, `concerttickets` and
+   `internetproviders` are verticals too, were searched with placeholders and no entity,
+   and all three completed. So these are exceptions with no known common factor, and the
+   map that holds them is a list of measurements, not a rule.
+5. Only unlocked tiles can pay, and four unlock a day.
 
-So the default query is the tile's prompt, and `VERIFIED_QUERIES` is the exception list
-for verticals — grown one measured entry at a time, not a rule over prompt text, since
-the prompt is not what decides. An unmapped vertical costs one tile once before it can be
-added, which is the right price for not guessing.
+So the default query is the tile's prompt, and `VERIFIED_QUERIES` is an exception list
+grown one measured entry at a time.
+
+**It holds nothing unmeasured, deliberately.** `hotel` and `realestate` were briefly given
+predicted entries on the entity reasoning; they came out on 2026-08-25 when that reasoning
+failed. The stronger objection is that a guessed override destroys the observation it is
+guessing at: with "hotels in Edinburgh" in the map, whether `hotel` completes on its own
+prompt can never be found out. Letting the default run costs one tile once and buys a real
+data point.
 
 **What was wrong along the way, and worth remembering.** The mechanism was doubted for a
 day when it had been right from the start; crediting lag was suspected and ruled out; the

@@ -60,40 +60,33 @@ logger = logging.getLogger("bing_rewards")
 
 # Queries that override a tile's own prompt, keyed on the topic in the offer id.
 #
-# **Why any override is needed.** A tile completes when the search actually produces the
-# experience its topic names. Informational topics need no help — "credit cards with top
-# rewards and rates" and "the best insurance plans for your needs" both completed with
-# the wording lifted straight off the tile. Vertical topics do: Bing renders nothing for
-# flights without a route, or for shopping without a product, and those tiles stayed
-# incomplete on the prompt text alone.
+# **The default is the tile's own prompt, and it usually works.** 2026-08-25 completed
+# 4 of 4 without touching this map at all.
 #
-# Measured 2026-08-24, same tiles, same day, changing only the query:
+# **This is an exception list, learned from failures, not a theory.** Two topics have
+# needed help so far, both measured on the same tiles the same day with only the query
+# changed:
 #
-#   flight    "a flight to your perfect vacation"    ✗  ->  "flights from London to Paris"   ✓
-#   shopping  "items on your shopping list"          ✗  ->  "buy wireless headphones"        ✓
+#   flight    "a flight to your perfect vacation"  ✗  ->  "flights from London to Paris"  ✓
+#   shopping  "items on your shopping list"        ✗  ->  "buy wireless headphones"       ✓
 #
-# Note what this is *not*: the placeholder in the prompt. `insurance` searched "…for your
-# needs", placeholder intact, and completed. The topic decides, not the wording.
+# The tempting generalisation — that Bing verticals need a concrete entity before they
+# render anything — does not survive 2026-08-25. `rentalcars`, `concerttickets` and
+# `internetproviders` are all verticals, all searched with a placeholder and no entity
+# ("book rental cars for your next adventure", "tickets for concerts near you"), and all
+# three completed. So flights and shopping are exceptions whose common factor is not yet
+# known, and nothing here should pretend otherwise.
 #
-# So the default stays the tile's own prompt, and this map is the exception list. It
-# grows one entry at a time, and an unmapped vertical topic costs one tile once before
-# it can be added — which is the right price for not guessing.
-
-# Completed with this exact query. Do not change these without re-measuring.
+# Which is why there are no *predicted* entries. An override that has never been measured
+# destroys the observation it was guessing at: put "hotels in Edinburgh" here and the
+# question of whether `hotel` completes on its own prompt can never be answered. Let the
+# default run, and add an entry when a tile actually fails. That costs one tile once.
 VERIFIED_QUERIES: dict[str, str] = {
     "flight": "flights from London to Paris",
     "shopping": "buy wireless headphones",
 }
 
-# Same reasoning applied to topics that need a place, but not yet observed completing.
-# Both failed on 2026-08-23, though that day's clicks were landing on the wrong card, so
-# they have never really been tried. Their next appearance is the test.
-PREDICTED_QUERIES: dict[str, str] = {
-    "hotel": "hotels in Edinburgh",
-    "realestate": "houses for sale in Bristol",
-}
-
-TOPIC_QUERIES: dict[str, str] = {**PREDICTED_QUERIES, **VERIFIED_QUERIES}
+TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES
 
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
 # The instruction is not part of the query; what follows it is.

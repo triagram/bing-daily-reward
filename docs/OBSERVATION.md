@@ -19,7 +19,7 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: 4 of 14 — counting from 2026-08-22
+## Status: 5 of 14 — counting from 2026-08-22
 
 | Run | Result |
 |---|---|
@@ -31,7 +31,8 @@ what the code now does. **Sample size for the current code is zero.** Do not rea
 | 2026-08-22 | Clean, 3/3, 8/8, 1/1, +159. **1 of 14.** |
 | 2026-08-23 | Clean, 3/3, 10/10, 2/2, +76. **2 of 14.** |
 | 2026-08-24 | Clean, 3/3, 9/9, 5/5, +138. **3 of 14.** |
-| **2026-08-25** | **Clean.** 3/3, 12/12, 3/3, +114. **4 of 14.** |
+| 2026-08-25 | Clean, 3/3, 12/12, 3/3, +114. **4 of 14.** |
+| **2026-08-26** | **Clean.** 3/3, 9/9, 3/3, +85. **5 of 14.** |
 
 **2026-08-21 paid for the window a second time.** It surfaced three defects that had
 been costing points silently, all fixed in `6992da7` with regression tests:
@@ -138,6 +139,17 @@ point of a window is that nobody is watching the console.
 
 `HEADLESS = False` stays. Headless has never been validated against Microsoft's
 detection; trying it here would move two variables at once.
+
+**Reporting: by exception, from 2026-08-26.** Daily updates are not needed — the run
+says out loud when something is wrong. Worth raising:
+
+- **`Flags` is not empty**, or a task shows `done` below `attempted`. The run prints a
+  red warning for the first; the second is visible in its own column.
+- **An Explore on Bing tile did not complete.** That is not a fault so much as a signal:
+  a topic the query map has not learned. Name the topic and it can be added.
+- **Day 14**, to close the window.
+
+Otherwise the two logs accumulate and can be read in one pass whenever it suits.
 
 Read three things, in this order:
 

@@ -69,6 +69,11 @@ logger = logging.getLogger("bing_rewards")
 #
 #   flight    "a flight to your perfect vacation"  ✗  ->  "flights from London to Paris"  ✓
 #   shopping  "items on your shopping list"        ✗  ->  "buy wireless headphones"       ✓
+#   jobs      "open roles at a specific company"   ✗  ->  "open roles at Microsoft"       ✓
+#
+# All three name something Bing cannot supply for itself — a route, a product, a company.
+# Placeholders it *can* resolve are fine and need no entry: "a restaurant near you" and
+# "compare internet plans in your area" both completed untouched.
 #
 # The tempting generalisation — that Bing verticals need a concrete entity before they
 # render anything — does not survive 2026-08-25. `rentalcars`, `concerttickets` and
@@ -84,9 +89,8 @@ logger = logging.getLogger("bing_rewards")
 VERIFIED_QUERIES: dict[str, str] = {
     "flight": "flights from London to Paris",
     "shopping": "buy wireless headphones",
-    # 2026-08-28, pending its retry. The prompt reads "open roles at a specific
-    # company", and only the placeholder is substituted — the rest is left alone so
-    # that the company name is the single thing that changed.
+    # 2026-08-28. Failed on the prompt verbatim — "open roles at a specific company" —
+    # and completed once the placeholder alone was substituted, nothing else changed.
     "jobs": "open roles at Microsoft",
 }
 

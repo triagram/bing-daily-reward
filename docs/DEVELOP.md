@@ -393,6 +393,17 @@ Settled, after four days and four wrong turns:
 So the default query is the tile's prompt, and `VERIFIED_QUERIES` is an exception list
 grown one measured entry at a time.
 
+**A sharper reading of which topics need help, 2026-08-28.** `jobs` failed on
+"open roles at **a specific company**" while `restaurant` completed on "a restaurant
+**near you**" the same run. Both prompts carry a placeholder; the difference is whether
+Bing can resolve it unaided. Location it can — "near you", "in your area" — and those
+tiles complete. A company, a route, a product it cannot, and those are the three topics
+that have ever needed an override.
+
+That is a better account than "verticals need an entity", which 08-25 disproved, but it
+is still a description of five observations rather than a rule. The map stays a list of
+measurements.
+
 **It holds nothing unmeasured, deliberately.** `hotel` and `realestate` were briefly given
 predicted entries on the entity reasoning; they came out on 2026-08-25 when that reasoning
 failed. The stronger objection is that a guessed override destroys the observation it is

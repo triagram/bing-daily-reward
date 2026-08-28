@@ -19,7 +19,7 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: 5 of 14 — counting from 2026-08-22
+## Status: 7 of 14 — counting from 2026-08-22
 
 | Run | Result |
 |---|---|
@@ -32,7 +32,9 @@ what the code now does. **Sample size for the current code is zero.** Do not rea
 | 2026-08-23 | Clean, 3/3, 10/10, 2/2, +76. **2 of 14.** |
 | 2026-08-24 | Clean, 3/3, 9/9, 5/5, +138. **3 of 14.** |
 | 2026-08-25 | Clean, 3/3, 12/12, 3/3, +114. **4 of 14.** |
-| **2026-08-26** | **Clean.** 3/3, 9/9, 3/3, +85. **5 of 14.** |
+| 2026-08-26 | Clean, 3/3, 9/9, 3/3, +85. **5 of 14.** |
+| 2026-08-27 | Clean, 3/3, 10/10, 3/3, +105. **6 of 14.** |
+| **2026-08-28** | **Clean.** 3/3, 11/11, 3/3, +161. **7 of 14.** |
 
 **2026-08-21 paid for the window a second time.** It surfaced three defects that had
 been costing points silently, all fixed in `6992da7` with regression tests:

@@ -84,6 +84,10 @@ logger = logging.getLogger("bing_rewards")
 VERIFIED_QUERIES: dict[str, str] = {
     "flight": "flights from London to Paris",
     "shopping": "buy wireless headphones",
+    # 2026-08-28, pending its retry. The prompt reads "open roles at a specific
+    # company", and only the placeholder is substituted — the rest is left alone so
+    # that the company name is the single thing that changed.
+    "jobs": "open roles at Microsoft",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

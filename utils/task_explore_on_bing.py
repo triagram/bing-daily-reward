@@ -72,6 +72,12 @@ logger = logging.getLogger("bing_rewards")
 #   jobs      "open roles at a specific company"   ✗  ->  "open roles at Microsoft"       ✓
 #
 # All three name something Bing cannot supply for itself — a route, a product, a company.
+#
+# `lyrics` looked like a fourth and is not. It failed on "the lyrics of your favorite
+# song" and failed again on "Bohemian Rhapsody lyrics", so the query is not its problem:
+# the tile ships only its title in the page data — no description, not even the "+10"
+# badge every other tile carries — and nothing typed into a search box fixes a card that
+# arrives half-rendered. Its override was removed rather than tuned further.
 # Placeholders it *can* resolve are fine and need no entry: "a restaurant near you" and
 # "compare internet plans in your area" both completed untouched.
 #
@@ -92,10 +98,6 @@ VERIFIED_QUERIES: dict[str, str] = {
     # 2026-08-28. Failed on the prompt verbatim — "open roles at a specific company" —
     # and completed once the placeholder alone was substituted, nothing else changed.
     "jobs": "open roles at Microsoft",
-    # 2026-09-02, pending its retry. The tile ships no description, so the query came
-    # from its title, "Learn song lyrics", by way of the fallback — and a song still has
-    # to be named.
-    "lyrics": "Bohemian Rhapsody lyrics",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

@@ -350,3 +350,45 @@ def test_a_failed_reconciliation_read_leaves_the_failures_standing():
     late = asyncio.run(reconcile_late_completions(
         {"a": "a: failed"}, recheck, wait_seconds=0))
     assert late == set()
+
+
+# --------------------------------------------------------------------------- #
+# Offers only the phone app can complete
+# --------------------------------------------------------------------------- #
+
+
+def _offer(offer_id, title, points=10, completed=False):
+    from utils.dashboard_state import Offer
+    return Offer(offer_id=offer_id, title=title, points=points, is_completed=completed)
+
+
+def test_app_only_offers_are_recognised_by_id_and_by_title():
+    """The page says so twice; a redesign is likelier to keep one than both."""
+    from utils.task_keep_earning import is_app_only
+    assert is_app_only(_offer("WW_Moreactivities_RewardsApp_offer_20260902_1", "Tough tusks"))
+    assert is_app_only(_offer("WW_Something_Else_1", "Tough tusks (Rewards App only)"))
+    assert not is_app_only(_offer("WW_Bing_MonthlyFeaturedTopic_20260902_4", "Chichen Itza insights"))
+
+
+def test_app_only_offers_never_reach_a_run():
+    """
+    Not because they fail — because they crowd out work that would have succeeded.
+
+    On 2026-09-02 five arrived at 10 points each, sorted to the front of a run capped at
+    six, and "Quote of the day" was never attempted. Their destinations are ordinary
+    bing.com/search URLs, so nothing else about them looks wrong.
+    """
+    from utils.task_keep_earning import outstanding_offers
+
+    class State:
+        offers = [
+            _offer(f"WW_Moreactivities_RewardsApp_offer_20260902_{i}", f"App thing {i}")
+            for i in range(1, 6)
+        ] + [
+            _offer("WW_Bing_MonthlyFeaturedTopic_20260902_4", "Chichen Itza insights"),
+            _offer("ENstar_Rewards_DailyGlobalOffer_Evergreen_Wednesday", "Quote of the day", 5),
+        ]
+
+    picked = outstanding_offers(State())
+    assert {o.title for o in picked} == {"Chichen Itza insights", "Quote of the day"}
+    assert len(picked) <= 6, "the cap must not be spent on offers that cannot complete"

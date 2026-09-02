@@ -92,6 +92,10 @@ VERIFIED_QUERIES: dict[str, str] = {
     # 2026-08-28. Failed on the prompt verbatim — "open roles at a specific company" —
     # and completed once the placeholder alone was substituted, nothing else changed.
     "jobs": "open roles at Microsoft",
+    # 2026-09-02, pending its retry. The tile ships no description, so the query came
+    # from its title, "Learn song lyrics", by way of the fallback — and a song still has
+    # to be named.
+    "lyrics": "Bohemian Rhapsody lyrics",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

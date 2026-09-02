@@ -84,16 +84,47 @@ async def _fetch_earn(page: Page):
     return parse_dashboard(await page.content())
 
 
+# Offers that only the Bing phone app can complete. This project drives a desktop
+# browser, so they are unreachable by architecture — a decision recorded 2026-08-16,
+# which this family then walked straight past by carrying a point value like any other
+# offer.
+APP_ONLY_FAMILY = "RewardsApp"
+APP_ONLY_TITLE = "rewards app only"
+
+
+def is_app_only(offer: Offer) -> bool:
+    """
+    Whether an offer needs the phone app, and so cannot be completed here.
+
+    The page says so twice over. The id reads
+    `WW_Moreactivities_RewardsApp_offer_20260902_1`, and the title ends in
+    "(Rewards App only)". Either is enough; both are checked because the id is the
+    structural signal and the title is the human one, and a redesign is more likely to
+    keep one than both.
+    """
+    if APP_ONLY_FAMILY.lower() in offer.offer_id.lower():
+        return True
+    return bool(offer.title and APP_ONLY_TITLE in offer.title.lower())
+
+
 def outstanding_offers(state) -> list[Offer]:
     """
-    Offers still to do: point-bearing, not a daily-set card, not complete.
+    Offers still to do: point-bearing, not a daily-set card, not complete, and doable.
 
     `points` being set is what separates a real offer from a banner. Banners report
     `None` there and lead to app installs and referral pages.
+
+    **App-only offers are excluded, and the reason is not merely that they fail.** On
+    2026-09-02 five of them appeared at 10 points each. Being the highest-valued things
+    outstanding they sorted to the front, filled the whole per-run cap of six, and pushed
+    "Quote of the day" out of the run entirely — so the cost was not five wasted
+    navigations but a real offer never attempted. Their destinations are ordinary
+    `bing.com/search?q=…` URLs, which is why nothing else about them looks wrong.
     """
     return [
         o for o in state.offers
         if not o.is_daily_set and o.points and o.is_completed is False
+        and not is_app_only(o)
     ]
 
 
@@ -205,6 +236,14 @@ async def run_keep_earning(
         if owns_page:
             await state_page.close()
         return result
+
+    skipped_app = [o for o in earn.offers
+                   if not o.is_daily_set and o.points and o.is_completed is False
+                   and is_app_only(o)]
+    if skipped_app:
+        logger.info(f"   skipping {len(skipped_app)} phone-app offer(s), "
+                    f"worth {sum(o.points for o in skipped_app)} pts to an app this "
+                    "project does not drive")
 
     logger.info(f"   {len(todo)} outstanding, worth {sum(o.points for o in todo)} pts")
 

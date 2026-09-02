@@ -462,6 +462,23 @@ Bing app to earn 500 points" offer, and anything else needing the Bing phone app
 project drives a desktop browser. Excluded from the task inventory by decision on
 2026-08-16 rather than left looking like an oversight.
 
+**That decision was walked past on 2026-09-02**, by a family that carries a point value
+like any other offer: `WW_Moreactivities_RewardsApp_offer_*`, titled "… (Rewards App
+only)", five of them at 10 points, with perfectly ordinary `bing.com/search?q=…`
+destinations. `outstanding_offers()` selects on having points and being incomplete, so
+they qualified.
+
+The damage was not the five failed navigations. Being the highest-valued things
+outstanding they sorted to the front of a run capped at six, and **"Quote of the day"
+was never attempted at all** — a real offer lost to five impossible ones. `keep_earning`
+finished 1 of 6 and flagged, breaking an eleven-run clean streak.
+
+Now excluded by both signals the page gives, the id and the title, since a redesign is
+likelier to keep one than both. Worth remembering as a shape: *a rule that selects on a
+property rather than an enumeration will pick up whatever new thing shares that
+property.* The property here was "has points and is not done", and it was correct right
+up until Microsoft shipped offers that have points and cannot be done.
+
 ### Market
 
 This account is `ENGB` (UK). Task sets and point values differ by market, so numbers

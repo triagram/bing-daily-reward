@@ -840,148 +840,23 @@ synchronised, with both browsers on the same machine.
 
 ---
 
-**Superseded 2026-08-20 — the automation profile reads account-wide; the account holder's Chrome under-reports**
+**Three wrong answers were given before that one, and each is worth one line.**
 
-The entry below concluded that each browser reports its own share. **That is wrong**, and
-a screenshot taken 2026-08-20 21:17 from the automation profile shows why:
+| Explanation | Killed by |
+|---|---|
+| Each browser reports only what it earned | The automation profile read "Today's points 120" — the run's 99 *plus* 21 the account holder earned in the other browser. It counts both. |
+| The page's clock runs a day fast | `new Date()` returned the same correct BST timestamp in both profiles. |
+| A stale cache | A hard refresh changed nothing, and the profile was showing *newer* data — tomorrow's unlocked tiles — which a cache cannot do. |
 
-```
-Today's points  120
-```
+The 2026-08-16 sighting that started it — the account holder's browser reading
+`Today's points 110 · Bing search 0/60` while the automation profile read
+`60 · 60/60`, with identical History rows — is subsumed: two profiles disagreeing about
+a daily panel, one of them wrong, with account-wide figures agreeing throughout.
 
-Today's account-wide earnings were the run's **+99** (108,083 → 108,182) plus **+21** the
-account holder earned afterwards by searching **in their own Chrome** (108,182 →
-108,203). 99 + 21 = 120. So the automation profile counts activity performed in the
-*other* browser — it is reading account-wide, not its own share.
-
-The same reading is already in an earlier measurement that was noted and not followed
-up: the points-breakdown modal read `Bing search 39/60` from the automation profile on
-08-19 while the bot itself had done 33 points of searching. The extra 6 was not its own.
-
-**So the divergence is one-sided.** The automation profile shows the truth; the account
-holder's Chrome showed `0` for a day in which the account earned 81. What is wrong with
-that browser is unknown — a hard refresh did not fix it, and it renders the balance
-correctly, so it is not a stale page.
-
-**Consequence, and it reverses the earlier advice:** the bot's allowance guard in
-`fetch_search_progress` reads the same modal, so it **does** see manual searching done
-elsewhere and will trim its count accordingly. That was the mechanism's whole purpose
-and it works. The account holder is free to search by hand without confusing the run's
-measurement, and the "search only after the run" habit is a convenience, not a
-requirement.
-
-**Still unexplained:** the 08-16 pair below, where the two browsers showed *different
-non-zero* figures. If the automation profile is account-wide it should have read 170
-that day, and it read 60. The reads were half an hour apart, which may or may not
-account for it.
-
-### Superseded — the daily widgets are scoped to the browser, not the account
-
-Confirmed 2026-08-19, 23:30ish, by reading the same widget in both browsers at once:
-
-| Ring | Automation profile | Account holder's Chrome |
-|---|---|---|
-| Bing | **1/1** | 0/1 |
-| Daily Set | **2/3** | 0/3 |
-| Bing search (on `/earn`) | — | 0/60 |
-| Offers | — | 0 |
-| **Balance** | **108,083** | **the same** |
-
-The bot had just earned 81 points in the automation profile. The account holder's
-Chrome, same account, same minute, reported a day in which nothing happened — while
-agreeing exactly on the balance.
-
-**So "Today's points", the four rings and the `/earn` activity breakdown all answer
-"what did *this browser* earn today", not "what did this account earn today".** Balance,
-"Ready to claim" and the History rows are account-wide, which is why those never
-disagreed.
-
-The cleanest demonstration is already in the samples, in a *single* page load. At
-2026-08-16 23:39 the automation profile read the three daily-set cards as `DDD` — all
-complete — and the Daily Set ring as `0/3`, in the same document. The balance had risen
-107,465 → 107,575 in the preceding hours, the +110 the account holder earned doing
-offers by hand in their own browser. Card flags are account state; the ring is session
-state; one page carried both, disagreeing.
-
-**Consequence for using this project:** the account holder cannot verify a run from
-their own browser, and should not try — that page will only ever show what they did by
-hand. Use `--history`, `monitor.py`, or the balance.
-
-**Q2 is narrowed but not closed by this.** It explains the 08-16 pair — the automation
-profile correctly read `0/3` for a day whose cards it had not touched. It does not
-explain 08-17 02:13, where the same profile read `3/3` just after the reset having
-earned nothing (balance flat at 107,575 across the boundary). Something still changes at
-the reset that session scoping alone does not account for.
-
-### Superseded framing: a points breakdown that read 0/60 while the same account read 60/60
-
-On 2026-08-16 the account holder saw, in their own browser:
-
-```
-Today's points 110 · Bing search 0/60 · Offers 110
-```
-
-At the same time, three reads from the automation profile — two pages, half an hour
-apart — all showed `Today's points 60 · Bing search 60/60 · Offers 0`. The History
-rows (month 3,925, year 40,160, lifetime 107,575) were **identical** in both, which is
-what makes it strange: same account, same data source, different "today".
-
-**Explained by the entry above.** Each browser was reporting its own share: the account
-holder's had done the offers (110), the automation profile the searches (60). The
-"direction mismatch" that made this look strange was an artefact of reading "today" as
-account-wide. Recorded as originally written, below, because the reasoning shows what
-the wrong assumption cost.
-
-Never reproduced at the time. It did not recur the following day, when searches credited
-normally in real time, so it was not a restriction — the 60 points that day had simply already
-been spent by an experiment before the manual searches. Candidates never eliminated:
-the History rows lag and so cannot date a reading; the modal distinguishes "Bing
-search" (combined) from "Desktop Bing search" and the two may render differently by
-context; or a stale client-side render.
-
-### Second sighting: the account holder's browser showed a different "today"
-
-2026-08-19, 22:41. A run measured +81 and the balance moved 107999 → 108080. Minutes
-later the account holder's own Chrome showed that same **108080 available**, and at the
-same time `Today's points 0` with no activity listed.
-
-The arithmetic reconciles exactly — 107999 + 20 + 33 + 28 = 108080 — so no points are
-missing; only the "today" panel disagrees between the two browsers, which is the same
-shape as the 2026-08-16 sighting above. Note it does not repeat that sighting's
-*direction*: there the account holder's browser read high (110) and the automation
-profile low (60); here the account holder's reads zero.
-
-Both first candidates are eliminated. A hard refresh changed nothing, so it is not a
-stale render; and a one-day lag would have shown 105, since 2026-08-18 earned that — not
-zero.
-
-**Leading hypothesis: the daily widgets report what *that browser* earned, not what the
-account earned.** A `monitor.py` sample at 23:26 from the automation profile read
-`Bing 1/1` and `Daily Set 2/3` — it sees the run perfectly well. The same account in the
-account holder's Chrome, minutes earlier, showed nothing.
-
-This is the first hypothesis that explains the 2026-08-16 sighting too, including the
-direction that made it look strange. Re-read those figures as per-browser shares:
-
-| | Account holder's browser | Automation profile |
-|---|---|---|
-| Offers | **110** | 0 |
-| Bing search | 0/60 | **60/60** |
-
-Each browser reported exactly its own contribution. The offers were done by hand in one;
-the searches by the bot in the other. Nothing was disagreeing — the two were answering
-different questions, and "today" was never account-wide. The identical History rows fit:
-those *are* account-wide.
-
-**What would confirm it, at no cost:** compare the four rings themselves, not the
-"Today's points" panel, in both browsers at the same moment. The automation profile read
-`Bing 1/1 · Daily Set 2/3 · Edge 0/30 · Mobile App 0/1` at 23:26. If the account
-holder's Chrome reads `0/1` and `0/3` for the first two at that time, the same widget is
-demonstrably session-scoped and this closes.
-
-**If it holds, it probably also explains [Q2](#q2)** — ring readings would depend on what
-the sampling profile itself had done, not on what the account had done, which is why no
-account-level model ("today", "yesterday") fits all seven observations.
+**The one thing to carry forward:** read availability and completion from the payload —
+`isLocked`, `isCompleted` — never from what a browser renders. A failed manual attempt on
+a `creditreport` tile is explained entirely by that profile showing it as open while the
+server had it locked.
 
 ### Hypothesis: a referral daily-set card may not be completable at all
 

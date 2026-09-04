@@ -19,71 +19,47 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: 7 of 14 — counting from 2026-08-22
+## Status: 2 of 14 — counting from 2026-09-03
 
 | Run | Result |
 |---|---|
-| 2026-08-17 | Pre-dates the verdict fields. Not counted. |
-| 2026-08-18 | Clean, +105 — but the sequence it started was broken the next day. |
-| 2026-08-19 | `daily_set` 2/3, `Child1` never registered. **Broke the sequence.** |
-| 2026-08-20 | Clean, +99 — broken the next day. |
-| 2026-08-21 | `daily_set` 2/3, `explore` 1/3 `short`, +57. Broke the sequence. |
-| 2026-08-22 | Clean, 3/3, 8/8, 1/1, +159. **1 of 14.** |
-| 2026-08-23 | Clean, 3/3, 10/10, 2/2, +76. **2 of 14.** |
-| 2026-08-24 | Clean, 3/3, 9/9, 5/5, +138. **3 of 14.** |
-| 2026-08-25 | Clean, 3/3, 12/12, 3/3, +114. **4 of 14.** |
-| 2026-08-26 | Clean, 3/3, 9/9, 3/3, +85. **5 of 14.** |
-| 2026-08-27 | Clean, 3/3, 10/10, 3/3, +105. **6 of 14.** |
-| **2026-08-28** | **Clean.** 3/3, 11/11, 3/3, +161. **7 of 14.** |
+| 2026-08-22 … 09-01 | Eleven consecutive clean runs. **Ended by the next line.** |
+| 2026-09-02 | `keep_earning` 1/6. Five `RewardsApp` offers — completable only in the phone app — filled the six-item cap and pushed a real offer out of the run. **Broke the sequence.** Cause removed in `d9b3d9e`. |
+| **2026-09-03** | **Clean.** 3/3, 12/12, 4/4, +119. **1 of 14.** |
+| **2026-09-04** | **Clean.** 3/3, 10/10, 3/3, +158. **2 of 14.** |
 
-**2026-08-21 paid for the window a second time.** It surfaced three defects that had
-been costing points silently, all fixed in `6992da7` with regression tests:
+The eleven-run streak was not carried over, by decision on 2026-09-04. The failure was
+real — work was attempted and not done, and an offer that would have completed was never
+reached — and the new count starts on the code that fixes it, which is worth more than a
+number spanning a known fault.
 
-1. A daily-set card whose URL used lowercase percent-encoding matched no anchor, so it
-   fell through to direct navigation and never registered. The page mixes both cases.
-2. Two Explore offers whose queries began with the same word both resolved to the first
-   card, so the second reported a successful click while never being opened.
-3. A five-point offer reported failed at 11:21 was complete at 11:31. The per-item check
-   runs before credit lands, so the run recorded an error and a `short` verdict for work
-   that had succeeded.
+## What v1.0.0 means
 
-The third is the one that threatens this document directly: `Flags` fires on a recorded
-error, and the exit criterion reads `Flags`. Left alone it would have made clean runs
-look dirty and the count unreachable.
+Two conditions, both measurable, neither met yet:
 
-Note what the fixes do **not** do. Two of the three failures were real — the card and
-the offer genuinely did not complete — so 08-21 stays a broken run. A change that made
-it look clean in hindsight would have been over-reaching.
+1. **This window closes at 14 of 14.**
+2. **`explore_on_bing.py` folds into the daily run**, so there is one command again. It
+   is separate only because a topic the query map has not learned fails once before it
+   can be added, and such a failure must not dirty an otherwise clean daily run. The
+   result type already matches the other tasks; merging is three lines in
+   `rewards_bot.py`.
 
-Two things it also confirmed, incidentally: the parser fix holds on a live page for a
-second day (`3 outstanding`, not six), and the allowance read `0/60` on a fresh day.
+They arrive together: the map needs roughly the same fortnight to settle.
 
-The `Child1` referral hypothesis is **still untested** — that slot held an ordinary
-search card today, so no `referandearn` card has appeared since. See `DEVELOP.md`.
+`v0.2.0` was tagged 2026-08-25 for the closed-loop rewrite. Its tag message is the
+release note.
 
-## How day one went
+## Open threads, as of 2026-09-04
 
-Day 1 was attempted on 2026-08-19 and held. The `--dry-run` reported **six**
-outstanding daily-set cards for a three-card set — `Child1`, `Child2` and `Child3`
-each listed twice, once populated and once with `None` for both points and title.
-A run would have recorded `daily_set 3/6` with three errors: a first data point known
-in advance to be bad.
+| Thread | State |
+|---|---|
+| `recipe` tile | Failed on a query carrying a non-breaking space. Normalisation now strips those (`0b078ee`). An override carries the corrected query for a same-day retry; **delete it once the tile passes on its own prompt.** |
+| `lyrics` tile | Failed twice, unexplained. Its empty description was a red herring — tiles lose that after activation. No override; next appearance starts clean. |
+| `hotel`, `realestate` | Never validly tried. They run on their own prompts now, which is the test. |
+| Q2 — what the Daily Set ring counts | Reopened 2026-08-19; one reading (08-17 02:13) fits no model. |
+| Q8 — the `Edge` 0/30 counter | Untouched, still frozen. |
 
-Cause, settled offline against a fresh `recon.py` capture: the dashboard ships each
-card as **two** objects, the rendered element and the data behind it, and the parser's
-dedup key was built from the very fields those two halves disagree on, so both
-survived. Fixed in `952f854`, with the shape now reproduced in the synthetic fixture.
-
-**This is the cheapest outcome the window can produce.** A read-only `--dry-run`
-caught it before any task ran — zero account exposure, and the fix arrived with a
-regression test rather than a guess. It is the argument for having a window at all.
-
-The dry-run listing now prints `offer_id` per offer and warns on an impossible count,
-because the slot alone could not distinguish the two candidate explanations.
-
-**Before starting: run `--dry-run` once more and confirm it reads three.**
-
-## Exit criterion
+## Exit criterion## Exit criterion
 
 Not a duration — a measurement, because the instrument already exists:
 

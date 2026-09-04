@@ -169,12 +169,28 @@ def is_present(value: Any) -> bool:
 # query nonsense if it is typed with them still in.
 ZERO_WIDTH = "\u200b\u200c\u200d\ufeff"
 
+# Characters that look like a space and are not one. A tile's prompt on 2026-09-04 read
+# "new\u00a0recipes" with a non-breaking space, which was typed into the search box
+# exactly as written — an invisible character that no person would ever enter. Whether
+# it is what stopped the tile completing is unproven; typing it was wrong regardless,
+# and removing it removes the variable.
+SPACE_LOOKALIKES = re.compile(r"[\u00a0\u2007\u202f\u2000-\u200a\u3000]")
+
+
+def normalise_text(text: str) -> str:
+    """Strip the invisible characters out of a rendered string and collapse runs."""
+    text = SPACE_LOOKALIKES.sub(" ", text)
+    text = text.strip().strip(ZERO_WIDTH)
+    for ch in ZERO_WIDTH:
+        text = text.replace(ch, "")
+    return re.sub(r"\s+", " ", text).strip()
+
 
 def strings_in(node: Any, out: list[str] | None = None) -> list[str]:
     """Every human-readable string under a React children tree, in document order."""
     out = [] if out is None else out
     if isinstance(node, str):
-        text = node.strip().strip(ZERO_WIDTH).strip()
+        text = normalise_text(node)
         # React's own placeholders ($L13, $undefined, $5f:props:...) are not text.
         if text and not text.startswith("$"):
             out.append(text)

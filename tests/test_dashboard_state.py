@@ -268,3 +268,38 @@ def test_latest_real_capture_still_parses():
     assert state.offers, "no offers in a real capture"
     assert state.counters, "no activity counters in a real capture"
     assert any(o.is_daily_set for o in state.offers)
+
+
+# --------------------------------------------------------------------------- #
+# Invisible characters in rendered text
+# --------------------------------------------------------------------------- #
+
+
+def test_a_non_breaking_space_does_not_survive_into_a_query():
+    """
+    A tile's prompt on 2026-09-04 read "new recipes", and that non-breaking space
+    was typed into the search box exactly as written. Nobody types an invisible
+    character; whatever else was wrong with that tile, this was.
+    """
+    from utils.dashboard_state import normalise_text
+
+    assert normalise_text("new recipes") == "new recipes"
+
+
+def test_zero_width_marks_are_removed_from_the_middle_too():
+    """Stripping only the ends left them inside, where they break an exact match."""
+    from utils.dashboard_state import normalise_text
+
+    assert normalise_text("​Catch​ the show​") == "Catch the show"
+
+
+def test_runs_of_whitespace_collapse():
+    from utils.dashboard_state import normalise_text
+
+    assert normalise_text("  tickets   for \n concerts  ") == "tickets for concerts"
+
+
+def test_normalisation_leaves_ordinary_text_alone():
+    from utils.dashboard_state import normalise_text
+
+    assert normalise_text("Search on Bing for hotels") == "Search on Bing for hotels"

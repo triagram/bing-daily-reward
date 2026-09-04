@@ -4,14 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Where to pick up
 
-The project is **not** in active feature development. All three tasks are rewritten,
-verified against a live account, and covered by tests; the account holder deliberately
-paused to watch stability before automating anything. Do not start new work unprompted.
+**An observation window is running, and it is the current work.** All four tasks are
+rewritten, verified against a live account and covered by tests; what remains is proving
+the daily run is boring. Two commands are run by hand each day — `rewards_bot.py`, then
+`explore_on_bing.py` — and nothing else should start without being asked.
 
-Read in this order when context is needed: this file for the rules that must not be
-broken, `docs/DEVELOP.md` for what the dashboard actually returns and which questions
-are settled, `README.md` for how to run it. Between them they carry everything — do
-not re-derive findings by experimenting on the account.
+Read in this order: **`docs/OBSERVATION.md` first** — it carries the window's status, its
+freeze list and every loose end still open — then this file for the rules that must not
+be broken, `docs/DEVELOP.md` for what the dashboard actually returns and which questions
+are settled, `README.md` for how to run it. Between them they carry everything; do not
+re-derive findings by experimenting on the account.
 
 Deferred by decision, not oversight: unattended scheduling, the Edge counter (Q8),
 multi-account, and packaging. CI is written but manual-only until the suite has been
@@ -108,12 +110,16 @@ never been validated against Microsoft's detection.
 `rewards_bot.py` only orchestrates: launch persistent browser → check login → run three
 tasks in sequence, each in its own `try`/`except` so one failure does not abort the rest.
 
-`utils/task_explore_on_bing.py` is a fourth task and is **not** in that sequence. It runs
-from `explore_on_bing.py` because the mechanism it assumes — open the tile, then search
-its topic in what the tile opens — has never been confirmed, and an unproven task inside
-the daily run would put its verdict into the Flags column the observation window reads.
-Run it after the daily run. Its result type matches the others so merging it later is
-three lines.
+`utils/task_explore_on_bing.py` is a fourth task and is **not** in that sequence. Run it
+after the daily run, from `explore_on_bing.py`.
+
+Its mechanism is settled — click the tile to *activate* it, then search its topic inside
+what it opens, typed and without navigating away. What is not settled is the query for
+every topic: the tile's own prompt usually works, a few topics need an entity Bing cannot
+supply for itself, and an unlearned one fails once before it can be added. That failure
+must not land in the Flags column the observation window reads, which is the whole reason
+this task sits outside the daily run. Merging it back is three lines and is half of what
+v1.0.0 means — see `docs/OBSERVATION.md`.
 
 Task 2 is `utils/task_keep_earning.py`, renamed from `task_explore.py` on 2026-08-22.
 The page has a section headed **"Explore on Bing"** that this task does not do and cannot

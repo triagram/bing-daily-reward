@@ -19,10 +19,9 @@ Deferred by decision, not oversight: unattended scheduling, the Edge counter (Q8
 multi-account, and packaging. CI is written but manual-only until the suite has been
 stable a while.
 
-**An observation window is running — read `docs/OBSERVATION.md` before changing
-anything.** It carries a short freeze list, time-boxed to that window, which is not the
-same as the permanent deferrals above. Probing Q8 is on it: it is the obvious next thing
-to reach for, and doing it mid-window contaminates the baseline being established.
+The window carries a freeze list of its own, time-boxed and distinct from the permanent
+deferrals above. Probing Q8 is on it: it is the obvious next thing to reach for, and
+doing it mid-window contaminates the baseline being established.
 
 ## Commands
 

@@ -404,16 +404,25 @@ That is a better account than "verticals need an entity", which 08-25 disproved,
 is still a description of five observations rather than a rule. The map stays a list of
 measurements.
 
-**Not every failure is a query, 2026-09-02.** The `lyrics` tile failed on its
-title-derived query and failed again on "Bohemian Rhapsody lyrics" — a named song, the
-substitution that fixed `flight`, `shopping` and `jobs`. It is not the query. That tile
-ships **one string in its whole subtree**, its title, where a working tile carries the
-title, the prompt, a "10" badge and a completion label. It arrives half-rendered, is not
-locked, and its anchor is present and clickable.
+**A tile loses its description once activated — corrected 2026-09-04.** `lyrics` was
+written off on 09-02 as a malformed card, on the evidence that its whole subtree held one
+string where a working tile holds four. That reading was **wrong**, and the captures say
+so plainly:
 
-No hypothesis worth testing follows from that, so the override was removed rather than
-tuned. `lyrics` recurs — it was present on 08-19 too — and the next appearance shows
-whether the tile is reliably malformed or was malformed once.
+| Capture | Tile | Description | Attempted yet? |
+|---|---|---|---|
+| 08-19 | `lyrics` | **present** | no |
+| 08-20 ×5, 08-21 | `recipe` | **present** | no |
+| 09-02 | `lyrics` | absent | yes, and failed |
+| 09-04 | `recipe` | absent | yes, and failed |
+
+The text disappears **after** the tile is activated. So an empty description is a
+consequence of having tried, never a cause of failing, and `lyrics` remains unexplained
+rather than explained.
+
+Two things follow. A tile's prompt has to be read *before* working it, which the task
+already does. And a same-day retry cannot re-derive the query from the page — the text
+is gone by then — so an override has to carry it, which is what `recipe` is doing now.
 
 **It holds nothing unmeasured, deliberately.** `hotel` and `realestate` were briefly given
 predicted entries on the entity reasoning; they came out on 2026-08-25 when that reasoning

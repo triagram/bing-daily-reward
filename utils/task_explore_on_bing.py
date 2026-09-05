@@ -74,9 +74,16 @@ logger = logging.getLogger("bing_rewards")
 #   financemarket  "the latest price of a specific stock" ✗  ->  "the latest price of Microsoft stock" ✓
 #
 # All six name something Bing cannot supply for itself — a route, a product, a company, a
-# word, a zone, a ticker. The last three were confirmed 3 of 3 on 2026-09-05 at 20:08,
-# on the same three tiles that had failed six hours earlier with nothing changed but the
-# query — which is as close to a controlled comparison as this account allows.
+# word, a zone, a ticker. The last three were confirmed 3 of 3 on 2026-09-05 at 20:08, on
+# the same three tiles that had failed six hours earlier.
+#
+# One thing that comparison does *not* separate: those tiles had already been activated by
+# the failed attempt, so "the query fixed it" and "a second pass on an activated tile
+# fixed it" both fit. `recipe` and `lyrics` argue against the second — both failed their
+# same-day retry on an activated tile — but not decisively. The clean test costs nothing:
+# topics recur (`mattress` passed 08-29 and again 09-05, `flowerdelivery` 08-28 and 09-03),
+# so these three will come round on unactivated tiles and either complete first time or
+# not. Do not add an override anywhere on the strength of the pattern alone.
 #
 # `lyrics` failed on "the lyrics of your favorite song" and again on "Bohemian Rhapsody
 # lyrics", and is still unexplained. It was briefly written off as a malformed tile

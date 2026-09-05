@@ -19,7 +19,7 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: 2 of 14 — counting from 2026-09-03
+## Status: 3 of 14 — counting from 2026-09-03
 
 | Run | Result |
 |---|---|
@@ -27,6 +27,7 @@ what the code now does. **Sample size for the current code is zero.** Do not rea
 | 2026-09-02 | `keep_earning` 1/6. Five `RewardsApp` offers — completable only in the phone app — filled the six-item cap and pushed a real offer out of the run. **Broke the sequence.** Cause removed in `d9b3d9e`. |
 | **2026-09-03** | **Clean.** 3/3, 12/12, 4/4, +119. **1 of 14.** |
 | **2026-09-04** | **Clean.** 3/3, 10/10, 3/3, +158. **2 of 14.** |
+| **2026-09-05** | **Clean.** 3/3, 9/9, 1/1, +65. **3 of 14.** Explore ran 1 of 4 and then 3 of 3 on a retry — outside the daily run, so outside this count. See *Reading a flag*. |
 
 The eleven-run streak was not carried over, by decision on 2026-09-04. The failure was
 real — work was attempted and not done, and an offer that would have completed was never
@@ -49,7 +50,7 @@ They arrive together: the map needs roughly the same fortnight to settle.
 `v0.2.0` was tagged 2026-08-25 for the closed-loop rewrite. Its tag message is the
 release note.
 
-## Open threads, as of 2026-09-04
+## Open threads, as of 2026-09-05
 
 | Thread | State |
 |---|---|
@@ -59,7 +60,7 @@ release note.
 | Q2 — what the Daily Set ring counts | Reopened 2026-08-19; one reading (08-17 02:13) fits no model. |
 | Q8 — the `Edge` 0/30 counter | Untouched, still frozen. |
 
-## Exit criterion## Exit criterion
+## Exit criterion
 
 Not a duration — a measurement, because the instrument already exists:
 

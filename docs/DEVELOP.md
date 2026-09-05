@@ -894,6 +894,18 @@ judged `ok`, which is precisely the silent failure `shortfall.py` exists to catc
 worth solving on one sighting, but worth knowing before trusting a per-task number in
 isolation. The per-item `isCompleted` checks are unaffected: they never look at points.
 
+**Second sighting, 2026-09-04 — so "not worth solving on one sighting" above no longer
+holds.** `daily_set` reported **+100** against 30 advertised. The day's `overall_delta`
+of 158 reconciles exactly against the per-task sum (100 + 30 + 28), which places the
+extra 70 inside the daily set's own before/after window rather than in a gap between
+tasks. What credited it was not identified: 70 matches no advertised value on the page,
+and unlike 2026-08-22 there is no observed bonus of the right size to attribute it to.
+Recorded as unexplained rather than assigned to a streak.
+
+Two sightings a fortnight apart, on two different tasks, is the useful part: a per-task
+delta that overshoots is a normal event on this account, not a curiosity. Read
+`overall_delta` against the per-task sum before believing any single task's figure.
+
 ### An Explore run that measured more than it advertised
 
 2026-08-17: four offers stating 15+15+5+5 = 40 measured **+50**. The Daily Set run the

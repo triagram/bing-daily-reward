@@ -63,15 +63,20 @@ logger = logging.getLogger("bing_rewards")
 # **The default is the tile's own prompt, and it usually works.** 2026-08-25 completed
 # 4 of 4 without touching this map at all.
 #
-# **This is an exception list, learned from failures, not a theory.** Two topics have
-# needed help so far, both measured on the same tiles the same day with only the query
-# changed:
+# **This is an exception list, learned from failures, not a theory.** Six topics have
+# needed help so far, each measured on the tile that failed, with only the query changed:
 #
-#   flight    "a flight to your perfect vacation"  ✗  ->  "flights from London to Paris"  ✓
-#   shopping  "items on your shopping list"        ✗  ->  "buy wireless headphones"       ✓
-#   jobs      "open roles at a specific company"   ✗  ->  "open roles at Microsoft"       ✓
+#   flight         "a flight to your perfect vacation"    ✗  ->  "flights from London to Paris"        ✓
+#   shopping       "items on your shopping list"          ✗  ->  "buy wireless headphones"             ✓
+#   jobs           "open roles at a specific company"     ✗  ->  "open roles at Microsoft"             ✓
+#   dictionary     "the meaning of a word you don't …"    ✗  ->  "the meaning of the word ephemeral"   ?
+#   timezonedates  "what time it is in a different …"     ✗  ->  "what time it is in Tokyo"            ?
+#   financemarket  "the latest price of a specific stock" ✗  ->  "the latest price of Microsoft stock" ?
 #
-# All three name something Bing cannot supply for itself — a route, a product, a company.
+# All six name something Bing cannot supply for itself — a route, a product, a company, a
+# word, a zone, a ticker. A `?` marks a substitution whose failing half is measured but
+# whose replacement has not completed a tile yet; it becomes a ✓ or is deleted on the
+# next run, and must not be left standing unresolved.
 #
 # `lyrics` failed on "the lyrics of your favorite song" and again on "Bohemian Rhapsody
 # lyrics", and is still unexplained. It was briefly written off as a malformed tile
@@ -108,6 +113,17 @@ VERIFIED_QUERIES: dict[str, str] = {
     # 2026-08-28. Failed on the prompt verbatim — "open roles at a specific company" —
     # and completed once the placeholder alone was substituted, nothing else changed.
     "jobs": "open roles at Microsoft",
+    # 2026-09-05. Three of that day's four tiles failed together, and all three prompts
+    # read as an unfilled placeholder — "a word you don't understand", "a different time
+    # zone", "a specific stock". The fourth, "top-rated mattresses at great prices", named
+    # a real thing and completed in the same run, which is what rules out the account
+    # rather than the queries: every search those failing tiles typed still credited 3
+    # points, and the daily run that day was clean.
+    #
+    # Substituting the placeholder alone, as `jobs` was, nothing else changed.
+    "dictionary": "the meaning of the word ephemeral",
+    "timezonedates": "what time it is in Tokyo",
+    "financemarket": "the latest price of Microsoft stock",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

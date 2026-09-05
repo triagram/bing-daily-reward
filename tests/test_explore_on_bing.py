@@ -6,6 +6,8 @@ server had locked — it renders first in the section, so it looked available. N
 was learned and no points were earned. Everything here is about not repeating that.
 """
 
+import contextlib
+
 from utils.dashboard_state import Offer
 from utils.task_explore_on_bing import (
     ExploreOnBingResult,
@@ -35,6 +37,22 @@ def tile(topic, *, completed=False, locked=False, disabled=None,
              "isDisabled": locked if disabled is None else disabled,
              "isCompleted": completed},
     )
+
+
+@contextlib.contextmanager
+def no_override_for(topic):
+    """
+    The fallback tests name real topics from real captures, and the override map grows
+    every time a tile fails — `dictionary` and `timezonedates` both acquired an entry on
+    2026-09-05. What those tests check is the *order* query_for resolves in, so a topic
+    joining the map must not turn them red.
+    """
+    learned = TOPIC_QUERIES.pop(topic, None)
+    try:
+        yield
+    finally:
+        if learned is not None:
+            TOPIC_QUERIES[topic] = learned
 
 
 # The 2026-08-20 capture: four open, four behind "Unlocks tomorrow".
@@ -85,7 +103,8 @@ def test_the_query_comes_from_the_tiles_own_prompt():
     """
     t = tile("timezonedates", title="What time is it?",
              description="Search on Bing to see what time it is in a different time zone.")
-    assert query_for(t) == "what time it is in a different time zone"
+    with no_override_for("timezonedates"):
+        assert query_for(t) == "what time it is in a different time zone"
 
 
 def test_the_instruction_is_stripped_but_the_subject_is_not():
@@ -97,7 +116,8 @@ def test_the_instruction_is_stripped_but_the_subject_is_not():
 
 def test_the_title_carries_a_tile_whose_prompt_did_not_parse():
     """`dictionary` rendered a title and no description on 2026-08-22."""
-    assert query_for(tile("dictionary", title="Expand your vocabulary")) == "Expand your vocabulary"
+    with no_override_for("dictionary"):
+        assert query_for(tile("dictionary", title="Expand your vocabulary")) == "Expand your vocabulary"
 
 
 def test_a_learned_phrasing_overrides_the_prompt():

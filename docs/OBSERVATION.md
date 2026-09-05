@@ -53,9 +53,9 @@ release note.
 
 | Thread | State |
 |---|---|
-| `recipe` tile | Failed on a query carrying a non-breaking space. Normalisation now strips those (`0b078ee`). An override carries the corrected query for a same-day retry; **delete it once the tile passes on its own prompt.** |
+| `recipe` tile | Failed twice, unexplained — the non-breaking space was not the cause. Normalisation strips those (`0b078ee`), and the 09-04 18:09 retry typed the corrected `new recipes` and still did not complete, so the override was deleted (`740dfd9`). Starts clean on its next appearance, like `lyrics`. |
 | `lyrics` tile | Failed twice, unexplained. Its empty description was a red herring — tiles lose that after activation. No override; next appearance starts clean. |
-| `hotel`, `realestate` | Never validly tried. They run on their own prompts now, which is the test. |
+| `hotel`, `realestate` | Never validly tried. They run on their own prompts now, which is the test — **both unlock 2026-09-06**, so the next run answers it. |
 | Q2 — what the Daily Set ring counts | Reopened 2026-08-19; one reading (08-17 02:13) fits no model. |
 | Q8 — the `Edge` 0/30 counter | Untouched, still frozen. |
 
@@ -166,6 +166,22 @@ The three verdicts need opposite responses, so do not treat them alike:
 **The cheapest signal that Microsoft's posture changed is re-authentication.** If
 `browser_session/` starts asking for a sign-in mid-window, note the date. That is more
 informative than any single zero-point run.
+
+**A bad Explore on Bing day is not that signal, and will look like one.** 2026-09-05
+completed 1 of 4 and the obvious reading was enforcement. Three checks ruled it out
+inside the same run's own numbers, and they are the ones to repeat:
+
+1. **Do the searches still pay?** `+22` measured against one confirmed tile is 10 for the
+   tile and 3 for each of four searches. Every search still credited at full rate —
+   throttling stops that first.
+2. **Did anything complete in the same run?** `mattress` did, same browser, same minute.
+   That rules out the mechanism and leaves the queries.
+3. **Was the daily run clean?** It was: 3/3, 9/9, 1/1, no errors, no sign-in prompt.
+
+The cause was the batch: three of that day's four prompts named an unfilled placeholder
+Bing cannot resolve — "a word you don't understand", "a different time zone", "a specific
+stock". Substituting a real entity into each and re-running the same three tiles six
+hours later completed **3 of 3** (`c0a5904`). Batch composition, not a trend.
 
 ## Frozen for the duration
 

@@ -69,14 +69,14 @@ logger = logging.getLogger("bing_rewards")
 #   flight         "a flight to your perfect vacation"    ✗  ->  "flights from London to Paris"        ✓
 #   shopping       "items on your shopping list"          ✗  ->  "buy wireless headphones"             ✓
 #   jobs           "open roles at a specific company"     ✗  ->  "open roles at Microsoft"             ✓
-#   dictionary     "the meaning of a word you don't …"    ✗  ->  "the meaning of the word ephemeral"   ?
-#   timezonedates  "what time it is in a different …"     ✗  ->  "what time it is in Tokyo"            ?
-#   financemarket  "the latest price of a specific stock" ✗  ->  "the latest price of Microsoft stock" ?
+#   dictionary     "the meaning of a word you don't …"    ✗  ->  "the meaning of the word ephemeral"   ✓
+#   timezonedates  "what time it is in a different …"     ✗  ->  "what time it is in Tokyo"            ✓
+#   financemarket  "the latest price of a specific stock" ✗  ->  "the latest price of Microsoft stock" ✓
 #
 # All six name something Bing cannot supply for itself — a route, a product, a company, a
-# word, a zone, a ticker. A `?` marks a substitution whose failing half is measured but
-# whose replacement has not completed a tile yet; it becomes a ✓ or is deleted on the
-# next run, and must not be left standing unresolved.
+# word, a zone, a ticker. The last three were confirmed 3 of 3 on 2026-09-05 at 20:08,
+# on the same three tiles that had failed six hours earlier with nothing changed but the
+# query — which is as close to a controlled comparison as this account allows.
 #
 # `lyrics` failed on "the lyrics of your favorite song" and again on "Bohemian Rhapsody
 # lyrics", and is still unexplained. It was briefly written off as a malformed tile

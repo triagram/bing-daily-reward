@@ -79,6 +79,15 @@ logger = logging.getLogger("bing_rewards")
 # description *after* being activated, so the empty text was a consequence of the failed
 # attempt rather than its cause. No override is kept for it; the next appearance starts
 # from a clean tile.
+#
+# `recipe` is the second of that kind. Its prompt arrived as "new\u00a0recipes" with a
+# non-breaking space, which looked like the whole story; normalisation now strips those
+# at extraction (`dashboard_state.normalise_text`). It is not the story. A same-day retry
+# on 2026-09-04 typed the corrected "new recipes" and the tile still did not complete, so
+# the override that carried it was deleted rather than tuned — an entry that does not fix
+# anything is exactly the unmeasured guess this list refuses to hold. Unexplained, like
+# `lyrics`, and starting clean on its next appearance.
+#
 # Placeholders it *can* resolve are fine and need no entry: "a restaurant near you" and
 # "compare internet plans in your area" both completed untouched.
 #
@@ -99,11 +108,6 @@ VERIFIED_QUERIES: dict[str, str] = {
     # 2026-08-28. Failed on the prompt verbatim — "open roles at a specific company" —
     # and completed once the placeholder alone was substituted, nothing else changed.
     "jobs": "open roles at Microsoft",
-    # 2026-09-04, pending its retry. The prompt read "new\u00a0recipes" with a
-    # non-breaking space and the tile did not complete. Normalisation now removes that
-    # at extraction, but this tile has since lost its description — activated tiles do —
-    # so the corrected query has to be supplied here to test it at all today.
-    "recipe": "new recipes",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

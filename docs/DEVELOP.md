@@ -390,6 +390,28 @@ Settled, after four days and four wrong turns:
    map that holds them is a list of measurements, not a rule.
 5. Only unlocked tiles can pay, and four unlock a day.
 
+**Step 2 is not always required, 2026-09-06.** `couponcodes` was clicked, and the click
+did not open Bing — the page stayed on `rewards.bing.com/earn`, where there is no search
+box, and the run logged `no search box on https://rewards.bing.com/earn`. **No query was
+ever typed for that tile.** It credited anyway, ~2.5 minutes later, on the re-read the
+run does before calling a tile failed.
+
+The arithmetic is what makes this more than a guess. The run measured **+39** for three
+confirmed tiles: 3 × 10 for the tiles, plus 3 × 3 for the searches — and only three
+searches were typed all run (`hotel`, `realestate`, `shopping`). `couponcodes` earned its
+10 with zero searches.
+
+So activation alone can credit a tile. It plainly does not always: every failed tile in
+this log was also clicked, and therefore also activated, without crediting. What decides
+it is unknown, and one sighting is not enough to change the method — searching after the
+click stays, because it is what the other tiles need. Recorded so the next session does
+not read "the search is what credits" as settled.
+
+It also costs the 2026-09-05 retry some of its force. That run was read as "the query
+fixed those three tiles"; if activation can credit on its own, a second activation is a
+live alternative explanation for the same outcome. The clean test is unchanged — those
+topics recur, and will arrive unactivated.
+
 So the default query is the tile's prompt, and `VERIFIED_QUERIES` is an exception list
 grown one measured entry at a time.
 
@@ -403,6 +425,21 @@ that have ever needed an override.
 That is a better account than "verticals need an entity", which 08-25 disproved, but it
 is still a description of five observations rather than a rule. The map stays a list of
 measurements.
+
+**And that reading breaks too, 2026-09-06.** `hotel` failed on "hotels to stay at on
+**your next adventure**". `rentalcars` completed on 2026-08-25 searching "book rental cars
+for **your next adventure**" — the same placeholder, in the same unresolvable-by-Bing
+class, with the opposite outcome.
+
+Two topics, one wording, and the results disagree. **So the discriminator is not in the
+prompt text at all**, and every attempt so far to find a rule in the wording — "verticals
+need an entity", "Bing must be able to resolve the placeholder" — has been reading a
+property of the topic off the only thing that varies visibly. `VERIFIED_QUERIES` still
+works as an exception list because substituting an entity does fix the topics on it. It
+just is not evidence for why.
+
+What has not been ruled out, and is cheap to watch for: that the tiles differ in what the
+click opens. `couponcodes` opened nothing at all the same day.
 
 **A tile loses its description once activated — corrected 2026-09-04.** `lyrics` was
 written off on 09-02 as a malformed card, on the evidence that its whole subtree held one

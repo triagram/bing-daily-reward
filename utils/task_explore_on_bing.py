@@ -131,6 +131,15 @@ VERIFIED_QUERIES: dict[str, str] = {
     "dictionary": "the meaning of the word ephemeral",
     "timezonedates": "what time it is in Tokyo",
     "financemarket": "the latest price of Microsoft stock",
+    # 2026-09-06, the first valid attempt at this tile. Failed on "hotels to stay at on
+    # your next adventure". `realestate` completed on its own placeholder prompt in the
+    # same run, so this is not a bad day — it is this topic.
+    #
+    # Note what that same run cost the theory: `rentalcars` completed on 2026-08-25
+    # searching "book rental cars for **your next adventure**" — the identical
+    # placeholder phrase that failed here. Two topics, one wording, opposite outcomes.
+    # Whatever separates them is not in the prompt text.
+    "hotel": "hotels to stay at in Edinburgh",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

@@ -63,7 +63,7 @@ logger = logging.getLogger("bing_rewards")
 # **The default is the tile's own prompt, and it usually works.** 2026-08-25 completed
 # 4 of 4 without touching this map at all.
 #
-# **This is an exception list, learned from failures, not a theory.** Six topics have
+# **This is an exception list, learned from failures, not a theory.** Seven topics have
 # needed help so far, each measured on the tile that failed, with only the query changed:
 #
 #   flight         "a flight to your perfect vacation"    ✗  ->  "flights from London to Paris"        ✓
@@ -72,6 +72,7 @@ logger = logging.getLogger("bing_rewards")
 #   dictionary     "the meaning of a word you don't …"    ✗  ->  "the meaning of the word ephemeral"   ✓
 #   timezonedates  "what time it is in a different …"     ✗  ->  "what time it is in Tokyo"            ✓
 #   financemarket  "the latest price of a specific stock" ✗  ->  "the latest price of Microsoft stock" ✓
+#   hotel          "hotels to stay at on your next …"     ✗  ->  "hotels to stay at in Edinburgh"      ✓
 #
 # All six name something Bing cannot supply for itself — a route, a product, a company, a
 # word, a zone, a ticker. The last three were confirmed 3 of 3 on 2026-09-05 at 20:08, on
@@ -139,7 +140,7 @@ VERIFIED_QUERIES: dict[str, str] = {
     # searching "book rental cars for **your next adventure**" — the identical
     # placeholder phrase that failed here. Two topics, one wording, opposite outcomes.
     # Whatever separates them is not in the prompt text.
-    "hotel": "hotels to stay at in Edinburgh",
+    "hotel": "hotels to stay at in Edinburgh",  # confirmed 19:25 the same day, 1/1
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

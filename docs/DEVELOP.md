@@ -122,6 +122,11 @@ This also puts Q1's original reading in doubt from the other side: that run saw 
 balance move by 3, where this one saw the pot move instead. Whether the routing
 differs by device, by point type, or by when the pot flushes is not yet known.
 
+**Answered in part, 2026-09-12:** it is by point type. The pot's `pointClaim.entries`
+carry a `category`, and the 3 here was `ds` — the search *streak's* daily credit, not
+the search's own 3, which the bot's typed searches put straight into the balance. See
+[Streak payouts, measured](#streak-payouts-measured--the-weekly-overshoots-and-the-stamp-bonus).
+
 ### Other things the dashboard shows that the parser does not yet read
 
 Visible in the capture screenshot, absent from `DashboardState`:
@@ -565,6 +570,56 @@ property rather than an enumeration will pick up whatever new thing shares that
 property.* The property here was "has points and is not done", and it was correct right
 up until Microsoft shipped offers that have points and cannot be done.
 
+### Streak payouts, measured — the weekly overshoots and the stamp bonus
+
+Read off `captures/samples/earn-*.html.gz` (the monitor archives `/earn` every sample,
+and the streak cards carry "Day N of 7" plus the stamp card's `activityProgress`), then
+matched against `logs/runs.jsonl` and the observation logs. Seven sightings, every one
+exact:
+
+| Date | Streak reaching day 7 | Where the money went |
+|---|---|---|
+| 08-22 Sat | Bing Search | 8 searches: balance +21, pot +100 |
+| 08-28 Fri | Daily Set | balance +100 against three 10-point cards |
+| 08-29 Sat | Bing Search | 9 searches: balance +24, pot +100 |
+| 09-04 Fri | Daily Set | balance +100 against three 10-point cards |
+| 09-05 Sat | Bing Search | a search by hand before the run: pot +100; the bot's 9 then paid 27 |
+| 09-11 Fri | Daily Set | balance +100 against three 10-point cards |
+| 09-12 Sat | Bing Search | a search by hand before the run: pot +100, **balance +1000** |
+
+Three rules follow:
+
+1. **On day 7, the gate activity pays 100 instead of its normal value.** The daily set
+   pays 100 into the balance in place of 30; the gate search pays 100 into the pot in
+   place of 3 — which is why 08-22 and 08-29 each show one search's 3 missing from the
+   balance. This is the streak card's own promise ("Complete the next day to earn 100
+   points" on day 6, 3 or 30 on the other days), and it is why `daily_set` reads
+   `100 / 30` and `searches` reads `+100` over on those days. **Both are expected, not
+   overshoots.**
+2. **The cadence is weekly and fixed** on this account: the Daily Set Streak completes
+   every Friday, the Bing Search Streak every Saturday. Each completion also adds a
+   stamp, so two a week.
+3. **Twelve stamps pay 1,000 straight into the balance**, then the card resets. Seen
+   once, 2026-09-12: `activityProgress` 11 → 0 and the balance +1000 between the 12:28
+   monitor sample and the 15:39 run start, with the bot idle. Two stamps a week puts the
+   next one about six weeks out.
+
+Where the streak credit lands is visible in the dashboard's `pointClaim.entries`, each
+carrying a `category`: `ds` is the streak's daily credit (3 on days 1-6, 100 on day 7),
+which is the "3 pending" seen at the top of so many runs. That is also what the
+2026-08-13 mobile search in *Earnings land in "Ready to claim"* measured — the streak's
+3 for the day, not the search's own.
+
+**Monthly bonuses land the same way, and are the largest single deposit on the account.**
+On 2026-09-01, between the 13:34 run and the 18:57 sample, the pot went 0 → 1,830:
+`mtb` 420, `gub` 1,200, `bseb` 210, all dated `2026-09` and all expiring 2026-10-04. The
+codes are not documented anywhere on the page; against the "last month" figures at
+*Other things the dashboard shows*, 420 is the monthly level-up and 210 the default
+search bonus, which leaves 1,200 as the Bing Star bonus (2,100 in August). The next
+run's claim moved all of it (09-02, `moved: 1833`), which is the strongest argument yet
+for that step: an unclaimed pot **expires**, and this one was eighteen days of ordinary
+earning.
+
 ### Market
 
 This account is `ENGB` (UK). Task sets and point values differ by market, so numbers
@@ -862,6 +917,12 @@ is to derive the remaining allowance from observation rather than assume a clean
 the balance delta since the day's first sample is one route, and `monitor.py` already
 records what would be needed.
 
+**Closed 2026-08-17 (`8302caa`)**, by a shorter route than either: the dashboard's own
+points breakdown reports the day's search points so far, `fetch_search_progress()` reads
+it, and the drawn count is trimmed to what is left. The run logs it as "Allowance so far
+today: 3/60 — room for 19 more searches". Left here because the section title is what a
+reader would search for.
+
 ## Unexplained observations
 
 Neither of these blocks anything, and neither has an explanation. Recorded so they are
@@ -971,6 +1032,17 @@ Recorded as unexplained rather than assigned to a streak.
 Two sightings a fortnight apart, on two different tasks, is the useful part: a per-task
 delta that overshoots is a normal event on this account, not a curiosity. Read
 `overall_delta` against the per-task sum before believing any single task's figure.
+
+**Both explained, 2026-09-12, and both readings above were wrong in detail.** The
+08-22 extra was not "seven credited, the eighth late": all eight credited, and the
+gate search paid 100 into the pot in place of 3 because the Bing Search Streak reached
+day 7 that day. The 09-04 extra 70 is the Daily Set Streak reaching day 7 — the set
+pays 100 in place of 30. The streak cards on `/earn` promise exactly this on day 6, and
+the monitor's archives show both streaks stepping to 7 on those dates. They recur
+weekly — Fridays for the daily set, Saturdays for searches — so a `100 / 30` on a
+Friday and a `+100` over on a Saturday are the account working, not a curiosity. The
+conclusion stands: read `overall_delta` against the per-task sum. See
+[Streak payouts, measured](#streak-payouts-measured--the-weekly-overshoots-and-the-stamp-bonus).
 
 ### An Explore run that measured more than it advertised
 

@@ -63,6 +63,7 @@ release note.
 | Whether any override is what fixed its tile | **Open, and it reaches all seven.** Every entry was verified by a same-day retry on an already-activated tile, and `hotel` now shows the same query failing and then passing with nothing changed. Only a re-test on an unactivated tile separates them; none has had one. |
 | Why some topics need an override | **Wider open than it was.** `hotel` failed on "your next adventure"; `rentalcars` completed on the same phrase 08-25. The discriminator is not the prompt text — see [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | A tile can credit without a search | `couponcodes`, 2026-09-06: the click opened nothing, no query was typed, and it credited 10 anyway. **Not reproduced** — the same tile ran normally on 09-10. One sighting, unexplained, method unchanged. |
+| Two jumps in `opening_total` between runs | **Closed 2026-09-12.** 09-01 → 09-02 opened 1,894 above the previous close; 09-11 → 09-12 opened 1,164 above. Neither is a flag — the criterion reads the *within-run* delta — but both were unexplained until the monitor's archives were read back: the first is the September monthly bonus landing in the pot (1,830, claimed next run), the second the twelfth stamp paying 1,000 plus the Saturday streak's 100. The weekly `100 / 30` on Fridays is the same mechanism. See [DEVELOP.md](DEVELOP.md#streak-payouts-measured--the-weekly-overshoots-and-the-stamp-bonus). |
 | Q2 — what the Daily Set ring counts | Reopened 2026-08-19; one reading (08-17 02:13) fits no model. |
 | Q8 — the `Edge` 0/30 counter | Untouched, still frozen. |
 
@@ -141,6 +142,10 @@ Read three things, in this order:
 1. Is the `Flags` column empty?
 2. Does `done == attempted` for every task?
 3. Is `overall_delta` plausible against the per-task points?
+
+A run that *opens* far above the previous close is not one of the three. Streak and
+monthly bonuses land between runs — 1,830 on the first of the month, 1,000 when the
+stamp card fills — and the criterion deliberately does not read them.
 
 ## Day by day
 

@@ -61,7 +61,7 @@ uv run python -m legacy.step_by_step_debugger    # interactive walkthrough, paus
 uv run python -m legacy.debug_task1              # screenshot dashboard, list every Daily set card found
 ```
 
-`uv run pytest -q` runs the suite (51 tests, ~0.2 s). It parses a synthetic fixture and
+`uv run pytest -q` runs the suite (87 tests, ~1 s). It parses a synthetic fixture and
 never opens a browser or touches the account, so it is free to run — and proves nothing
 about a live run. There is no linter. CI (`.github/workflows/tests.yml`) runs the same
 suite on a clean machine, but is `workflow_dispatch` only on purpose; enable its `push:`

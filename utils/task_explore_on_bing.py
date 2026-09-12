@@ -132,15 +132,27 @@ VERIFIED_QUERIES: dict[str, str] = {
     "dictionary": "the meaning of the word ephemeral",
     "timezonedates": "what time it is in Tokyo",
     "financemarket": "the latest price of Microsoft stock",
-    # 2026-09-06, the first valid attempt at this tile. Failed on "hotels to stay at on
-    # your next adventure". `realestate` completed on its own placeholder prompt in the
-    # same run, so this is not a bad day — it is this topic.
+    # 2026-09-06. Failed on "hotels to stay at on your next adventure", completed on the
+    # retry with a city. **Both sentences written here that day were wrong**, and the
+    # ledger says so:
     #
-    # Note what that same run cost the theory: `rentalcars` completed on 2026-08-25
-    # searching "book rental cars for **your next adventure**" — the identical
-    # placeholder phrase that failed here. Two topics, one wording, opposite outcomes.
-    # Whatever separates them is not in the prompt text.
-    "hotel": "hotels to stay at in Edinburgh",  # confirmed 19:25 the same day, 1/1
+    #   08-23 11:45  'hotels to stay at on your next adventure'  ✗   (mechanism era)
+    #   08-30 12:43  'hotels to stay at on your next adventure'  ✓
+    #   09-06 12:30  'hotels to stay at on your next adventure'  ✗
+    #   09-06 19:26  'hotels to stay at in Edinburgh'            ✓
+    #
+    # It was not "the first valid attempt" — 08-30 was valid and passed. And it is not
+    # "this topic rather than a bad day": the identical query on the identical topic
+    # passed one week and failed the next, with 08-23 discounted only because the
+    # mechanism itself was wrong then.
+    #
+    # So this entry is kept because it works, not because a city is known to be what
+    # fixed it. The same doubt reaches every entry above: each was verified by a *second
+    # attempt the same day*, and hotel now shows an attempt can fail and then succeed
+    # with nothing changed at all. `recipe` and `lyrics` keep that from being the whole
+    # story — both failed their same-day retries — but an unactivated re-test is the only
+    # thing that can separate these, and none of the seven has had one yet.
+    "hotel": "hotels to stay at in Edinburgh",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

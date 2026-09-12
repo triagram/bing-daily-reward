@@ -19,7 +19,7 @@ So that record shows 15 searches and no Explore or claim columns — it does not
 what the code now does. **Sample size for the current code is zero.** Do not read its
 95-point total as a baseline.
 
-## Status: 4 of 14 — counting from 2026-09-03
+## Status: 10 of 14 — counting from 2026-09-03
 
 | Run | Result |
 |---|---|
@@ -29,6 +29,7 @@ what the code now does. **Sample size for the current code is zero.** Do not rea
 | **2026-09-04** | **Clean.** 3/3, 10/10, 3/3, +158. **2 of 14.** |
 | **2026-09-05** | **Clean.** 3/3, 9/9, 1/1, +65. **3 of 14.** Explore ran 1 of 4 and then 3 of 3 on a retry — outside the daily run, so outside this count. See *Reading a flag*. |
 | **2026-09-06** | **Clean.** 3/3, 9/9, 2/2, +73. **4 of 14.** Explore 3 of 4; `hotel` outstanding. |
+| **2026-09-07 … 09-12** | **Six clean runs**, no errors and no flags on any. Explore ran **4 of 4 every one of those days**, +52 against 40 each, with no retry needed. **10 of 14.** |
 
 The eleven-run streak was not carried over, by decision on 2026-09-04. The failure was
 real — work was attempted and not done, and an offer that would have completed was never
@@ -51,17 +52,17 @@ They arrive together: the map needs roughly the same fortnight to settle.
 `v0.2.0` was tagged 2026-08-25 for the closed-loop rewrite. Its tag message is the
 release note.
 
-## Open threads, as of 2026-09-06
+## Open threads, as of 2026-09-12
 
 | Thread | State |
 |---|---|
-| `recipe` tile | Failed twice, unexplained — the non-breaking space was not the cause. Normalisation strips those (`0b078ee`), and the 09-04 18:09 retry typed the corrected `new recipes` and still did not complete, so the override was deleted (`740dfd9`). Starts clean on its next appearance, like `lyrics`. |
-| `lyrics` tile | Failed twice, unexplained. Its empty description was a red herring — tiles lose that after activation. No override; next appearance starts clean. |
+| `recipe` tile | Failed twice, unexplained — the non-breaking space was not the cause. Normalisation strips those (`0b078ee`), and the 09-04 18:09 retry typed the corrected `new recipes` and still did not complete, so the override was deleted (`740dfd9`). **Has not reappeared since 09-04**, so still untested on a clean tile. |
+| `lyrics` tile | Failed twice, unexplained. Its empty description was a red herring — tiles lose that after activation. No override. **Has not reappeared since 09-02** — the longest-waiting thread here. |
 | `realestate` tile | **Closed 2026-09-06.** Completed on its own prompt, placeholder and all. No override; nothing further to watch. |
 | `hotel` tile | Completed on an override 2026-09-06, **but not closed.** Its own prompt passed on 08-30 and failed on 09-06 — same query, same topic, opposite results a week apart. See below. |
 | Whether any override is what fixed its tile | **Open, and it reaches all seven.** Every entry was verified by a same-day retry on an already-activated tile, and `hotel` now shows the same query failing and then passing with nothing changed. Only a re-test on an unactivated tile separates them; none has had one. |
 | Why some topics need an override | **Wider open than it was.** `hotel` failed on "your next adventure"; `rentalcars` completed on the same phrase 08-25. The discriminator is not the prompt text — see [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
-| A tile can credit without a search | `couponcodes`, 2026-09-06: the click opened nothing, no query was typed, and it credited 10 anyway. One sighting; the method is unchanged. |
+| A tile can credit without a search | `couponcodes`, 2026-09-06: the click opened nothing, no query was typed, and it credited 10 anyway. **Not reproduced** — the same tile ran normally on 09-10. One sighting, unexplained, method unchanged. |
 | Q2 — what the Daily Set ring counts | Reopened 2026-08-19; one reading (08-17 02:13) fits no model. |
 | Q8 — the `Edge` 0/30 counter | Untouched, still frozen. |
 

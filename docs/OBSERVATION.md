@@ -58,7 +58,8 @@ release note.
 | `recipe` tile | Failed twice, unexplained — the non-breaking space was not the cause. Normalisation strips those (`0b078ee`), and the 09-04 18:09 retry typed the corrected `new recipes` and still did not complete, so the override was deleted (`740dfd9`). Starts clean on its next appearance, like `lyrics`. |
 | `lyrics` tile | Failed twice, unexplained. Its empty description was a red herring — tiles lose that after activation. No override; next appearance starts clean. |
 | `realestate` tile | **Closed 2026-09-06.** Completed on its own prompt, placeholder and all. No override; nothing further to watch. |
-| `hotel` tile | **Closed 2026-09-06.** Failed its first valid attempt, completed on the retry with a city substituted for "your next adventure" — 1/1, +13. Like every same-day retry, it ran on an already-activated tile. |
+| `hotel` tile | Completed on an override 2026-09-06, **but not closed.** Its own prompt passed on 08-30 and failed on 09-06 — same query, same topic, opposite results a week apart. See below. |
+| Whether any override is what fixed its tile | **Open, and it reaches all seven.** Every entry was verified by a same-day retry on an already-activated tile, and `hotel` now shows the same query failing and then passing with nothing changed. Only a re-test on an unactivated tile separates them; none has had one. |
 | Why some topics need an override | **Wider open than it was.** `hotel` failed on "your next adventure"; `rentalcars` completed on the same phrase 08-25. The discriminator is not the prompt text — see [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | A tile can credit without a search | `couponcodes`, 2026-09-06: the click opened nothing, no query was typed, and it credited 10 anyway. One sighting; the method is unchanged. |
 | Q2 — what the Daily Set ring counts | Reopened 2026-08-19; one reading (08-17 02:13) fits no model. |

@@ -441,6 +441,35 @@ just is not evidence for why.
 What has not been ruled out, and is cheap to watch for: that the tiles differ in what the
 click opens. `couponcodes` opened nothing at all the same day.
 
+**Sharper still, and it undercuts the map itself — noticed 2026-09-12 on the ledger, not
+on a new run.** The comparison above used two topics. `hotel` supplies it with one:
+
+```
+08-30 12:43  'hotels to stay at on your next adventure'  ✓
+09-06 12:30  'hotels to stay at on your next adventure'  ✗
+```
+
+Same topic, same query, a week apart, opposite outcomes — both well after the mechanism
+was settled, so neither is an artefact of the 08-23 era. **There is a per-attempt failure
+that no property of the query explains**, and the map has been reading structure into it.
+
+This does not make `VERIFIED_QUERIES` wrong to keep: every entry has been measured to
+work, and a query that works is worth keeping whatever the reason. It makes the *claim*
+wrong. Each entry was verified by a **second attempt on the same day**, on a tile the
+first attempt had already activated, and `hotel` shows an attempt can fail and then
+succeed with nothing changed at all. So "the entity fixed it" and "the retry fixed it"
+are both still live for all seven.
+
+What keeps "a retry always fixes it" from being the answer: `recipe` and `lyrics` each
+failed their same-day retries. Something real is topic-specific. It is simply not the
+wording, and the size of the random component is unmeasured.
+
+**The test that would settle it costs nothing but patience.** Topics recur — the gap
+between sightings clusters hard at 7 and 14 days across 26 observed pairs. So each of the
+seven will return on an unactivated tile. Let it run on its own prompt when it does,
+rather than on its override, and the answer arrives on its own. Until then, do not add an
+entry on the strength of one failure alone.
+
 **A tile loses its description once activated — corrected 2026-09-04.** `lyrics` was
 written off on 09-02 as a malformed card, on the evidence that its whole subtree held one
 string where a working tile holds four. That reading was **wrong**, and the captures say

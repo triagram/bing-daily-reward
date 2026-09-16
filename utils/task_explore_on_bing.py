@@ -157,6 +157,24 @@ VERIFIED_QUERIES: dict[str, str] = {
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES
 
+# Topics this task no longer attempts. A tile here is skipped and logged as shelved; it
+# is neither attempted nor failed, so once the task joins the daily run a tile that
+# cannot be made to credit does not put a flag on an otherwise clean day.
+#
+# The bar is high on purpose: every other tile has completed on its prompt, an override
+# or a retry, and an entry gives up ten points a fortnight for good. The value is the
+# reason, dated, so the next reader knows what was already tried.
+SHELVED_TOPICS: dict[str, str] = {
+    # Four attempts, four failures, three query shapes: the prompt ("the lyrics of your
+    # favorite song", 09-02), song alone ("Bohemian Rhapsody lyrics", 09-02), the title
+    # ("Learn song lyrics", 09-16), and the shape three independent forum reports say
+    # works — "<artist> <song> lyrics" ("queen bohemian rhapsody lyrics", 09-16). Every
+    # search credited its 3; the tile never flipped. It also arrived on 09-16 already
+    # activated from 09-02 — no description, and nobody had clicked it — so it cannot
+    # carry a prompt again until it completes. See DEVELOP.md.
+    "lyrics": "2026-09-16: four failures across three query shapes",
+}
+
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
 # The instruction is not part of the query; what follows it is.
 PROMPT_PREFIX = re.compile(r"^\s*search\s+on\s+bing\s+(?:to|for)\s+", re.I)
@@ -197,9 +215,9 @@ def query_for(offer: Offer) -> str | None:
     return query_from_description(offer.description) or offer.title or topic
 
 
-def outstanding_tiles(state) -> list[Offer]:
+def _open_tiles(state) -> list[Offer]:
     """
-    Tiles this run may attempt: this family, not complete, and **not locked**.
+    This family, not complete, and **not locked**.
 
     Both lock fields are checked. They have only ever been seen agreeing, but a tile
     that is disabled without being locked is one this run should still leave alone.
@@ -211,6 +229,16 @@ def outstanding_tiles(state) -> list[Offer]:
         and not o.raw.get("isLocked")
         and not o.raw.get("isDisabled")
     ]
+
+
+def outstanding_tiles(state) -> list[Offer]:
+    """Tiles this run may attempt: open, and not shelved."""
+    return [o for o in _open_tiles(state) if topic_of(o) not in SHELVED_TOPICS]
+
+
+def shelved_tiles(state) -> list[Offer]:
+    """Open tiles this run leaves alone on purpose — reported, never attempted."""
+    return [o for o in _open_tiles(state) if topic_of(o) in SHELVED_TOPICS]
 
 
 @dataclass
@@ -378,6 +406,11 @@ async def run_explore_on_bing(
     if locked:
         logger.info(f"   {len(locked)} locked (tomorrow's): "
                     + ", ".join(sorted(filter(None, (topic_of(o) for o in locked)))))
+
+    shelved = shelved_tiles(earn)
+    if shelved:
+        logger.info(f"   {len(shelved)} shelved, not attempted: "
+                    + ", ".join(sorted(filter(None, (topic_of(o) for o in shelved)))))
 
     if not todo:
         logger.info("✅ [Explore on Bing] Nothing unlocked and outstanding.")

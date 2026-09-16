@@ -48,9 +48,9 @@ point delta it actually measured — or says "unknown" rather than inventing a n
 All three have been verified against a live account, and the parser and the
 behavioural choices are covered by an offline test suite.
 
-It is still run by hand, on purpose. Unattended scheduling, headless mode and
-multi-account support are deliberately deferred until the daily run has been stable
-for a stretch — see [Current Limitations](#current-limitations).
+It is still run by hand, on purpose. Unattended scheduling and headless mode are
+deliberately deferred until the daily run has been stable for a stretch; multi-account
+use and VPNs are ruled out, not deferred — see [Current Limitations](#current-limitations).
 
 ---
 
@@ -352,7 +352,10 @@ list are fixed; what is left is either a deliberate deferral or a genuine unknow
 - **Selectors will break.** The Rewards dashboard is redesigned periodically.
   Reading the page's own state is far more durable than class matching, but the
   shape of that state is not a published contract either.
-- **Single account only.** `USER_DATA_DIR` is one fixed path in `config.py`.
+- **Single account only, and that is permanent.** `USER_DATA_DIR` is one fixed path
+  in `config.py`. Multi-account use and VPN/proxy routing are the two most-cited
+  causes of suspension in the community's own reports (decision 2026-09-16), so
+  neither will be made easy here.
 - **The run history is thin.** `logs/runs.jsonl` holds only a handful of records,
   so `--history` cannot yet tell an unusual day from a normal one. This resolves
   itself with use.
@@ -405,7 +408,8 @@ list are fixed; what is left is either a deliberate deferral or a genuine unknow
 - [ ] **Out-of-band failure alerts** — a shortfall currently only prints to a
       console nobody is watching. This one is worth having *before* scheduling,
       not after.
-- [ ] **Multi-account support** — `profiles/<account>/`, driven by config.
+- [x] ~~**Multi-account support**~~ — **not planned.** Ruled out 2026-09-16 as the
+      most-cited cause of suspension; see Current Limitations.
 - [ ] **Real quiz answering** — extract the correct option instead of guessing.
 
 ---

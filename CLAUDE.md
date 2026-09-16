@@ -4,10 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Where to pick up
 
-**An observation window is running, and it is the current work.** All four tasks are
-rewritten, verified against a live account and covered by tests; what remains is proving
-the daily run is boring. Two commands are run by hand each day — `rewards_bot.py`, then
-`explore_on_bing.py` — and nothing else should start without being asked.
+**The observation window closed on 2026-09-16 at 14 of 14, and the routine has not
+changed.** All four tasks are rewritten, verified against a live account and covered by
+tests; the daily run has been proved boring. Two commands are still run by hand each day
+— `rewards_bot.py`, then `explore_on_bing.py` — for a further period of clean runs by
+decision, and nothing else should start without being asked. Folding the second into the
+first (half of v1.0.0) waits for that period. The `lyrics` tile is shelved, not open.
 
 Read in this order: **`docs/OBSERVATION.md` first** — it carries the window's status, its
 freeze list and every loose end still open — then this file for the rules that must not

@@ -475,6 +475,12 @@ seven will return on an unactivated tile. Let it run on its own prompt when it d
 rather than on its override, and the answer arrives on its own. Until then, do not add an
 entry on the strength of one failure alone.
 
+*Qualified 2026-09-16:* that holds for the seven, because each of them **completed**,
+and completion is what resets a tile. A topic that failed and was never completed —
+`recipe`, and `lyrics` before it was shelved — returns still activated and without its
+prompt, so it can never be re-tested "on its own prompt" at all. See the activated-state
+finding below.
+
 **A tile loses its description once activated — corrected 2026-09-04.** `lyrics` was
 written off on 09-02 as a malformed card, on the evidence that its whole subtree held one
 string where a working tile holds four. That reading was **wrong**, and the captures say

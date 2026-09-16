@@ -1,7 +1,8 @@
 # The observation window
 
-Start date: **not yet — see below.** Purpose: establish that a daily run is boring before anything is
-automated. Nothing here is about adding capability — it is about accumulating evidence.
+Ran 2026-09-03 to 2026-09-16, **closed at 14 of 14.** Purpose: establish that a daily run
+is boring before anything is automated. Nothing here is about adding capability — it is
+about accumulating evidence.
 
 ## Why this is starting from zero, not continuing
 
@@ -58,11 +59,11 @@ They arrive together: the map needs roughly the same fortnight to settle.
 `v0.2.0` was tagged 2026-08-25 for the closed-loop rewrite. Its tag message is the
 release note.
 
-## Open threads, as of 2026-09-12
+## Open threads, as of 2026-09-16
 
 | Thread | State |
 |---|---|
-| `recipe` tile | Failed twice, unexplained — the non-breaking space was not the cause. Normalisation strips those (`0b078ee`), and the 09-04 18:09 retry typed the corrected `new recipes` and still did not complete, so the override was deleted (`740dfd9`). **Has not reappeared since 09-04**, so still untested on a clean tile. |
+| `recipe` tile | Failed twice on 09-04, unexplained — the non-breaking space was not the cause (`0b078ee`, `740dfd9`). **Has not reappeared since.** What `lyrics` showed on 09-16 now predicts how it will: a tile that was activated and never completed comes back **still activated, with no description**, so the prompt route is closed to it for good and `query_for()` will fall to the title. **Prediction to check on the day:** the morning sample shows `recipe` unlocked with no description before anything runs. If so, persistence is confirmed twice, and the only moves are a carried override or the shelf — an unhandled `recipe` day becomes a flag once the merge happens. |
 | `lyrics` tile | **Shelved 2026-09-16.** Reappeared on 09-16 already activated from 09-02 — the description was gone before anything ran — and failed twice more, the second time on the shape three forum posters say works. Four failures, three query shapes, every search credited. On `SHELVED_TOPICS`: reported, never attempted, never a flag. See [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | `realestate` tile | **Closed 2026-09-06.** Completed on its own prompt, placeholder and all. No override; nothing further to watch. |
 | `hotel` tile | Completed on an override 2026-09-06, **but not closed.** Its own prompt passed on 08-30 and failed on 09-06 — same query, same topic, opposite results a week apart. See below. |

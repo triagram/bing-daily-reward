@@ -30,6 +30,7 @@ from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
 from utils.state_reader import fetch_state
 from utils.task_explore_on_bing import (
     _fetch_earn,
+    SHELVED_TOPICS,
     outstanding_tiles,
     query_for,
     run_explore_on_bing,
@@ -80,6 +81,8 @@ async def main():
                     state, term = "[green]done[/green]", "—"
                 elif o.raw.get("isLocked") or o.raw.get("isDisabled"):
                     state, term = "[dim]locked (tomorrow)[/dim]", "—"
+                elif topic_of(o) in SHELVED_TOPICS:
+                    state, term = "[yellow]shelved[/yellow]", "—"
                 else:
                     state, term = "[bold]open[/bold]", repr(query_for(o))
                 table.add_row(topic_of(o) or "?", state, term)

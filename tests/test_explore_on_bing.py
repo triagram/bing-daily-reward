@@ -11,10 +11,12 @@ import contextlib
 from utils.dashboard_state import Offer
 from utils.task_explore_on_bing import (
     ExploreOnBingResult,
+    SHELVED_TOPICS,
     TOPIC_QUERIES,
     outstanding_tiles,
     query_for,
     query_from_description,
+    shelved_tiles,
     topic_of,
 )
 
@@ -55,6 +57,16 @@ def no_override_for(topic):
             TOPIC_QUERIES[topic] = learned
 
 
+@contextlib.contextmanager
+def shelved(topic):
+    """Same reasoning as `no_override_for`, for the other map."""
+    SHELVED_TOPICS[topic] = "test"
+    try:
+        yield
+    finally:
+        SHELVED_TOPICS.pop(topic, None)
+
+
 # The 2026-08-20 capture: four open, four behind "Unlocks tomorrow".
 OPEN = ["airlinetickets", "airportparking", "flowerdelivery", "streamingservices"]
 LOCKED = ["creditreport", "health", "recipe", "videogames"]
@@ -79,6 +91,27 @@ def test_a_disabled_tile_is_left_alone_even_if_it_is_not_locked():
 def test_completed_tiles_are_not_redone():
     state = FakeState([tile("airlinetickets", completed=True), tile("airportparking")])
     assert [topic_of(o) for o in outstanding_tiles(state)] == ["airportparking"]
+
+
+def test_a_shelved_topic_is_reported_but_never_attempted():
+    # lyrics, 2026-09-16: four failures, then shelved. Once this task joins the daily
+    # run, an unattempted tile must not read as a failed one.
+    state = FakeState([tile("airlinetickets"), tile("videogames")])
+    with shelved("videogames"):
+        assert [topic_of(o) for o in outstanding_tiles(state)] == ["airlinetickets"]
+        assert [topic_of(o) for o in shelved_tiles(state)] == ["videogames"]
+
+
+def test_a_shelved_topic_that_is_locked_or_done_is_not_listed_as_shelved():
+    state = FakeState([tile("videogames", locked=True), tile("recipe", completed=True)])
+    with shelved("videogames"), shelved("recipe"):
+        assert shelved_tiles(state) == []
+        assert outstanding_tiles(state) == []
+
+
+def test_every_shelved_entry_carries_a_dated_reason():
+    for topic, reason in SHELVED_TOPICS.items():
+        assert reason[:4].isdigit() and reason[4] == "-", (topic, reason)
 
 
 def test_other_offer_families_are_not_picked_up():

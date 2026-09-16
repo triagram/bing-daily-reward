@@ -495,6 +495,48 @@ Two things follow. A tile's prompt has to be read *before* working it, which the
 already does. And a same-day retry cannot re-derive the query from the page — the text
 is gone by then — so an override has to carry it, which is what `recipe` is doing now.
 
+**Sharper, 2026-09-16: the activated state outlives the tile's rotation, and the
+description comes back on completion.** Read off the monitor's `/earn` archives:
+
+| Sample | Tile | Description | State |
+|---|---|---|---|
+| 09-05 06:20 | `hotel` | present | unlocked, untouched |
+| 09-06 12:33 | `hotel` | **absent** | after the 12:30 attempt failed |
+| 09-06 23:39 | `hotel` | **present again** | after the 19:26 retry completed it |
+| 09-15 07:03 | `lyrics` | present | locked, tomorrow's preview |
+| 09-16 06:02 | `lyrics` | **absent** | unlocked, four hours before anything ran |
+
+So the description is not lost — it is *replaced* while a tile is activated-and-
+incomplete, and restored when it completes. And `lyrics` reached 09-16 already in that
+state, with no click from anyone (the account holder confirmed none), which means the
+09-02 activation was still standing a fortnight later. A tile that has been activated
+and never completed therefore never shows its prompt again; `query_for()` falls to the
+title, and the title is not a query. One sighting, but a clean one.
+
+**`lyrics` shelved, 2026-09-16.** The ledger:
+
+```
+09-02 13:38  'the lyrics of your favorite song'   ✗   prompt
+09-02 15:15  'Bohemian Rhapsody lyrics'           ✗   song, no artist
+09-16 10:30  'Learn song lyrics'                  ✗   title — no prompt to read, see above
+09-16 17:53  'queen bohemian rhapsody lyrics'     ✗   the community's shape
+```
+
+The fourth is the one that settles it. A survey of Microsoft Q&A (2025-08 to 2026-08)
+finds this tile the most-complained-about of the family, and three independent posters
+report the same working shape — `<artist> <song> lyrics`, e.g. "tupac hit em up
+lyrics" — where full lines and "lyrics to your favorite song" did not. That shape was
+typed here on an activated tile, credited its 3 like every other search, and the tile
+did not flip. Unlike the seven overrides, "the retry fixed it" was never a live
+explanation for this topic: its plain retry had already failed on 09-02.
+
+Rather than a fifth attempt, the topic goes on `SHELVED_TOPICS`: reported as shelved,
+never attempted, never counted as failed — so that when this task joins the daily run
+a tile that cannot be made to credit does not flag a clean day. Ten points a fortnight
+is the price. No source anywhere explains the crediting rule; the same survey found
+plenty of "hourglass never fills" reports for other topics and no fix beyond "file a
+support ticket", so a shelf, not a fix, is the honest shape of this.
+
 **It holds nothing unmeasured, deliberately.** `hotel` and `realestate` were briefly given
 predicted entries on the entity reasoning; they came out on 2026-08-25 when that reasoning
 failed. The stronger objection is that a guessed override destroys the observation it is

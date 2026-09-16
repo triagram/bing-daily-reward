@@ -408,9 +408,10 @@ list are fixed; what is left is either a deliberate deferral or a genuine unknow
 - [ ] **Out-of-band failure alerts** — a shortfall currently only prints to a
       console nobody is watching. This one is worth having *before* scheduling,
       not after.
-- [x] ~~**Multi-account support**~~ — **not planned.** Ruled out 2026-09-16 as the
-      most-cited cause of suspension; see Current Limitations.
 - [ ] **Real quiz answering** — extract the correct option instead of guessing.
+
+**Not planned:** multi-account support. Ruled out 2026-09-16 as the most-cited cause
+of suspension; see Current Limitations.
 
 ---
 

@@ -15,9 +15,15 @@ be broken, `docs/DEVELOP.md` for what the dashboard actually returns and which q
 are settled, `README.md` for how to run it. Between them they carry everything; do not
 re-derive findings by experimenting on the account.
 
-Deferred by decision, not oversight: unattended scheduling, the Edge counter (Q8),
-multi-account, and packaging. CI is written but manual-only until the suite has been
-stable a while.
+Deferred by decision, not oversight: unattended scheduling, the Edge counter (Q8), and
+packaging. CI is written but manual-only until the suite has been stable a while.
+
+**Never, by decision on 2026-09-16: multi-account, and running through a VPN or proxy.**
+Not deferred — ruled out. A survey of suspension reports (script maintainers' own issue
+trackers and Microsoft Q&A, 2023-2026) names those two as the most frequently cited
+causes, ahead of search rate; every ban signal anyone names is behavioural, and these
+are the two behaviours this project can simply not have. Do not add a `profiles/`
+directory, a proxy setting, or anything that makes either easy.
 
 The window carries a freeze list of its own, time-boxed and distinct from the permanent
 deferrals above. Probing Q8 is on it: it is the obvious next thing to reach for, and

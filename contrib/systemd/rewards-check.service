@@ -1,0 +1,6 @@
+[Unit]
+Description=Say if no Rewards run was recorded today
+
+[Service]
+Type=oneshot
+ExecStart=/projects/bing-daily-reward/contrib/systemd/rewards-alert.sh missing

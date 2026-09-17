@@ -1,0 +1,14 @@
+[Unit]
+Description=Run the Rewards tasks once a day, in the morning
+
+[Timer]
+# 07:30 plus up to three hours: somewhere in 07:30-10:30 local, different every day.
+# The reset is midnight UTC (Q3), so even the earliest start is hours into the day.
+OnCalendar=*-*-* 07:30:00
+RandomizedDelaySec=3h
+# A day the machine was off is run at the next login. The run is idempotent: it reads
+# what is outstanding and does only that, so a second run on a day is harmless.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

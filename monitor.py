@@ -32,6 +32,7 @@ from rich.table import Table
 
 from config import USER_DATA_DIR, REWARDS_EARN_URL
 from utils.dashboard_state import DashboardState, parse_dashboard
+from utils import profile_lock
 
 BASE = Path(__file__).parent
 LOG_PATH = BASE / "logs" / "state_samples.jsonl"
@@ -200,7 +201,7 @@ def profile_in_use() -> bool:
     fail noisily or disturb the other session. Skipping is the right response — the
     next sample is only hours away.
     """
-    return any((USER_DATA_DIR / name).exists() for name in ("SingletonLock", "SingletonSocket"))
+    return profile_lock.profile_in_use(USER_DATA_DIR)
 
 
 async def take_sample(note: str) -> dict | None:

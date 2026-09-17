@@ -35,6 +35,7 @@ from config import (
     USER_DATA_DIR,
 )
 from utils.claim import claim_pending
+from utils.profile_lock import wait_for_profile
 from utils.shortfall import Verdict, assess, flags_for
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
@@ -47,6 +48,8 @@ RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
 # No session, and no terminal to wait for one in. Distinct from a crash (1) so that
 # whatever watches a scheduled run can say "sign in" rather than "look at the log".
 EXIT_SIGN_IN_REQUIRED = 3
+# The profile stayed held for the whole wait: a browser or another run has it open.
+EXIT_PROFILE_BUSY = 4
 
 console = Console()
 logging.basicConfig(
@@ -230,6 +233,12 @@ async def main():
     console.print(f"[dim]{mode}[/dim]\n")
 
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # The monitor holds the profile for seconds; wait it out rather than lose the day.
+    if not await wait_for_profile(USER_DATA_DIR):
+        logger.error("The browser profile is still in use after five minutes — a browser "
+                     "window or another run has it open. Nothing was done.")
+        sys.exit(EXIT_PROFILE_BUSY)
 
     async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(

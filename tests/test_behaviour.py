@@ -19,6 +19,7 @@ from config import (
 )
 from utils import keywords
 from utils.humanizer import daily_search_count, search_gap
+from utils.shortfall import flags_for
 from utils.state_reader import searches_remaining
 
 DAY = date(2026, 8, 17)
@@ -279,6 +280,40 @@ def test_well_under_is_flagged_as_short():
 
     v = assess(expected=50, measured=10, attempted=3)
     assert v.verdict is Verdict.SHORT and v.is_problem
+
+
+# --------------------------------------------------------------------------- #
+# Flags — the one judgement about a day
+# --------------------------------------------------------------------------- #
+
+
+def _task(verdict="ok", errors=(), attempted=3, done=3):
+    return {"verdict": verdict, "errors": list(errors), "attempted": attempted, "done": done}
+
+
+def test_a_clean_run_has_no_flags():
+    assert flags_for({"daily_set": _task(), "searches": _task(attempted=12, done=12)}) == []
+
+
+def test_a_bad_verdict_flags_the_task():
+    assert flags_for({"searches": _task(verdict="zero")}) == ["searches:zero"]
+    assert flags_for({"searches": _task(verdict="short")}) == ["searches:short"]
+    assert flags_for({"searches": _task(verdict="unknown")}) == ["searches:unknown"]
+
+
+def test_an_error_flags_a_task_whose_verdict_was_ok():
+    # 2026-08-19: a card failed outright, 20 of 30 cleared the tolerance, verdict ok.
+    assert flags_for({"daily_set": _task(errors=["Child2: not confirmed"])}) == ["daily_set:1err"]
+
+
+def test_doing_less_than_attempted_flags_even_with_no_error_recorded():
+    assert flags_for({"keep_earning": _task(attempted=3, done=2)}) == ["keep_earning:2/3"]
+
+
+def test_one_flag_per_task_and_idle_is_not_a_flag():
+    tasks = {"searches": _task(verdict="zero", errors=["x"], attempted=9, done=0),
+             "keep_earning": _task(verdict="idle", attempted=0, done=0)}
+    assert flags_for(tasks) == ["searches:zero"]
 
 
 # --------------------------------------------------------------------------- #

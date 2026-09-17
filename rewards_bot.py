@@ -30,7 +30,7 @@ from config import (
     USER_DATA_DIR,
 )
 from utils.claim import claim_pending
-from utils.shortfall import Verdict, assess
+from utils.shortfall import Verdict, assess, flags_for
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
 from utils.task_explore_on_bing import run_explore_on_bing
@@ -111,22 +111,7 @@ def print_history():
 
         claim = run.get("claim") or {}
         moved = claim.get("moved")
-
-        # Errors flag on their own, not only through the verdict. The 2026-08-19 run
-        # confirmed one card outright failed while shortfall returned "ok", because
-        # 20 of an advertised 30 clears the 0.6 tolerance. The tolerance is right —
-        # advertised values are a guide, not a contract — but a run with a recorded
-        # error is never clean, whatever it earned.
-        flags = []
-        for n, t in tasks.items():
-            if t.get("verdict") in ("zero", "short", "unknown"):
-                flags.append(f"{n}:{t['verdict']}")
-            elif t.get("errors"):
-                flags.append(f"{n}:{len(t['errors'])}err")
-            elif (t.get("done") is not None
-                  and t.get("done") != t.get("attempted")):
-                flags.append(f"{n}:{t['done']}/{t['attempted']}")
-        flags = " ".join(flags)
+        flags = " ".join(flags_for(tasks))
         overall = run.get("overall_delta")
         table.add_row(
             run.get("date", "?"),

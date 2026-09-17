@@ -77,3 +77,30 @@ def assess(expected: int, measured: int | None, attempted: int,
 
     return Shortfall(Verdict.OK, expected, measured,
                      f"earned {measured} pts against {expected} advertised")
+
+
+def flags_for(tasks: dict) -> list[str]:
+    """
+    Why a recorded run is not clean — one entry per task, empty when it is.
+
+    This is the observation window's exit criterion, and the one judgement the
+    project makes about a day: a task is clean when its verdict is not zero / short /
+    unknown, it recorded no errors, and it did everything it attempted. Errors flag on
+    their own, not only through the verdict: the 2026-08-19 run failed a card outright
+    and still assessed `ok`, because 20 of an advertised 30 clears the tolerance. The
+    tolerance is right — advertised values are a guide — but a run carrying an error is
+    never clean, whatever it earned.
+
+    `--history` prints these; a scheduled run turns a non-empty list into its exit
+    code. Both read this function so the two can never drift apart.
+    """
+    flags = []
+    for name, task in tasks.items():
+        verdict = task.get("verdict")
+        if verdict in ("zero", "short", "unknown"):
+            flags.append(f"{name}:{verdict}")
+        elif task.get("errors"):
+            flags.append(f"{name}:{len(task['errors'])}err")
+        elif task.get("done") is not None and task.get("done") != task.get("attempted"):
+            flags.append(f"{name}:{task['done']}/{task['attempted']}")
+    return flags

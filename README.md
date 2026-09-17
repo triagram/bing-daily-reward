@@ -406,13 +406,14 @@ list are fixed; what is left is either a deliberate deferral or a genuine unknow
 - [ ] **Enable CI on push** — a one-line uncomment, once the suite has held.
 - [ ] **Answer Q8 — the `Edge` 0/30 counter** — the largest unexplored surface on
       the account.
-- [ ] **Unattended operation** — replace the blocking login prompt with an explicit
-      `--login` mode, make `HEADLESS` configurable by environment variable, and
-      only then consider a systemd timer. `contrib/systemd/` already carries units
-      for the read-only monitor.
-- [ ] **Out-of-band failure alerts** — a shortfall currently only prints to a
-      console nobody is watching. This one is worth having *before* scheduling,
-      not after.
+- [ ] **Unattended operation** — built 2026-09-17, to be enabled on 2026-09-23 if
+      the test period stays clean: `--login` replaces the blocking prompt, a run
+      with no terminal exits with a code instead, and `contrib/systemd/` carries the
+      bot's timer next to the monitor's. `HEADLESS` stays a config constant on
+      purpose — the timer runs a real window inside the desktop session.
+- [ ] **Out-of-band failure alerts** — built with the above: a failed run's exit
+      code becomes a desktop notification, an evening check reports a day that
+      never ran, and a phone push is one line in a file outside the repository.
 - [ ] **Real quiz answering** — extract the correct option instead of guessing.
 
 **Not planned:** multi-account support. Ruled out 2026-09-16 as the most-cited cause

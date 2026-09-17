@@ -1,8 +1,8 @@
 # Runs the test suite on a clean machine.
 #
-# Deliberately manual-only for now: `workflow_dispatch` means it runs when you press
-# the button on the Actions tab, not on every push. Add the `push:` trigger below once
-# the suite has been stable for a while.
+# Runs on every push to main, and on demand from the Actions tab (`workflow_dispatch`).
+# It was manual-only until 2026-09-17, while the suite settled; enabled once the
+# observation window had closed on 14 clean days with the suite green throughout.
 #
 # What this catches that running pytest locally does not: a dependency used but never
 # declared, a Python version assumption, and anything else the development machine
@@ -16,8 +16,8 @@ name: tests
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
+  push:
+    branches: [main]
 
 jobs:
   pytest:

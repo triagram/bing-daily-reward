@@ -44,7 +44,7 @@ uv run python rewards_bot.py --dry-run   # read state and report, change nothing
 uv run python rewards_bot.py --history   # what past runs earned, per task
 uv run python rewards_bot.py --login     # sign in by hand; confirms the session works
 
-uv run python explore_on_bing.py             # the Explore on Bing tiles — separate on purpose
+uv run python explore_on_bing.py             # the Explore on Bing tiles, until the switch is on
 uv run python explore_on_bing.py --dry-run   # which tiles are open today, and what it would search
 
 uv run python monitor.py             # read-only state sample, appends to logs/state_samples.jsonl

@@ -5,7 +5,10 @@ Description=Evening check that today's Rewards run happened
 # A failed run announces itself; a run that never started cannot. This is the one
 # alert that covers absence — a timer that did not fire, a machine that was off.
 OnCalendar=*-*-* 20:00:00
-Persistent=true
+# Deliberately not Persistent. A check missed because the machine was off would fire
+# at the next boot — the next morning — read "today" as the new day, find no record
+# yet, and race the bot's own catch-up run to a false alarm. A missed evening check
+# has nothing to catch up: if the machine was off at 20:00, you already know.
 
 [Install]
 WantedBy=timers.target

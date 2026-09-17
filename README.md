@@ -66,7 +66,7 @@ bing-daily-reward/
 │   ├── task_daily_set.py       # Task 1 — the three "Daily set" cards, plus point claiming
 │   ├── task_keep_earning.py    # Task 2 — the point-bearing offers under "Keep earning"
 │   ├── task_searches.py        # Task 3 — N Bing searches, closed-loop measured
-│   ├── task_explore_on_bing.py # Task 4 — the "Explore on Bing" tiles (run separately)
+│   ├── task_explore_on_bing.py # Task 4 — the "Explore on Bing" tiles (behind a switch)
 │   ├── claim.py                # Moves the "Ready to claim" pot into the balance
 │   ├── dashboard_state.py      # Pure parser: dashboard HTML → structured offers & counters
 │   ├── state_reader.py         # Thin layer that feeds the parser from a live page
@@ -74,7 +74,7 @@ bing-daily-reward/
 │   ├── shortfall.py            # Judges a run: did it earn what the work was worth?
 │   └── keywords.py             # Date-seeded search-term generation
 │
-├── explore_on_bing.py          # Entry point for task 4, deliberately outside the daily run
+├── explore_on_bing.py          # Task 4 on its own: the retry and dry-run tool
 ├── monitor.py                  # Read-only daily sampler — records state, diffs against last run
 ├── recon.py                    # Read-only deep capture — screenshots, DOM, network log
 │
@@ -178,12 +178,15 @@ seeded by the date, so consecutive days do not repeat the same strings.
 > called `explore` until 2026-08-22, and that collision misled both the notes and the
 > account holder, so it is now named for the heading its offers appear under.
 >
-> **Task 4 runs from `explore_on_bing.py`, not from the daily run.** Its tiles credit in two
-> steps — clicking one *activates* it, and a search inside what it opens *completes* it —
-> and a topic the query map has not learned yet will fail once before it can be added.
-> Keeping it separate means such a failure cannot dirty a daily run that was otherwise
-> clean. It returns the same result type as the others, so folding it in is three lines
-> once the map has settled.
+> **Task 4 sits behind `RUN_EXPLORE_ON_BING` in `config.py`, off until 2026-09-23.** Its
+> tiles credit in two steps — clicking one *activates* it, and a search inside what it
+> opens *completes* it — and a topic the query map has not learned yet fails once before
+> it can be added. While the switch is off, run it from `explore_on_bing.py` after the
+> daily run, so that such a failure cannot dirty a day that was otherwise clean. With the
+> switch on, the daily run works the tiles itself (after keep-earning, before the claim,
+> with their four searches held back from the search allowance) and records them with
+> the others; `explore_on_bing.py` stays as the retry and dry-run tool. A topic that has
+> been given up on goes on `SHELVED_TOPICS` and is reported, never attempted.
 
 Supporting behaviour:
 

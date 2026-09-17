@@ -100,6 +100,7 @@ async def run_daily_searches(
     terms: list[str] | None = None,
     stop_after_zero: int | None = None,
     log_path: str | Path | None = None,
+    reserve_searches: int = 0,
 ) -> SearchResult:
     """
     Perform Bing searches and measure what they earned.
@@ -149,11 +150,12 @@ async def run_daily_searches(
         # quota — the one number the varying count exists to stay under. Observed
         # rather than assumed: the points breakdown reports the real figure.
         progress = await fetch_search_progress(state_page)
-        remaining = searches_remaining(progress)
+        remaining = searches_remaining(progress, reserve_searches)
         if remaining is not None:
+            held = f" after holding {reserve_searches} back" if reserve_searches else ""
             logger.info(
                 f"   Allowance so far today: {progress[0]}/{progress[1]} points "
-                f"— room for {remaining} more searches"
+                f"— room for {remaining} more searches{held}"
             )
             if remaining < search_count:
                 logger.info(f"   Trimming {search_count} → {remaining} to stay within it")

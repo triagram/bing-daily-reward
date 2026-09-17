@@ -22,11 +22,18 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
-from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
+from config import (
+    EXPLORE_ON_BING_TILES_PER_DAY,
+    HEADLESS,
+    REWARDS_URL,
+    RUN_EXPLORE_ON_BING,
+    USER_DATA_DIR,
+)
 from utils.claim import claim_pending
 from utils.shortfall import Verdict, assess
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
+from utils.task_explore_on_bing import run_explore_on_bing
 from utils.task_keep_earning import run_keep_earning
 from utils.task_searches import run_daily_searches
 
@@ -80,6 +87,7 @@ def print_history():
     table.add_column("Daily set", justify="right")
     table.add_column("Searches", justify="right")
     table.add_column("Keep earning", justify="right")
+    table.add_column("Explore", justify="right")
     table.add_column("Claimed", justify="right")
     table.add_column("Total", justify="right")
     table.add_column("Flags", style="yellow")
@@ -97,7 +105,9 @@ def print_history():
                 return f"[yellow]?[/yellow] {done}/{attempted}"
             colour = {"zero": "red", "short": "yellow", "unknown": "yellow"}.get(
                 task.get("verdict"), "green" if points else "dim")
-            return f"[{colour}]{points:+d}[/{colour}] {done}/{attempted}"
+            shelved = task.get("shelved") or []
+            note = f" [dim]({len(shelved)} shelved)[/dim]" if shelved else ""
+            return f"[{colour}]{points:+d}[/{colour}] {done}/{attempted}{note}"
 
         claim = run.get("claim") or {}
         moved = claim.get("moved")
@@ -121,6 +131,7 @@ def print_history():
         table.add_row(
             run.get("date", "?"),
             cell("daily_set"), cell("searches"), cell("keep_earning"),
+            cell("explore_on_bing"),
             f"{moved:+d}" if moved else "[dim]—[/dim]",
             f"[bold]{overall:+d}[/bold]" if overall is not None else "[yellow]?[/yellow]",
             flags or "",
@@ -133,6 +144,49 @@ def print_history():
             f"[dim]{len(earned)} measured runs · best {max(earned)} · "
             f"worst {min(earned)} · mean {sum(earned) / len(earned):.0f} points[/dim]"
         )
+
+
+def build_run_record(run_date: str, opening_total: int | None, closing_total: int | None,
+                     results: dict) -> dict:
+    """
+    The line runs.jsonl gets: one entry per task, in the shape --history reads.
+
+    Explore on Bing carries two extras — the per-tile detail, which is the output that
+    matters for a task whose crediting rule is unknown, and the topics shelved rather
+    than attempted, so that a day with a shelved tile is not read as a day with one
+    fewer tile.
+    """
+    overall = (closing_total - opening_total
+               if closing_total is not None and opening_total is not None else None)
+    claim = results.get("claim")
+    tasks = {}
+    for name, res in results.items():
+        if name == "claim":
+            continue
+        entry = {
+            "attempted": res.attempted,
+            "done": getattr(res, "completed", getattr(res, "submitted", None)),
+            "points": res.points_earned,
+            "expected": res.expected_points,
+            "verdict": assess(res.expected_points, res.points_earned,
+                              res.attempted).verdict.value,
+            "errors": res.errors,
+        }
+        if name == "explore_on_bing":
+            entry["tiles"] = res.per_tile
+            entry["shelved"] = res.shelved
+        tasks[name] = entry
+    return {
+        "date": run_date,
+        "opening_total": opening_total,
+        "closing_total": closing_total,
+        "overall_delta": overall,
+        "claim": (
+            {"clicked": claim.clicked, "moved": claim.claimed, "error": claim.error}
+            if claim is not None else None
+        ),
+        "tasks": tasks,
+    }
 
 
 def record_run(payload: dict):
@@ -212,7 +266,10 @@ async def main():
             logger.error(f"Daily Set failed outright: {e}")
 
         try:
-            results["searches"] = await run_daily_searches(context, state_page=page)
+            results["searches"] = await run_daily_searches(
+                context, state_page=page,
+                reserve_searches=EXPLORE_ON_BING_TILES_PER_DAY if RUN_EXPLORE_ON_BING else 0,
+            )
         except Exception as e:
             logger.error(f"Searches failed outright: {e}")
 
@@ -220,6 +277,14 @@ async def main():
             results["keep_earning"] = await run_keep_earning(context, state_page=page)
         except Exception as e:
             logger.error(f"Keep earning failed outright: {e}")
+
+        # Off until the post-window test period ends (config.py). Until then the tiles
+        # are worked by explore_on_bing.py after this run has recorded its day.
+        if RUN_EXPLORE_ON_BING:
+            try:
+                results["explore_on_bing"] = await run_explore_on_bing(context, state_page=page)
+            except Exception as e:
+                logger.error(f"Explore on Bing failed outright: {e}")
 
         # Claiming goes last: the pot only stops growing once the tasks are done.
         try:
@@ -282,31 +347,8 @@ async def main():
                 f"'Ready to claim'.[/yellow] The pot does not drain on its own."
             )
 
-        record_run({
-            "date": date.today().isoformat(),
-            "opening_total": opening.total_points,
-            "closing_total": closing.total_points,
-            "overall_delta": overall,
-            "claim": (
-                {"clicked": results["claim"].clicked,
-                 "moved": results["claim"].claimed,
-                 "error": results["claim"].error}
-                if "claim" in results else None
-            ),
-            "tasks": {
-                name: {
-                    "attempted": res.attempted,
-                    "done": getattr(res, "completed", getattr(res, "submitted", None)),
-                    "done": getattr(res, "completed", getattr(res, "submitted", None)),
-                    "points": res.points_earned,
-                    "expected": res.expected_points,
-                    "verdict": assess(res.expected_points, res.points_earned,
-                                      res.attempted).verdict.value,
-                    "errors": res.errors,
-                }
-                for name, res in results.items() if name != "claim"
-            },
-        })
+        record_run(build_run_record(date.today().isoformat(), opening.total_points,
+                                    closing.total_points, results))
         console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]\n")
 
         await context.close()

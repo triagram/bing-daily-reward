@@ -1,0 +1,6 @@
+[Unit]
+Description=Say that the Rewards run failed
+
+[Service]
+Type=oneshot
+ExecStart=/projects/bing-daily-reward/contrib/systemd/rewards-alert.sh failed rewards-bot.service

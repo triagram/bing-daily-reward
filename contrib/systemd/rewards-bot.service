@@ -1,0 +1,12 @@
+[Unit]
+Description=Microsoft Rewards daily run
+Documentation=file:///projects/bing-daily-reward/docs/OBSERVATION.md
+# Any non-zero exit: 1 crashed, 2 ran with flags, 3 sign-in needed, 4 profile busy.
+OnFailure=rewards-alert.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/projects/bing-daily-reward
+ExecStart=/home/mengyuan/.local/bin/uv run python rewards_bot.py
+# A run is ten to fifteen minutes; waiting for the monitor can add five.
+TimeoutStartSec=1800

@@ -1,0 +1,11 @@
+[Unit]
+Description=Evening check that today's Rewards run happened
+
+[Timer]
+# A failed run announces itself; a run that never started cannot. This is the one
+# alert that covers absence — a timer that did not fire, a machine that was off.
+OnCalendar=*-*-* 20:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

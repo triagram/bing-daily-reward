@@ -4,11 +4,12 @@ Run the "Explore on Bing" tiles, separately from the daily run.
     uv run python explore_on_bing.py            # work today's unlocked tiles
     uv run python explore_on_bing.py --dry-run  # read state and report, change nothing
 
-Separate on purpose. The mechanism these tiles credit by is not yet proven — one manual
-attempt tested a locked tile and settled nothing — and an unproven task inside
-rewards_bot.py would put its verdict into the daily run's Flags column, which is what
-the observation window's exit criterion reads. Run this *after* the daily run, so the
-day's measurement is already recorded.
+Separate while `RUN_EXPLORE_ON_BING` in config.py is off. The mechanism is settled now,
+but a topic the query map has not learned fails once before it can be added, and inside
+rewards_bot.py that failure would land in the daily run's Flags column — which is what
+the observation window read. So until the post-window test period ends this runs
+*after* the daily run, once the day's measurement is recorded. When the switch is on,
+rewards_bot.py works the tiles itself and this file is the retry and dry-run tool.
 
 It shares every rule the other tasks follow: work is confirmed per tile by re-reading
 that tile's own isCompleted, and no point figure is printed that was not observed.

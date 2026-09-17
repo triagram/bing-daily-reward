@@ -88,9 +88,15 @@ async def fetch_search_progress(page: Page) -> tuple[int, int] | None:
     return None
 
 
-def searches_remaining(progress: tuple[int, int] | None) -> int | None:
-    """How many more searches can still earn, or None if it could not be read."""
+def searches_remaining(progress: tuple[int, int] | None, reserve: int = 0) -> int | None:
+    """
+    How many more searches can still earn, or None if it could not be read.
+
+    `reserve` is searches held back for work later in the same run that also types
+    into the search box — the Explore on Bing tiles — so that this task's count plus
+    theirs stays short of the quota.
+    """
     if not progress:
         return None
     earned, cap = progress
-    return max(0, (cap - earned) // POINTS_PER_SEARCH)
+    return max(0, (cap - earned) // POINTS_PER_SEARCH - reserve)

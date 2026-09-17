@@ -135,6 +135,17 @@ def test_searches_remaining(progress, expected):
     assert searches_remaining(progress) == expected
 
 
+@pytest.mark.parametrize(
+    "progress, reserve, expected",
+    [((0, 60), 4, 16),    # four tiles' searches held back
+     ((45, 60), 4, 1),
+     ((51, 60), 4, 0),    # 3 left, 4 reserved: never negative
+     (None, 4, None)],
+)
+def test_a_reservation_comes_off_the_remaining_allowance(progress, reserve, expected):
+    assert searches_remaining(progress, reserve) == expected
+
+
 # --------------------------------------------------------------------------- #
 # Retry
 # --------------------------------------------------------------------------- #
@@ -302,6 +313,67 @@ def test_run_log_absent_is_empty_not_an_error(tmp_path, monkeypatch):
 
     monkeypatch.setattr(rewards_bot, "RUN_LOG", tmp_path / "nope.jsonl")
     assert rewards_bot.load_runs() == []
+
+
+class _Task:
+    """The slice of a task result the run record reads."""
+
+    def __init__(self, attempted, done, points, expected, errors=(), *, searches=False,
+                 per_tile=None, shelved=None):
+        self.attempted = attempted
+        if searches:
+            self.submitted = done
+        else:
+            self.completed = done
+        self.points_earned = points
+        self.expected_points = expected
+        self.errors = list(errors)
+        if per_tile is not None:
+            self.per_tile = per_tile
+        if shelved is not None:
+            self.shelved = shelved
+
+
+class _Claim:
+    def __init__(self, clicked, claimed, error=None):
+        self.clicked, self.claimed, self.error = clicked, claimed, error
+
+
+def test_the_run_record_reads_done_from_whichever_field_the_task_has():
+    from rewards_bot import build_run_record
+
+    record = build_run_record("2026-09-17", 100, 190, {
+        "daily_set": _Task(3, 3, 30, 30),
+        "searches": _Task(12, 12, 36, 36, searches=True),
+        "claim": _Claim(True, 3),
+    })
+    assert record["overall_delta"] == 90
+    assert record["tasks"]["daily_set"]["done"] == 3
+    assert record["tasks"]["searches"]["done"] == 12
+    assert record["tasks"]["searches"]["verdict"] == "ok"
+    assert record["claim"] == {"clicked": True, "moved": 3, "error": None}
+    assert "tiles" not in record["tasks"]["daily_set"]
+
+
+def test_the_run_record_keeps_explore_tiles_and_what_was_shelved():
+    from rewards_bot import build_run_record
+
+    tiles = [{"topic": "hotel", "confirmed": True}]
+    record = build_run_record("2026-09-17", 100, 113, {
+        "explore_on_bing": _Task(1, 1, 13, 10, per_tile=tiles, shelved=["lyrics"]),
+    })
+    explore = record["tasks"]["explore_on_bing"]
+    assert explore["tiles"] == tiles
+    assert explore["shelved"] == ["lyrics"]
+    assert explore["attempted"] == 1          # the shelved tile is not an attempt
+    assert record["claim"] is None
+
+
+def test_an_unreadable_total_leaves_the_overall_delta_unknown():
+    from rewards_bot import build_run_record
+
+    record = build_run_record("2026-09-17", None, 113, {})
+    assert record["overall_delta"] is None
 
 
 # --------------------------------------------------------------------------- #

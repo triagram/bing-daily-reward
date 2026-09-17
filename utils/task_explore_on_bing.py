@@ -250,6 +250,9 @@ class ExploreOnBingResult:
     per_tile: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     expected_points: int = 0
+    # Open tiles left alone on purpose. Recorded so that --history can tell a day
+    # with a shelved tile from a day with one fewer tile.
+    shelved: list[str] = field(default_factory=list)
 
     @property
     def points_earned(self) -> int | None:
@@ -409,8 +412,9 @@ async def run_explore_on_bing(
 
     shelved = shelved_tiles(earn)
     if shelved:
+        result.shelved = sorted(filter(None, (topic_of(o) for o in shelved)))
         logger.info(f"   {len(shelved)} shelved, not attempted: "
-                    + ", ".join(sorted(filter(None, (topic_of(o) for o in shelved)))))
+                    + ", ".join(result.shelved))
 
     if not todo:
         logger.info("✅ [Explore on Bing] Nothing unlocked and outstanding.")

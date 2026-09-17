@@ -117,8 +117,11 @@ never been validated against Microsoft's detection.
 `rewards_bot.py` only orchestrates: launch persistent browser → check login → run three
 tasks in sequence, each in its own `try`/`except` so one failure does not abort the rest.
 
-`utils/task_explore_on_bing.py` is a fourth task and is **not** in that sequence. Run it
-after the daily run, from `explore_on_bing.py`.
+`utils/task_explore_on_bing.py` is a fourth task, in that sequence **only when
+`RUN_EXPLORE_ON_BING` in `config.py` is on** — after keep-earning, before the claim, with
+its four typed searches reserved out of the search allowance. It is off until the
+post-window test period ends (2026-09-23); until then run it after the daily run, from
+`explore_on_bing.py`, which stays as the retry and dry-run tool afterwards.
 
 Its mechanism is settled — click the tile to *activate* it, then search its topic inside
 what it opens, typed and without navigating away. What is not settled is the query for

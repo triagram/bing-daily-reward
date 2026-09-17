@@ -317,6 +317,22 @@ def test_one_flag_per_task_and_idle_is_not_a_flag():
 
 
 # --------------------------------------------------------------------------- #
+# Sign-in
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("url, expected", [
+    ("https://rewards.bing.com/", False),
+    ("https://rewards.bing.com/?refd=...", False),
+    ("https://login.live.com/oauth20_authorize.srf?client_id=...", True),
+    ("https://login.microsoftonline.com/common/oauth2/signin?x=1", True),
+])
+def test_the_sign_in_page_is_recognised_by_its_url(url, expected):
+    from rewards_bot import sign_in_required
+    assert sign_in_required(url) is expected
+
+
+# --------------------------------------------------------------------------- #
 # Run history
 # --------------------------------------------------------------------------- #
 

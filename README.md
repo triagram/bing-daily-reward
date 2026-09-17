@@ -347,9 +347,10 @@ list are fixed; what is left is either a deliberate deferral or a genuine unknow
 - **Headless mode is untested.** `HEADLESS = True` will launch, but the anti-bot
   posture is a single Chromium flag and Microsoft's detection of headless sessions
   has not been checked. The default is `False` for a reason.
-- **The first run cannot be automated.** Login waits on a blocking `input()` call,
-  so an unattended scheduled run is not possible until that is reworked. This is
-  the one blocker on scheduling.
+- **Signing in is by hand.** `rewards_bot.py --login` opens the browser, waits for
+  you, and confirms the balance is readable before it says the session works. A run
+  that finds the sign-in page with no terminal to wait in — a scheduled one — stops
+  with exit code 3 and records nothing, rather than crashing on `input()`.
 - **Quizzes are answered at random.** `handle_quiz_or_poll_on_page()` clicks the
   first available option. Quizzes award points for wrong answers too, but fewer.
 - **Selectors will break.** The Rewards dashboard is redesigned periodically.

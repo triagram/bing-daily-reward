@@ -116,19 +116,20 @@ mkdir -p logs/observation
 Then, once a day:
 
 ```bash
-uv run python rewards_bot.py 2>&1 | tee -a logs/observation/$(date +%F).log
+uv run python rewards_bot.py
 ```
 
-Reading that: `2>&1` merges the error channel into the normal one so that a traceback
-reaches the log rather than only the screen — which is the whole point, since nobody is
-watching the screen. `tee -a` writes to the file *and* passes the output through, and
-appends rather than truncating, so a second run on a day does not erase the first one's
-failure. `$(date +%F)` expands to `2026-08-18`, giving one file per day that sorts
-chronologically by name.
+**Since 2026-09-17 the bot writes the day's file itself**: everything the terminal
+showed — table, warnings, a traceback if it crashed — is appended as plain text to
+`logs/observation/<date>.log` when the run ends, one file per day, a second run on the
+same day appended below the first. The `tee -a logs/observation/$(date +%F).log` the
+window ran with is no longer needed (it is harmless, but doubles the file). The
+structured result still goes to `runs.jsonl`; the day file is what a person reads, and
+the reason it exists is that the shortfall warning and the "compare against an earlier
+capture" hint are console-only — and nobody is watching the console.
 
-The `tee` is not optional. `runs.jsonl` captures the structured result, but the shortfall
-warning and the "compare against an earlier capture" hint are console-only — and the
-point of a window is that nobody is watching the console.
+`explore_on_bing.py` does not do this; keep `tee` for it while it is still run
+separately.
 
 `HEADLESS = False` stays. Headless has never been validated against Microsoft's
 detection; trying it here would move two variables at once.

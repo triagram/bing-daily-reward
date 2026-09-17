@@ -10,9 +10,14 @@ observe: where a total could not be read it says so.
     uv run python rewards_bot.py --history  # what past runs earned
     uv run python rewards_bot.py --login    # sign in by hand; confirms the session works
 
-Exit codes: 0 ran (or nothing to do); 3 no session and no terminal to sign in from.
+Exit codes: 0 clean (or nothing to do); 1 crashed; 2 ran but Flags is not empty;
+3 no session and no terminal to sign in from; 4 the browser profile stayed busy.
 A scheduled run that finds the sign-in page stops there and records nothing —
 somebody has to run --login in a terminal.
+
+Everything the terminal shows is also appended, as plain text, to
+logs/observation/<date>.log when the run ends, so a run nobody watched can still be
+read the next day. (The systemd journal has the same text, streamed.)
 """
 
 import sys
@@ -44,14 +49,20 @@ from utils.task_keep_earning import run_keep_earning
 from utils.task_searches import run_daily_searches
 
 RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
+OBSERVATION_DIR = Path(__file__).parent / "logs" / "observation"
 
+# The run finished, but a task is flagged — the observation window's criterion, from
+# flags_for(). Under a timer this is the difference between "boring" and "look".
+EXIT_FLAGGED = 2
 # No session, and no terminal to wait for one in. Distinct from a crash (1) so that
 # whatever watches a scheduled run can say "sign in" rather than "look at the log".
 EXIT_SIGN_IN_REQUIRED = 3
 # The profile stayed held for the whole wait: a browser or another run has it open.
 EXIT_PROFILE_BUSY = 4
 
-console = Console()
+# Recorded so the day's log file can be written from what was actually shown, table
+# and warnings included — the tee that the observation window relied on, built in.
+console = Console(record=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
@@ -211,6 +222,25 @@ async def wait_for_sign_in(page, context) -> None:
     await asyncio.to_thread(input, "ENTER once signed in > ")
 
 
+_day_log: Path | None = None
+
+
+def start_day_log() -> None:
+    """Everything printed from here on is appended to today's observation log at exit."""
+    global _day_log
+    OBSERVATION_DIR.mkdir(parents=True, exist_ok=True)
+    _day_log = OBSERVATION_DIR / f"{date.today().isoformat()}.log"
+    console.print(f"[dim]{datetime.now():%Y-%m-%d %H:%M:%S}[/dim]")
+
+
+def flush_day_log() -> None:
+    if _day_log is None:
+        return
+    text = console.export_text(clear=True)
+    with _day_log.open("a", encoding="utf-8") as fh:
+        fh.write(text if text.endswith("\n") else text + "\n")
+
+
 def record_run(payload: dict):
     RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
     with RUN_LOG.open("a", encoding="utf-8") as fh:
@@ -230,7 +260,9 @@ async def main():
     mode = ("signing in" if login_mode
             else "dry run — reading state only" if dry_run
             else "running today's tasks")
-    console.print(f"[dim]{mode}[/dim]\n")
+    console.print(f"[dim]{mode}[/dim]")
+    start_day_log()
+    console.print()
 
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -390,11 +422,19 @@ async def main():
                 f"'Ready to claim'.[/yellow] The pot does not drain on its own."
             )
 
-        record_run(build_run_record(date.today().isoformat(), opening.total_points,
-                                    closing.total_points, results))
-        console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]\n")
+        record = build_run_record(date.today().isoformat(), opening.total_points,
+                                  closing.total_points, results)
+        record_run(record)
+        console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]")
+
+        flags = flags_for(record["tasks"])
+        if flags:
+            console.print(f"[bold yellow]⚠ Flags: {' '.join(flags)}[/bold yellow]")
+        console.print()
 
         await context.close()
+        if flags:
+            sys.exit(EXIT_FLAGGED)
 
 
 if __name__ == "__main__":
@@ -403,3 +443,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted.[/yellow]")
         sys.exit(0)
+    except Exception:
+        # Rendered through the console so the traceback reaches the day's log too.
+        console.print_exception()
+        sys.exit(1)
+    finally:
+        flush_day_log()

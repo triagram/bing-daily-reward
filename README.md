@@ -270,6 +270,7 @@ is a one-time step.
 uv run python rewards_bot.py            # run today's tasks
 uv run python rewards_bot.py --dry-run  # report what it would do, change nothing
 uv run python rewards_bot.py --history  # what past runs earned, per task
+uv run python rewards_bot.py --login    # sign in by hand; confirms the session works
 
 uv run python explore_on_bing.py            # the Explore on Bing tiles, after the daily run
 uv run python explore_on_bing.py --dry-run  # which are open today, and what it would search

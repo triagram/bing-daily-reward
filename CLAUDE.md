@@ -40,6 +40,7 @@ uv run playwright install chromium   # download the browser — separate step, e
 uv run python rewards_bot.py             # run today's tasks
 uv run python rewards_bot.py --dry-run   # read state and report, change nothing
 uv run python rewards_bot.py --history   # what past runs earned, per task
+uv run python rewards_bot.py --login     # sign in by hand; confirms the session works
 
 uv run python explore_on_bing.py             # the Explore on Bing tiles — separate on purpose
 uv run python explore_on_bing.py --dry-run   # which tiles are open today, and what it would search
@@ -145,8 +146,9 @@ Three design decisions worth knowing before editing:
 
 **Persistent profile, not stored credentials.** `launch_persistent_context()` points at
 `browser_session/`; Chromium owns the cookie lifecycle. There is deliberately no
-credential-handling code in this project. First run blocks on `input()` waiting for a
-manual sign-in, which is why unattended scheduling is not yet possible.
+credential-handling code in this project. Signing in is done by a person, through
+`--login`; a run that meets the sign-in page with no terminal attached exits with code 3
+and records nothing, so a scheduled run can never wait on an `input()` nobody will answer.
 
 **Selectors anchor on URL signatures, not CSS classes.** The Rewards dashboard uses
 utility-first CSS (`bg-bgCardOnPrimaryDefaultRest`), which churns. `locate_daily_set_individual_cards()`

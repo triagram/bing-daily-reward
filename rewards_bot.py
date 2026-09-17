@@ -8,6 +8,11 @@ observe: where a total could not be read it says so.
     uv run python rewards_bot.py            # run today's tasks
     uv run python rewards_bot.py --dry-run  # read state and report, change nothing
     uv run python rewards_bot.py --history  # what past runs earned
+    uv run python rewards_bot.py --login    # sign in by hand; confirms the session works
+
+Exit codes: 0 ran (or nothing to do); 3 no session and no terminal to sign in from.
+A scheduled run that finds the sign-in page stops there and records nothing —
+somebody has to run --login in a terminal.
 """
 
 import sys
@@ -38,6 +43,10 @@ from utils.task_keep_earning import run_keep_earning
 from utils.task_searches import run_daily_searches
 
 RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
+
+# No session, and no terminal to wait for one in. Distinct from a crash (1) so that
+# whatever watches a scheduled run can say "sign in" rather than "look at the log".
+EXIT_SIGN_IN_REQUIRED = 3
 
 console = Console()
 logging.basicConfig(
@@ -174,6 +183,31 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
     }
 
 
+def sign_in_required(url: str) -> bool:
+    """Microsoft bounced the dashboard load to its sign-in flow."""
+    return "login.live.com" in url or "signin" in url
+
+
+async def wait_for_sign_in(page, context) -> None:
+    """
+    Block until a person has signed in — or stop, if there is no person.
+
+    The persistent profile keeps the session for weeks, so this is rare, but when it
+    happens under a timer there is nobody at the keyboard: input() on a stdin that is
+    /dev/null raises EOFError, which reads as a crash. Say what is needed instead, and
+    leave with a code that means exactly that.
+    """
+    if not sys.stdin.isatty():
+        logger.error("Sign-in required, and no terminal to wait in. Run "
+                     "`uv run python rewards_bot.py --login` by hand, then retry.")
+        await context.close()
+        sys.exit(EXIT_SIGN_IN_REQUIRED)
+    console.print("\n[bold yellow]Sign-in required.[/bold yellow]")
+    console.print("Sign in to the Microsoft account in the open browser window,")
+    console.print("then press [bold green]ENTER[/bold green] here to continue.\n")
+    await asyncio.to_thread(input, "ENTER once signed in > ")
+
+
 def record_run(payload: dict):
     RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
     with RUN_LOG.open("a", encoding="utf-8") as fh:
@@ -187,9 +221,12 @@ async def main():
         return
 
     dry_run = "--dry-run" in sys.argv
+    login_mode = "--login" in sys.argv
 
     console.print("\n[bold cyan]Microsoft Rewards[/bold cyan]")
-    mode = "dry run — reading state only" if dry_run else "running today's tasks"
+    mode = ("signing in" if login_mode
+            else "dry run — reading state only" if dry_run
+            else "running today's tasks")
     console.print(f"[dim]{mode}[/dim]\n")
 
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -207,13 +244,25 @@ async def main():
         await page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3.0)
 
-        if "login.live.com" in page.url or "signin" in page.url:
-            console.print("\n[bold yellow]Sign-in required.[/bold yellow]")
-            console.print("Sign in to the Microsoft account in the open browser window,")
-            console.print("then press [bold green]ENTER[/bold green] here to continue.\n")
-            await asyncio.to_thread(input, "ENTER once signed in > ")
+        if sign_in_required(page.url):
+            await wait_for_sign_in(page, context)
+        elif login_mode:
+            console.print("[dim]Already signed in.[/dim]")
 
         opening = await fetch_state(page)
+
+        if login_mode:
+            # Success means the session is usable, not that ENTER was pressed: the
+            # balance has to be readable, which is what every run needs from it.
+            if opening.total_points is None:
+                console.print("[bold red]Signed in, but the balance cannot be read — "
+                              "the session is not usable yet.[/bold red]")
+                await context.close()
+                sys.exit(1)
+            console.print(f"  session works — balance [bold]{opening.balance}[/bold], "
+                          f"total [bold]{opening.total_points}[/bold]\n")
+            await context.close()
+            return
         console.print(
             f"  balance [bold]{opening.balance}[/bold]  ·  "
             f"unclaimed [bold]{opening.ready_to_claim}[/bold]  ·  "

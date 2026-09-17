@@ -230,6 +230,13 @@ only then, unattended operation. The alert belongs *before* scheduling: a shortf
 currently prints to a console nobody is watching, which is not much use once nobody is
 watching by design.
 
+**Status 2026-09-17:** the alert and the scheduling are built and switched off —
+`contrib/systemd/` for the units, `RUN_EXPLORE_ON_BING` in `config.py` for the merge.
+If the test period is clean through 09-23 they go live in this order: switch on → one
+run by hand, watched → tag `v1.0.0` → `systemctl --user start rewards-bot.service`
+once, watched → enable the two timers. CI's `push:` trigger is a one-line change to a
+config file, waiting for a yes. Q8 stays after all of it.
+
 **Profile changes, agreed 2026-09-16 and deliberately not started with the window:** a
 survey of what gets accounts suspended (see `CLAUDE.md`, *Never*) found every named
 signal to be behavioural, and no source claiming Microsoft fingerprints the browser. So

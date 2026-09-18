@@ -234,12 +234,38 @@ only then, unattended operation. The alert belongs *before* scheduling: a shortf
 currently prints to a console nobody is watching, which is not much use once nobody is
 watching by design.
 
-**Status 2026-09-17:** the alert and the scheduling are built and switched off —
+**Status 2026-09-18:** the alert and the scheduling are built and switched off —
 `contrib/systemd/` for the units, `RUN_EXPLORE_ON_BING` in `config.py` for the merge.
-If the test period is clean through 09-23 they go live in this order: switch on → one
-run by hand, watched → tag `v1.0.0` → `systemctl --user start rewards-bot.service`
-once, watched → enable the two timers. CI's `push:` trigger is a one-line change to a
-config file, waiting for a yes. Q8 stays after all of it.
+CI runs on push (enabled 09-17, first run green). Q8 stays after all of it.
+
+**Enablement is 2026-09-24 morning, by decision on 09-18**, not 09-23: the 09-23 run
+is the seventh hand run of the test period, and a second run that day would find
+nothing outstanding and prove nothing about the merge. The user will ask to be walked
+through it one step at a time. The steps, so that a fresh session has them verbatim:
+
+1. `uv run python rewards_bot.py --history` — confirm 09-17 … 09-23 are seven clean
+   rows. A flag on any of them stops here.
+2. Phone push: if the user has a Telegram bot token and has messaged the bot, swap
+   the ntfy block in `contrib/systemd/rewards-alert.sh` for a Telegram `sendMessage`
+   and put the token and chat id in `~/.config/bing-daily-reward/alert.env`. If not,
+   desktop notification only; the push can be added any day.
+3. `RUN_EXPLORE_ON_BING = True` in `config.py`; `uv run pytest -q`;
+   `uv run python rewards_bot.py --dry-run`.
+4. Install the units: copy the five `rewards-bot` / `rewards-alert` / `rewards-check`
+   files from `contrib/systemd/` to `~/.config/systemd/user/`, then
+   `systemctl --user daemon-reload`. **No `enable-linger`.**
+5. `systemctl --user start rewards-bot.service` with
+   `journalctl --user -u rewards-bot.service -f` alongside, the user watching. This
+   one run verifies three things at once: the merged Explore inside the daily run,
+   a real browser window launched by systemd, and the exit code reaching
+   `OnFailure=` (fire `rewards-alert.sh failed` by hand once if the run is clean, to
+   see the notification arrive from under systemd).
+6. Clean → commit the switch, tag `v1.0.0` with the release note in the tag message.
+7. `systemctl --user enable --now rewards-bot.timer rewards-check.timer`;
+   `systemctl --user list-timers 'rewards-*'`.
+8. Push.
+9. From 09-25 the routine is nothing: no hand runs, no `explore_on_bing.py`, no
+   `tee`. `explore_on_bing.py --dry-run` remains the way to look at the tiles.
 
 **Profile changes, agreed 2026-09-16 and deliberately not started with the window:** a
 survey of what gets accounts suspended (see `CLAUDE.md`, *Never*) found every named

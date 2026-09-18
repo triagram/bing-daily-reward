@@ -33,7 +33,11 @@ what the code now does. **Sample size for the current code is zero.** Do not rea
 | **2026-09-07 … 09-12** | **Six clean runs**, no errors and no flags on any. Explore ran **4 of 4 every one of those days**, +52 against 40 each, with no retry needed. **10 of 14.** |
 | **2026-09-13 … 09-16** | **Four clean runs**; every `overall_delta` reconciles to its per-task sum (82, 147, 111, 85). **14 of 14 — the exit criterion is met.** Explore 4 of 4 on three of the four days; `lyrics` failed on 09-16, outside the count, and is the subject of *Open threads*. |
 
-**The window closed on 2026-09-16.** Condition 1 of v1.0.0 holds. Condition 2 — folding
+**The window closed on 2026-09-16.** Condition 1 of v1.0.0 holds. The test period that
+followed — seven clean runs, 09-17 to 09-23 — stands at 2 of 7: 09-17 +111 and 09-18
++164, both clean; the 09-18 `daily_set` 100 / 30 is the Friday streak payout,
+as [DEVELOP.md](DEVELOP.md#streak-payouts-measured--the-weekly-overshoots-and-the-stamp-bonus)
+predicts. Condition 2 — folding
 `explore_on_bing.py` into the daily run — **waits, by decision the same day**, for a
 further period of clean runs on the same two commands; nothing changes in the routine
 meanwhile. The user's words: merge after the test period, not before.
@@ -63,7 +67,7 @@ release note.
 
 | Thread | State |
 |---|---|
-| `recipe` tile | Failed twice on 09-04, unexplained — the non-breaking space was not the cause (`0b078ee`, `740dfd9`). **Has not reappeared since.** What `lyrics` showed on 09-16 now predicts how it will: a tile that was activated and never completed comes back **still activated, with no description**, so the prompt route is closed to it for good and `query_for()` will fall to the title. **Prediction to check on the day:** the morning sample shows `recipe` unlocked with no description before anything runs. If so, persistence is confirmed twice, and the only moves are a carried override or the shelf — an unhandled `recipe` day becomes a flag once the merge happens. |
+| `recipe` tile | **Prediction failed, and a third failure, 2026-09-18.** It returned with its description present (06:04, 13:16 — nothing had run) and failed at 14:57 on `new recipes`, the same query as both 09-04 attempts. So "activated-and-incomplete persists across rotation" is one for two (see [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits)). Three failures, **one query shape** — no entity has ever been tried on this topic, which is what fixed every fixable one. **Must be settled before the merge on 09-23**, override or shelf: an unhandled `recipe` day is a flag from then on. |
 | `lyrics` tile | **Shelved 2026-09-16.** Reappeared on 09-16 already activated from 09-02 — the description was gone before anything ran — and failed twice more, the second time on the shape three forum posters say works. Four failures, three query shapes, every search credited. On `SHELVED_TOPICS`: reported, never attempted, never a flag. See [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | `realestate` tile | **Closed 2026-09-06.** Completed on its own prompt, placeholder and all. No override; nothing further to watch. |
 | `hotel` tile | Completed on an override 2026-09-06, **but not closed.** Its own prompt passed on 08-30 and failed on 09-06 — same query, same topic, opposite results a week apart. See below. |

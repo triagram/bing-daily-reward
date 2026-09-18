@@ -475,11 +475,11 @@ seven will return on an unactivated tile. Let it run on its own prompt when it d
 rather than on its override, and the answer arrives on its own. Until then, do not add an
 entry on the strength of one failure alone.
 
-*Qualified 2026-09-16:* that holds for the seven, because each of them **completed**,
-and completion is what resets a tile. A topic that failed and was never completed —
-`recipe`, and `lyrics` before it was shelved — returns still activated and without its
-prompt, so it can never be re-tested "on its own prompt" at all. See the activated-state
-finding below.
+*Qualified 2026-09-16, and un-qualified two days later:* the worry was that a topic
+which failed and never completed would return still activated and without its prompt,
+as `lyrics` did on 09-16. `recipe` returned on 09-18 **with** its prompt and was
+re-tested on it — and failed a third time. So the seven can be re-tested when they
+recur; see the correction under the activated-state finding below.
 
 **A tile loses its description once activated — corrected 2026-09-04.** `lyrics` was
 written off on 09-02 as a malformed card, on the evidence that its whole subtree held one
@@ -518,6 +518,22 @@ state, with no click from anyone (the account holder confirmed none), which mean
 09-02 activation was still standing a fortnight later. A tile that has been activated
 and never completed therefore never shows its prompt again; `query_for()` falls to the
 title, and the title is not a query. One sighting, but a clean one.
+
+**Half of that failed its first test, 2026-09-18.** The prediction was that `recipe` —
+activated 09-04, never completed — would return the same way. It did not:
+
+| Sample | Tile | Description | State |
+|---|---|---|---|
+| 09-17 06:15 … 23:55 | `recipe` | present | locked, tomorrow's preview |
+| 09-18 06:04, 13:16 | `recipe` | **present** | unlocked, before anything ran |
+| 09-18 18:54 | `recipe` | absent | after the 14:57 attempt failed |
+
+So the first half holds — the description goes while a tile is activated-and-incomplete
+(09-18 18:54 is a third sighting of that) — and the second half is one for two: `lyrics`
+came back without its prompt, `recipe` came back with it, both after a fourteen-day gap
+and two same-day activations. What emptied `lyrics` on 09-16 is unexplained again. Do
+not build on "activation persists across rotation"; it is a single sighting with a
+counterexample.
 
 **`lyrics` shelved, 2026-09-16.** The ledger:
 

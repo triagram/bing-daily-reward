@@ -469,6 +469,12 @@ What keeps "a retry always fixes it" from being the answer: `recipe` and `lyrics
 failed their same-day retries. Something real is topic-specific. It is simply not the
 wording, and the size of the random component is unmeasured.
 
+*And the other way round, 2026-09-18:* `recipe` is the first topic where both halves are
+on the ledger — a same-day retry with nothing changed **failed** (09-04, 18:09), and a
+same-day retry with a dish substituted **passed** (09-18, 20:47, +13). For this topic
+the entity is what did it; the retry alone had been tried and had not. One topic, but
+it is the separation the seven earlier entries never had.
+
 **The test that would settle it costs nothing but patience.** Topics recur — the gap
 between sightings clusters hard at 7 and 14 days across 26 observed pairs. So each of the
 seven will return on an unactivated tile. Let it run on its own prompt when it does,

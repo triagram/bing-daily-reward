@@ -153,6 +153,11 @@ VERIFIED_QUERIES: dict[str, str] = {
     # story — both failed their same-day retries — but an unactivated re-test is the only
     # thing that can separate these, and none of the seven has had one yet.
     "hotel": "hotels to stay at in Edinburgh",
+    # 2026-09-18. Three failures on the prompt verbatim, "new recipes" — 09-04 at 14:57
+    # and again at 18:09 with nothing changed, and 09-18 at 14:57 — then completed at
+    # 20:47 on the first try with a dish named. The sharpest separation in the ledger:
+    # on this topic "the retry fixed it" was already dead before the entity was tried.
+    "recipe": "new chicken curry recipes",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

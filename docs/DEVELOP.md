@@ -1055,6 +1055,41 @@ a daily panel, one of them wrong, with account-wide figures agreeing throughout.
 a `creditreport` tile is explained entirely by that profile showing it as open while the
 server had it locked.
 
+### Direct navigation has never completed anything — and a hand on the browser costs a card
+
+2026-09-22: three "follow us" offers appeared at once, `WW_Rewards_Campaign_SocialMedia_
+{Instagram,TikTok,YouTube}_20260921_n`, 10 points each, destinations on instagram.com,
+tiktok.com and youtube.com. Instagram and YouTube completed on the card click alone —
+nobody followed anything; the click opened the tab, the tab was closed, the points
+arrived. **Crediting is the Rewards card's click, not the destination page.**
+
+TikTok did not. The log reads `no anchor matched, navigating directly` at 10:43:33,
+zero seconds after the /earn load had settled — both lookups (`a[href=…]`, then
+`a:has-text(title)`) are instant checks, and both came back empty — then
+`still incomplete` after a `page.goto(tiktok.com)`. Neither lookup was wrong: an
+offline render of the archived page matches all three cards, a live read-only load
+four hours later finds the TikTok card present and visible four seconds after
+`domcontentloaded`, and a retry of the task alone at 11:35 completed it on
+`anchor-click`, +10. What differed at 10:43 is that **the account holder had just
+closed the Instagram tab by hand**, thinking it a stray click of their own, in the
+seconds between the bot reloading /earn and looking for the next card. The page was
+not where the task assumed it was.
+
+Two things follow, one of them old:
+
+- **The fallback is worthless.** Every `navigating directly` in the observation logs,
+  end to end: 08-19 the referral card (three times), 08-21 a daily-set card (twice),
+  09-02 five app-only offers, 09-22 this — **twelve, and none credited.** It cannot:
+  the click on the Rewards card is what reports the activity. For an external
+  destination it also parks the state page on a third-party site. Left in place for
+  now, as a known weak spot, because removing it is a code change on the eve of
+  unattended operation and the thing that triggers it is a person; when it is next
+  touched, the right shape is a bounded wait and one reload, then "card not found",
+  never a `goto`.
+- **The browser window is the bot's while a run is in progress.** Tabs opening to
+  instagram.com or tiktok.com are the run working a social offer, not a stray click.
+  Under the timer the window still appears on the desktop (07:30–10:30); leave it.
+
 ### Hypothesis: a referral daily-set card may not be completable at all
 
 2026-08-19: `Child1`, "Turn referrals into rewards", destination

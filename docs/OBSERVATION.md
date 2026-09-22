@@ -34,10 +34,14 @@ what the code now does. **Sample size for the current code is zero.** Do not rea
 | **2026-09-13 … 09-16** | **Four clean runs**; every `overall_delta` reconciles to its per-task sum (82, 147, 111, 85). **14 of 14 — the exit criterion is met.** Explore 4 of 4 on three of the four days; `lyrics` failed on 09-16, outside the count, and is the subject of *Open threads*. |
 
 **The window closed on 2026-09-16.** Condition 1 of v1.0.0 holds. The test period that
-followed — seven clean runs, 09-17 to 09-23 — stands at 2 of 7: 09-17 +111 and 09-18
-+164, both clean; the 09-18 `daily_set` 100 / 30 is the Friday streak payout,
-as [DEVELOP.md](DEVELOP.md#streak-payouts-measured--the-weekly-overshoots-and-the-stamp-bonus)
-predicts. Condition 2 — folding
+followed — seven runs, 09-17 to 09-23 — has been clean on 09-17 … 09-21 (five). **09-22
+flagged `keep_earning:1err`, explained the same day:** a new "follow us on TikTok"
+offer's card was not on the page at the instant the task looked, because the account
+holder had just closed the bot's Instagram tab by hand; a retry of that task alone,
+undisturbed, completed it on the card click, +10 (see
+[DEVELOP.md](DEVELOP.md#direct-navigation-has-never-completed-anything--and-a-hand-on-the-browser-costs-a-card)).
+Whether the day counts toward the seven is the user's call; the code was not at fault
+and nothing was changed. Condition 2 — folding
 `explore_on_bing.py` into the daily run — **waits, by decision the same day**, for a
 further period of clean runs on the same two commands; nothing changes in the routine
 meanwhile. The user's words: merge after the test period, not before.

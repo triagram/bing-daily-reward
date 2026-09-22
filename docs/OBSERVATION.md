@@ -40,8 +40,8 @@ offer's card was not on the page at the instant the task looked, because the acc
 holder had just closed the bot's Instagram tab by hand; a retry of that task alone,
 undisturbed, completed it on the card click, +10 (see
 [DEVELOP.md](DEVELOP.md#direct-navigation-has-never-completed-anything--and-a-hand-on-the-browser-costs-a-card)).
-Whether the day counts toward the seven is the user's call; the code was not at fault
-and nothing was changed. Condition 2 — folding
+**Counted as day 6, by the user's decision the same day** — the code was not at fault
+and nothing was changed. 09-23 is day 7; enablement stays 09-24. Condition 2 — folding
 `explore_on_bing.py` into the daily run — **waits, by decision the same day**, for a
 further period of clean runs on the same two commands; nothing changes in the routine
 meanwhile. The user's words: merge after the test period, not before.

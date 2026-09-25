@@ -41,7 +41,14 @@ holder had just closed the bot's Instagram tab by hand; a retry of that task alo
 undisturbed, completed it on the card click, +10 (see
 [DEVELOP.md](DEVELOP.md#direct-navigation-has-never-completed-anything--and-a-hand-on-the-browser-costs-a-card)).
 **Counted as day 6, by the user's decision the same day** — the code was not at fault
-and nothing was changed. 09-23 is day 7; enablement stays 09-24. Condition 2 — folding
+and nothing was changed. **09-23 was day 7, clean (+82): the test period is complete.**
+09-24 was run by hand and clean (+112) — the enablement did not happen that day. 09-25
+was clean too (+135, Explore 4 of 4), and is the first run made under systemd: the user
+was away and asked for it, and the harness driving the session could not keep a
+browser alive under the machine's memory pressure, so both scripts ran as transient
+user units (`systemd-run --user`), DISPLAY from the user manager, nobody at the
+keyboard. Both exited 0. That is step 5 below, verified a day early on a transient
+unit rather than the installed one. **Enablement is now 2026-09-26 morning.** Condition 2 — folding
 `explore_on_bing.py` into the daily run — **waits, by decision the same day**, for a
 further period of clean runs on the same two commands; nothing changes in the routine
 meanwhile. The user's words: merge after the test period, not before.
@@ -242,10 +249,9 @@ watching by design.
 `contrib/systemd/` for the units, `RUN_EXPLORE_ON_BING` in `config.py` for the merge.
 CI runs on push (enabled 09-17, first run green). Q8 stays after all of it.
 
-**Enablement is 2026-09-24 morning, by decision on 09-18**, not 09-23: the 09-23 run
-is the seventh hand run of the test period, and a second run that day would find
-nothing outstanding and prove nothing about the merge. The user will ask to be walked
-through it one step at a time. The steps, so that a fresh session has them verbatim:
+**Enablement is 2026-09-26 morning** (set for 09-24 on 09-18, moved on 09-25 — the user
+was away). The user will ask to be walked through it one step at a time. The steps, so
+that a fresh session has them verbatim:
 
 1. `uv run python rewards_bot.py --history` — confirm 09-17 … 09-23 are seven clean
    rows. A flag on any of them stops here.

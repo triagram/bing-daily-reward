@@ -111,8 +111,17 @@ uv run python monitor.py --history           # the read-only state samples
 ```
 
 Every run appends one line to `logs/runs.jsonl` and everything it printed to
-`logs/observation/<date>.log`. `--history` renders the records; its `Flags` column is
-the one to read — empty means clean. `logs/` and `captures/` are git-ignored.
+`logs/observation/<date>.log`. `--history` renders the records, one row per run with
+the time it finished; its `Flags` column is the one to read — empty means clean.
+`logs/` and `captures/` are git-ignored.
+
+The timer's own view of the same days:
+
+```bash
+systemctl --user list-timers 'rewards-*'                          # last and next trigger
+journalctl --user -u rewards-bot.service -S -7d --no-pager \
+  | grep -E "Starting|Finished|Failed|Flags"                       # start, end, outcome per day
+```
 
 ## Configuration
 

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 # Base Paths
@@ -30,12 +29,11 @@ DAILY_SEARCH_MAX = 12
 # expensive place to economise; prefer cutting searches (see DAILY_SEARCH_MIN/MAX).
 KEEP_EARNING_MAX_PER_RUN = 6
 
-# Explore on Bing inside the daily run. Off until the test period that followed the
-# observation window closes (2026-09-23): until then the tiles are worked by
-# explore_on_bing.py after the daily run, so that an unlearned tile cannot flag a day
-# whose measurement is already recorded. When on, the tiles' own typed searches are
-# reserved out of the day's search allowance — four tiles, four searches — so that the
-# drawn count plus the tiles cannot land on the quota.
+# Explore on Bing inside the daily run (on since 2026-09-26; it was off through the
+# observation window so an unlearned tile could not flag a day already recorded). When
+# on, the tiles' own typed searches are reserved out of the day's search allowance —
+# four tiles, four searches — so the drawn count plus the tiles cannot land on the quota.
+# Off, explore_on_bing.py works the tiles on its own.
 RUN_EXPLORE_ON_BING = True
 EXPLORE_ON_BING_TILES_PER_DAY = 4
 

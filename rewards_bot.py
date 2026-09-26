@@ -353,8 +353,8 @@ async def main():
         except Exception as e:
             logger.error(f"Keep earning failed outright: {e}")
 
-        # Off until the post-window test period ends (config.py). Until then the tiles
-        # are worked by explore_on_bing.py after this run has recorded its day.
+        # Behind a switch so the tiles can be taken out of the daily run again if a
+        # topic the query map has not learned starts flagging days; see config.py.
         if RUN_EXPLORE_ON_BING:
             try:
                 results["explore_on_bing"] = await run_explore_on_bing(context, state_page=page)

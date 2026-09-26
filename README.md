@@ -178,15 +178,16 @@ seeded by the date, so consecutive days do not repeat the same strings.
 > called `explore` until 2026-08-22, and that collision misled both the notes and the
 > account holder, so it is now named for the heading its offers appear under.
 >
-> **Task 4 sits behind `RUN_EXPLORE_ON_BING` in `config.py`, off until 2026-09-23.** Its
+> **Task 4 sits behind `RUN_EXPLORE_ON_BING` in `config.py`, on since 2026-09-26.** Its
 > tiles credit in two steps — clicking one *activates* it, and a search inside what it
 > opens *completes* it — and a topic the query map has not learned yet fails once before
-> it can be added. While the switch is off, run it from `explore_on_bing.py` after the
-> daily run, so that such a failure cannot dirty a day that was otherwise clean. With the
-> switch on, the daily run works the tiles itself (after keep-earning, before the claim,
-> with their four searches held back from the search allowance) and records them with
-> the others; `explore_on_bing.py` stays as the retry and dry-run tool. A topic that has
-> been given up on goes on `SHELVED_TOPICS` and is reported, never attempted.
+> it can be added. With the switch on, the daily run works the tiles itself (after
+> keep-earning, before the claim, with their four searches held back from the search
+> allowance) and records them with the others; `explore_on_bing.py` is the retry and
+> dry-run tool. It was off through the observation window and the test period that
+> followed, so that such a failure could not dirty a day that was otherwise clean. A
+> topic that has been given up on goes on `SHELVED_TOPICS` and is reported, never
+> attempted.
 
 Supporting behaviour:
 
@@ -391,7 +392,9 @@ list are fixed; what is left is either a deliberate deferral or a genuine unknow
 - [x] **Fix cross-navigation locators** — cards are re-queried inside the loop and
       identified by offer id, and the day's offers are filtered by date.
 - [x] **Idempotent re-runs** — state is read up front and only outstanding work is
-      done, so a failed run can simply be repeated.
+      done, so a failed run can simply be repeated. **Except searches**: they size
+      themselves to what is left of the allowance, so a second run on a day fills it
+      to the quota. Repeat a failed run; do not repeat a clean one.
 - [x] **Retries with backoff** — `utils/retry.py`, including a re-attempt of a card
       whose completion flag did not flip.
 - [x] **Claim the pending pot** — points sitting in "Ready to claim" do not move on

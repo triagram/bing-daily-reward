@@ -48,7 +48,8 @@ was away and asked for it, and the harness driving the session could not keep a
 browser alive under the machine's memory pressure, so both scripts ran as transient
 user units (`systemd-run --user`), DISPLAY from the user manager, nobody at the
 keyboard. Both exited 0. That is step 5 below, verified a day early on a transient
-unit rather than the installed one. **Enablement is now 2026-09-26 morning.** Condition 2 — folding
+unit rather than the installed one. 09-26 was run by hand and clean (+165, the
+Saturday search-streak payout) before enablement began that afternoon. Condition 2 — folding
 `explore_on_bing.py` into the daily run — **waits, by decision the same day**, for a
 further period of clean runs on the same two commands; nothing changes in the routine
 meanwhile. The user's words: merge after the test period, not before.
@@ -249,9 +250,26 @@ watching by design.
 `contrib/systemd/` for the units, `RUN_EXPLORE_ON_BING` in `config.py` for the merge.
 CI runs on push (enabled 09-17, first run green). Q8 stays after all of it.
 
-**Enablement is 2026-09-26 morning** (set for 09-24 on 09-18, moved on 09-25 — the user
-was away). The user will ask to be walked through it one step at a time. The steps, so
-that a fresh session has them verbatim:
+**Enablement happened 2026-09-26** (set for 09-24 on 09-18, moved on 09-25 — the user
+was away), walked through one step at a time. Two things did not go as the list below
+was written, and are worth more than the list:
+
+- **Linger was already on** for this user, for the monitor's sake, so "no linger for
+  the bot" was never a choice. `rewards-bot.service` now runs through
+  `contrib/systemd/run-with-display.sh`, which waits up to three hours for the desktop
+  session and exits 5 without one; see `contrib/systemd/README.md`.
+- **Step 5 could not be a real run**, because the day had already been run by hand and
+  **a second run on a day is not idle**: the search task sizes itself to what is left
+  of the allowance, so a re-run fills the day to exactly 20 — the one figure the
+  varying count exists to avoid. The daily set, keep-earning and Explore are idempotent;
+  searches are not. Step 5 was done as a `--dry-run` through the wrapper under
+  `systemd-run`, plus a start of `rewards-alert.service` by hand; the real launch
+  under systemd had been proved the day before, twice, on transient units. The first
+  run of the installed unit is the 09-27 timer run.
+- The Telegram push is pending: the user's account is currently refused new bots
+  (`NEWBOT_BLOCKED`); ntfy is back in the script as the alternative.
+
+The steps as planned, kept so the record reads against them:
 
 1. `uv run python rewards_bot.py --history` — confirm 09-17 … 09-23 are seven clean
    rows. A flag on any of them stops here.

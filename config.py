@@ -8,12 +8,10 @@ USER_DATA_DIR = BASE_DIR / "browser_session"
 # Target URLs
 REWARDS_URL = "https://rewards.bing.com/"
 REWARDS_EARN_URL = "https://rewards.bing.com/earn"
-BING_SEARCH_URL = "https://www.bing.com"
 
-# Task Settings - Anti-bot & Points Registration Intervals
-# The measured allowance on this UK account is 20 searches at 3 points (2026-08-16;
-# searches 21-23 paid nothing). Differs by market — re-measure with
-# experiments/q6_allowance.py elsewhere.
+# The measured allowance on this account is 20 searches at 3 points (2026-08-16;
+# searches 21-23 paid nothing). Differs by market. The run reads the day's real figure
+# from the points breakdown; this constant documents the ceiling and anchors the tests.
 DAILY_SEARCH_ALLOWANCE = 20
 POINTS_PER_SEARCH = 3          # measured alongside the allowance
 
@@ -24,11 +22,6 @@ POINTS_PER_SEARCH = 3          # measured alongside the allowance
 # for a lower profile, this is the number to cut — not the other tasks.
 DAILY_SEARCH_MIN = 8
 DAILY_SEARCH_MAX = 12
-
-# Superseded by search_gap() in utils/humanizer.py, which draws from a heavy-tailed
-# mixture instead of a flat window. Kept only for the older task modules.
-MIN_DELAY_BETWEEN_SEARCHES = 6.0
-MAX_DELAY_BETWEEN_SEARCHES = 9.0
 
 # Most Keep-earning offers a run will do. Observed outstanding counts have been 1-6, so
 # this normally binds on nothing and every offer gets done — it exists only to stop a
@@ -48,27 +41,3 @@ EXPLORE_ON_BING_TILES_PER_DAY = 4
 
 # Headless mode: Set to False for visual browser, True for background
 HEADLESS = False
-
-# Search Keywords Source Bank (diverse topics to ensure point registration)
-FALLBACK_KEYWORDS = [
-    "latest technology news",
-    "best travel destinations 2026",
-    "healthy breakfast ideas",
-    "space exploration milestones",
-    "climate change solutions",
-    "artificial intelligence trends",
-    "electric vehicles comparison",
-    "popular movie reviews",
-    "simple home workout routine",
-    "historical events today",
-    "gardening tips for beginners",
-    "easy pasta recipes",
-    "book recommendations 2026",
-    "national parks travel guide",
-    "cybersecurity best practices",
-    "renewable energy innovations",
-    "mindfulness meditation benefits",
-    "financial planning tips",
-    "astrophotography guide",
-    "smart home gadgets"
-]

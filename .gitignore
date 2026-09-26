@@ -26,7 +26,6 @@ build/
 browser_session/
 
 # Runtime artifacts
-diagnostics_report.json
 debug_*.png
 logs/
 

@@ -803,7 +803,7 @@ past the UTC reset, it read 3/3 while that day's cards were all untouched.
 **Consequence (still stands, for a broader reason):** `isCompleted` on the cards is the
 only source for "is this done today".
 
-`experiments/q2_daily_set_counter.py` was written to settle this by completing one card
+`experiments/q2_daily_set_counter.py` (since removed from the tree; in git history before v1.1) was written to settle this by completing one card
 and watching both sources. It is unnecessary now and was never run; kept because it
 would still be the right instrument if the semantics change.
 

@@ -1,8 +1,11 @@
 # The observation window
 
-Ran 2026-09-03 to 2026-09-16, **closed at 14 of 14.** Purpose: establish that a daily run
-is boring before anything is automated. Nothing here is about adding capability — it is
-about accumulating evidence.
+**A closed record.** Ran 2026-09-03 to 2026-09-16, closed at 14 of 14; a seven-day test
+period followed and closed clean on 09-23; the run was scheduled on 09-26. Purpose:
+establish that a daily run is boring before anything is automated. Nothing here is
+about adding capability — it is about accumulating evidence. Kept as written, including
+the instructions that no longer apply; the routine now is in the
+[README](../README.md#let-it-run-itself).
 
 ## Why this is starting from zero, not continuing
 
@@ -118,6 +121,9 @@ different code paths and both need to be walked. Fourteen runs also covers a ful
 cycle, which the docs note dwarfs the daily tasks.
 
 ## The daily routine
+
+*Historical — the window was run by hand; since 2026-09-26 the timer runs it and the
+bot writes its own day log. What follows is what the window did.*
 
 Once a day, at roughly the same time, at a consistent offset after the daily reset
 ([Q3](DEVELOP.md#q3) settled when that is). A run at 23:50 and one at 00:10 are not

@@ -106,7 +106,7 @@ def print_history():
         return
 
     table = Table(title=f"Runs ({len(runs)})")
-    table.add_column("Date", style="cyan", no_wrap=True)
+    table.add_column("Finished", style="cyan", no_wrap=True)
     table.add_column("Daily set", justify="right")
     table.add_column("Searches", justify="right")
     table.add_column("Keep earning", justify="right")
@@ -136,8 +136,10 @@ def print_history():
         moved = claim.get("moved")
         flags = " ".join(flags_for(tasks))
         overall = run.get("overall_delta")
+        # Under the timer the start moves every day; the record carries the finish.
+        finished = f"{run.get('date', '?')} {run.get('at', '')[11:16]}".strip()
         table.add_row(
-            run.get("date", "?"),
+            finished,
             cell("daily_set"), cell("searches"), cell("keep_earning"),
             cell("explore_on_bing"),
             f"{moved:+d}" if moved else "[dim]—[/dim]",

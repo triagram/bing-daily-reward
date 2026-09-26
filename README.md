@@ -28,7 +28,7 @@ Requirements: Python 3.13+, [uv](https://docs.astral.sh/uv/), and — for schedu
 operation — a Linux desktop session managed by systemd (the bot opens a real window).
 
 ```bash
-git clone git@github.com:triagram/bing-daily-reward.git
+git clone https://github.com/triagram/bing-daily-reward.git
 cd bing-daily-reward
 uv sync                              # virtual environment and dependencies
 uv run playwright install chromium   # the browser build Playwright drives

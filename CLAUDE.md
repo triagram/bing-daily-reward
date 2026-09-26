@@ -4,12 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Where to pick up
 
-**The observation window closed on 2026-09-16 at 14 of 14, and the routine has not
-changed.** All four tasks are rewritten, verified against a live account and covered by
-tests; the daily run has been proved boring. Two commands are still run by hand each day
-— `rewards_bot.py`, then `explore_on_bing.py` — for a further period of clean runs by
-decision, and nothing else should start without being asked. Folding the second into the
-first (half of v1.0.0) waits for that period. The `lyrics` tile is shelved, not open.
+**v1.0.0 is tagged (2026-09-26) and the daily run is scheduled.** All four tasks —
+Explore on Bing included, `RUN_EXPLORE_ON_BING` on — run from `rewards_bot.py` under
+`rewards-bot.timer`, 07:30 plus up to three hours, waiting for the desktop session. The
+observation window closed 14 of 14 on 09-16, a seven-day test period closed clean on
+09-23. **Nothing is run by hand any more; do not run the bot to "check something" — a
+second run on a day fills the search allowance to the quota.** `--dry-run` and
+`--history` are the ways to look. What the user does now is read `--history` when a
+desktop notification says a day was not clean, and sign in with `--login` if one says
+so. The `lyrics` tile is shelved; `recipe` is learned.
 
 Read in this order: **`docs/OBSERVATION.md` first** — it carries the window's status, its
 freeze list and every loose end still open — then this file for the rules that must not
@@ -17,10 +20,11 @@ be broken, `docs/DEVELOP.md` for what the dashboard actually returns and which q
 are settled, `README.md` for how to run it. Between them they carry everything; do not
 re-derive findings by experimenting on the account.
 
-Deferred by decision, not oversight: the Edge counter (Q8) and packaging. Unattended
-scheduling is **built and switched off** — `contrib/systemd/` carries the units, and
-nothing is installed or enabled until 2026-09-23 (see `docs/OBSERVATION.md`, *After the
-window*). CI is written but manual-only until the suite has been stable a while.
+Deferred by decision, not oversight: the Edge counter (Q8), packaging, a wider
+inter-search gap and an occasional result click — the last two one at a time, after
+v1.0.0 has run clean for a week under the timer. The Telegram push is pending on the
+user's account being allowed to create a bot; ntfy is the alternative, both wired in
+`contrib/systemd/rewards-alert.sh`. CI runs on every push to main.
 
 **Never, by decision on 2026-09-16: multi-account, and running through a VPN or proxy.**
 Not deferred — ruled out. A survey of suspension reports (script maintainers' own issue
@@ -29,9 +33,9 @@ causes, ahead of search rate; every ban signal anyone names is behavioural, and 
 are the two behaviours this project can simply not have. Do not add a `profiles/`
 directory, a proxy setting, or anything that makes either easy.
 
-The window carries a freeze list of its own, time-boxed and distinct from the permanent
-deferrals above. Probing Q8 is on it: it is the obvious next thing to reach for, and
-doing it mid-window contaminates the baseline being established.
+Q8 is the obvious next thing to reach for. It waits, on purpose, until the scheduled
+run has a week of clean days behind it: probing it adds a new activity type, and the
+first week under the timer is its own baseline.
 
 ## Commands
 
@@ -44,8 +48,8 @@ uv run python rewards_bot.py --dry-run   # read state and report, change nothing
 uv run python rewards_bot.py --history   # what past runs earned, per task
 uv run python rewards_bot.py --login     # sign in by hand; confirms the session works
 
-uv run python explore_on_bing.py             # the Explore on Bing tiles, until the switch is on
 uv run python explore_on_bing.py --dry-run   # which tiles are open today, and what it would search
+uv run python explore_on_bing.py             # the tiles alone — a retry tool, not part of the routine
 
 uv run python monitor.py             # read-only state sample, appends to logs/state_samples.jsonl
 uv run python monitor.py --history   # what has been collected so far
@@ -72,11 +76,10 @@ uv run python -m legacy.step_by_step_debugger    # interactive walkthrough, paus
 uv run python -m legacy.debug_task1              # screenshot dashboard, list every Daily set card found
 ```
 
-`uv run pytest -q` runs the suite (87 tests, ~1 s). It parses a synthetic fixture and
+`uv run pytest -q` runs the suite (111 tests, ~1 s). It parses a synthetic fixture and
 never opens a browser or touches the account, so it is free to run — and proves nothing
 about a live run. There is no linter. CI (`.github/workflows/tests.yml`) runs the same
-suite on a clean machine, but is `workflow_dispatch` only on purpose; enable its `push:`
-trigger once the suite has been stable a while.
+suite on a clean machine on every push to main.
 
 So "verifying a change" splits in two: anything in `dashboard_state.py` and the
 behavioural helpers is verifiable offline by test, while anything that touches the live
@@ -120,19 +123,17 @@ never been validated against Microsoft's detection.
 `rewards_bot.py` only orchestrates: launch persistent browser → check login → run three
 tasks in sequence, each in its own `try`/`except` so one failure does not abort the rest.
 
-`utils/task_explore_on_bing.py` is a fourth task, in that sequence **only when
-`RUN_EXPLORE_ON_BING` in `config.py` is on** — after keep-earning, before the claim, with
-its four typed searches reserved out of the search allowance. It is off until the
-post-window test period ends (2026-09-23); until then run it after the daily run, from
-`explore_on_bing.py`, which stays as the retry and dry-run tool afterwards.
+`utils/task_explore_on_bing.py` is the fourth task in that sequence, behind
+`RUN_EXPLORE_ON_BING` in `config.py` (on since 2026-09-26) — after keep-earning, before
+the claim, with its four typed searches reserved out of the search allowance.
+`explore_on_bing.py` runs it alone: the retry and dry-run tool.
 
 Its mechanism is settled — click the tile to *activate* it, then search its topic inside
 what it opens, typed and without navigating away. What is not settled is the query for
 every topic: the tile's own prompt usually works, a few topics need an entity Bing cannot
-supply for itself, and an unlearned one fails once before it can be added. That failure
-must not land in the Flags column the observation window reads, which is the whole reason
-this task sits outside the daily run. Merging it back is three lines and is half of what
-v1.0.0 means — see `docs/OBSERVATION.md`.
+supply for itself, and an unlearned one fails once before it can be added — and now
+flags that day, which is the accepted price of one command. A topic given up on goes on
+`SHELVED_TOPICS`: reported, never attempted, never a flag.
 
 Task 2 is `utils/task_keep_earning.py`, renamed from `task_explore.py` on 2026-08-22.
 The page has a section headed **"Explore on Bing"** that this task does not do and cannot

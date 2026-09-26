@@ -43,7 +43,7 @@ KEEP_EARNING_MAX_PER_RUN = 6
 # whose measurement is already recorded. When on, the tiles' own typed searches are
 # reserved out of the day's search allowance — four tiles, four searches — so that the
 # drawn count plus the tiles cannot land on the quota.
-RUN_EXPLORE_ON_BING = False
+RUN_EXPLORE_ON_BING = True
 EXPLORE_ON_BING_TILES_PER_DAY = 4
 
 # Headless mode: Set to False for visual browser, True for background

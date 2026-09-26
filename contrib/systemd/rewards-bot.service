@@ -1,12 +1,17 @@
 [Unit]
 Description=Microsoft Rewards daily run
 Documentation=file:///projects/bing-daily-reward/docs/OBSERVATION.md
-# Any non-zero exit: 1 crashed, 2 ran with flags, 3 sign-in needed, 4 profile busy.
+# Any non-zero exit: 1 crashed, 2 ran with flags, 3 sign-in needed, 4 profile busy,
+# 5 no desktop session within the wait window.
 OnFailure=rewards-alert.service
 
 [Service]
 Type=oneshot
 WorkingDirectory=/projects/bing-daily-reward
-ExecStart=/home/mengyuan/.local/bin/uv run python rewards_bot.py
-# A run is ten to fifteen minutes; waiting for the monitor can add five.
-TimeoutStartSec=1800
+# The wrapper waits (up to three hours) for the desktop session's display, then runs
+# the bot in it. The user manager lingers for the monitor's sake, so the timer fires
+# logged-in or not; the window the bot opens needs a session. See the script.
+ExecStart=/projects/bing-daily-reward/contrib/systemd/run-with-display.sh /home/mengyuan/.local/bin/uv run python rewards_bot.py
+# Three hours of waiting, then a run of ten to fifteen minutes, plus up to five
+# waiting for the monitor's hold on the profile.
+TimeoutStartSec=14400

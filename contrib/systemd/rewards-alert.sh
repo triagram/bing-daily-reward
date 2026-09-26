@@ -6,10 +6,10 @@
 #   rewards-alert.sh test            send one line through every channel, by hand
 #
 # Delivery: a desktop notification always (the run needs the desktop session anyway,
-# so if the notification cannot reach you, neither could the run). A Telegram message
-# in addition when ~/.config/bing-daily-reward/alert.env defines TELEGRAM_BOT_TOKEN
-# and TELEGRAM_CHAT_ID — the token is a secret, the file is outside this repository,
-# and only the sentence below is sent, never a point figure.
+# so if the notification cannot reach you, neither could the run). A phone push in
+# addition, from ~/.config/bing-daily-reward/alert.env, outside this repository:
+# TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID for Telegram, NTFY_TOPIC for ntfy — either,
+# or both. Only the sentence below is sent, never a point figure.
 set -u
 REPO=/projects/bing-daily-reward
 ENV_FILE="$HOME/.config/bing-daily-reward/alert.env"
@@ -23,6 +23,7 @@ case "${1:-}" in
       2) msg="Today's run finished with flags — read logs/observation/$today.log" ;;
       3) msg="Sign-in required — run: uv run python rewards_bot.py --login" ;;
       4) msg="Browser profile was busy for five minutes — is a browser window open?" ;;
+      5) msg="No desktop session this morning — the run needs you logged in; it did nothing" ;;
       *) msg="Today's run crashed (exit $code) — journalctl --user -u $unit" ;;
     esac ;;
   test)
@@ -43,5 +44,9 @@ if [ -r "$ENV_FILE" ]; then
     curl -fsS --max-time 20 "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
       --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
       --data-urlencode "text=Microsoft Rewards: $msg" >/dev/null || true
+  fi
+  if [ -n "${NTFY_TOPIC:-}" ]; then
+    curl -fsS --max-time 20 -H "Title: Microsoft Rewards" -d "$msg" \
+      "https://ntfy.sh/$NTFY_TOPIC" >/dev/null || true
   fi
 fi

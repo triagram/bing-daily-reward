@@ -25,16 +25,25 @@ systemctl --user enable --now rewards-bot.timer rewards-check.timer
 systemctl --user list-timers 'rewards-*'        # when each next fires
 ```
 
-**Do not `enable-linger` for the bot.** It opens a real browser window, which needs
-your desktop session; the user manager only carries `DISPLAY` while you are logged in.
-With linger the timer would fire while you are logged out, the launch would fail, and
-the alert would be a false one. Without it, a day you were logged out is a day that
-did not run, and `Persistent=true` runs it at your next login.
+**Linger is on for this user** (the monitor needs it), so the bot's timer fires whether
+or not you are logged in — and the bot opens a real window, which needs your desktop
+session. `rewards-bot.service` therefore runs through `run-with-display.sh`: it waits
+up to three hours for the session's display to answer, re-reading `DISPLAY` from the
+user manager each minute (a fresh login re-imports it), then runs the bot in it. Log
+in at 09:15 and the run starts within the minute; stay away all morning and it exits
+5, which the alert words as "no desktop session this morning". A day the machine was
+off is caught up at boot (`Persistent=true`) and then waits for you the same way.
+
+Enabling the timer for the first time after 07:30 fires a catch-up run at once. To
+skip that, stamp the timer as already run today before enabling it:
+`mkdir -p ~/.local/share/systemd/timers && touch ~/.local/share/systemd/timers/stamp-rewards-bot.timer`.
 
 Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification
-is unconditional. To add a phone push, create `~/.config/bing-daily-reward/alert.env`
-(mode 600) containing `TELEGRAM_BOT_TOKEN=…` and `TELEGRAM_CHAT_ID=…`: a bot made with
-@BotFather, and the id of your own chat with it. The file is outside the repository;
+is unconditional. For a phone push, create `~/.config/bing-daily-reward/alert.env`
+(mode 600) with either or both of: `TELEGRAM_BOT_TOKEN=…` and `TELEGRAM_CHAT_ID=…` (a
+bot made with @BotFather — by anyone; the token is just a string — and the id of your
+own chat with it), or `NTFY_TOPIC=…` (a long random topic name, subscribed to in the
+ntfy app; no account needed). The file is outside the repository;
 `./rewards-alert.sh test` sends one line through every configured channel.
 
 ```bash

@@ -33,8 +33,9 @@ did not run, and `Persistent=true` runs it at your next login.
 
 Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification
 is unconditional. To add a phone push, create `~/.config/bing-daily-reward/alert.env`
-containing `NTFY_TOPIC=<a long random topic name>` and subscribe to that topic in the
-ntfy app; the file is outside the repository, and the topic name is the only secret.
+(mode 600) containing `TELEGRAM_BOT_TOKEN=…` and `TELEGRAM_CHAT_ID=…`: a bot made with
+@BotFather, and the id of your own chat with it. The file is outside the repository;
+`./rewards-alert.sh test` sends one line through every configured channel.
 
 ```bash
 ./rewards-alert.sh missing                       # silent if today is recorded

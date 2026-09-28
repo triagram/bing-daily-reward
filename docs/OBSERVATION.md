@@ -86,7 +86,7 @@ release note.
 | `lyrics` tile | **Shelved 2026-09-16.** Reappeared on 09-16 already activated from 09-02 — the description was gone before anything ran — and failed twice more, the second time on the shape three forum posters say works. Four failures, three query shapes, every search credited. On `SHELVED_TOPICS`: reported, never attempted, never a flag. See [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | `realestate` tile | **Closed 2026-09-06.** Completed on its own prompt, placeholder and all. No override; nothing further to watch. |
 | `hotel` tile | Completed on an override 2026-09-06, **but not closed.** Its own prompt passed on 08-30 and failed on 09-06 — same query, same topic, opposite results a week apart. See below. |
-| Whether any override is what fixed its tile | **Open, and it reaches all seven.** Every entry was verified by a same-day retry on an already-activated tile, and `hotel` now shows the same query failing and then passing with nothing changed. Only a re-test on an unactivated tile separates them; none has had one. |
+| Whether any override is what fixed its tile | **Both answers observed, 2026-09-28.** `recipe` (09-18): the retry on unchanged words failed, the entity passed. `personalloan` (09-28): the retry on unchanged words passed. So a retry alone can fix a tile, and for some topics only an entity does. Rule from here: a first failure on a query that has completed before gets a same-day retry on the same words, with the prompt carried in the map because an activated tile hides it; an override is for a query that has never completed. See [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | Why some topics need an override | **Wider open than it was.** `hotel` failed on "your next adventure"; `rentalcars` completed on the same phrase 08-25. The discriminator is not the prompt text — see [DEVELOP.md](DEVELOP.md#how-an-explore-on-bing-tile-actually-credits). |
 | A tile can credit without a search | `couponcodes`, 2026-09-06: the click opened nothing, no query was typed, and it credited 10 anyway. **Not reproduced** — the same tile ran normally on 09-10. One sighting, unexplained, method unchanged. |
 | Two jumps in `opening_total` between runs | **Closed 2026-09-12.** 09-01 → 09-02 opened 1,894 above the previous close; 09-11 → 09-12 opened 1,164 above. Neither is a flag — the criterion reads the *within-run* delta — but both were unexplained until the monitor's archives were read back: the first is the September monthly bonus landing in the pot (1,830, claimed next run), the second the twelfth stamp paying 1,000 plus the Saturday streak's 100. The weekly `100 / 30` on Fridays is the same mechanism. See [DEVELOP.md](DEVELOP.md#streak-payouts-measured--the-weekly-overshoots-and-the-stamp-bonus). |
@@ -257,7 +257,11 @@ watching by design.
 CI runs on push (enabled 09-17, first run green). Q8 stays after all of it.
 
 **Enablement happened 2026-09-26** (set for 09-24 on 09-18, moved on 09-25 — the user
-was away), walked through one step at a time. Two things did not go as the list below
+was away), walked through one step at a time. **First scheduled run 09-27, clean, 4 of
+4.** **First real failure 09-28**: `personalloan` did not credit, the run exited 2 at
+10:42:52, the alert unit fired the same second, and the user had the notification before
+looking — the whole chain, end to end, on a real event. A same-day retry on the same
+words completed the tile. Two things did not go as the list below
 was written, and are worth more than the list:
 
 - **Linger was already on** for this user, for the monitor's sake, so "no linger for

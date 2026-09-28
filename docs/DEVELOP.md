@@ -475,6 +475,21 @@ same-day retry with a dish substituted **passed** (09-18, 20:47, +13). For this 
 the entity is what did it; the retry alone had been tried and had not. One topic, but
 it is the separation the seven earlier entries never had.
 
+*And the retry alone, measured at last, 2026-09-28:* `personalloan` completed on its
+prompt on 08-31 and 09-14, failed on the identical prompt in the scheduled run at
+10:42, and **passed on the identical prompt at 10:50**, nothing changed but the
+attempt. Third same-query pass/fail pair on the ledger (after `hotel`), and the first
+where the same-day retry was run on the same words. So both mechanisms are now
+separately observed: a retry alone can fix a tile (`personalloan`), and for some
+topics only an entity does (`recipe`). A first failure on a query that has completed
+before is a retry, not an override.
+
+One mechanical consequence, already recorded above and worth repeating here because it
+bit: an activated tile no longer shows its description, so a same-day retry falls to
+the title unless the prompt is carried. `personalloan` now has its prompt verbatim in
+`VERIFIED_QUERIES` for that reason alone — a dry run before the retry showed it about
+to search "Plan your future".
+
 **The test that would settle it costs nothing but patience.** Topics recur — the gap
 between sightings clusters hard at 7 and 14 days across 26 observed pairs. So each of the
 seven will return on an unactivated tile. Let it run on its own prompt when it does,

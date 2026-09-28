@@ -158,6 +158,10 @@ VERIFIED_QUERIES: dict[str, str] = {
     # 20:47 on the first try with a dish named. The sharpest separation in the ledger:
     # on this topic "the retry fixed it" was already dead before the entity was tried.
     "recipe": "new chicken curry recipes",
+    # 2026-09-28. The prompt verbatim, not a substitution: it completed 08-31 and 09-14
+    # and failed 09-28. Carried so that a same-day retry searches the prompt rather than
+    # falling to the title — an activated tile no longer shows its description.
+    "personalloan": "compare personal and student loan options",
 }
 
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES

@@ -848,7 +848,9 @@ a total of 108,080, and a read-only sample at 23:26 read 108,083 — **3 points 
 after the run had finished measuring**. So a run's own `overall_delta` can understate
 what the day earned, and a small shortfall against expectation is not automatically a
 failure. Not enough to characterise the lag; enough to stop treating the closing read as
-final.
+final. 2026-10-01 widened the bound: a keep-earning card's credit landed more than five
+minutes after its click, after the run had already flagged it — see
+[A keep-earning card credited more than five minutes after its click](#a-keep-earning-card-credited-more-than-five-minutes-after-its-click).
 
 **Settled:** crediting is **fast** — typed searches showed up within about fifteen
 seconds (Q1). And **nothing drifts on its own**: from 06:08 to 12:01 on 08-13 with no
@@ -1172,6 +1174,60 @@ single Explore offer the next day matched exactly too (10 stated, 10 measured).
 
 This is why the shortfall check tolerates a wide band: advertised values are a guide,
 not a contract.
+
+### A keep-earning card credited more than five minutes after its click
+
+2026-10-01: the timer's run worked the previous day's featured pair,
+`WW_Bing_MonthlyFeaturedTopic_20260930_43` and `_44`, plus Mid-week puzzle. `_43`
+confirmed on `anchor-click` at 08:32:45. `_44` ("Mars exploration") was clicked the same
+way at about 08:33:00 — both cards render as plain anchors whose whole destination URL
+matches the payload, so the 08-21 needle mistake does not apply — and read
+`isCompleted: false` at 08:33:21, again on the 25-second re-check at 08:34:37, and the
+claim step's read at 08:37:59 still had no sign of it: balance 118,463 + 3 pending =
+118,466 = 118,319 + 50 + 30 + 15 + 52. The run exited with `keep_earning:1err` and the
+alert fired.
+
+The 12:38 read-only sample: balance 118,476; `pointsProgress` 157 against the 147 the
+run earned; every daily counter unchanged (Bing 1/1, Edge 0/30, Mobile 0/1); and the
+09-30 pair gone from `/earn`, replaced by `20261001_1` and `_2`. The 10 that arrived
+between 08:38 and 12:38 is the card's value exactly, and nothing else on the account
+moved. **An inference, not a read:** the offer rotated out before its `isCompleted`
+could be re-read, so the attribution rests on the arithmetic — and the arithmetic
+cannot tell a late credit from a hand completion. The account holder had the 08:38
+alert telling them to look at the page, and a card completed by hand between 08:38 and
+12:38 leaves exactly this evidence. Asked the same day, the account holder said they had
+opened nothing and clicked nothing, which leaves the late credit. 08-21 has the same
+shape with the other cause: `_30` (Magnet science) was never opened by the bot, was
+still outstanding at 12:50, and read complete at 18:02, by means not recorded. So the
+question has to be asked each time rather than assumed either way.
+
+What this adds to [Q4](#q4): a card click's credit can lag by **more than five
+minutes**. The previous bound was 08-21's news quiz, checked twenty seconds after its
+click and complete on the next read ten minutes later. `reconcile_late_completions`
+waits 25 s, and a re-check at the end of the run would not have caught this one either —
+the claim read five minutes after the click showed nothing. The flag is the verdict
+being formed too early, not the click failing. The other reading — the morning's click
+never registering, say by landing on a server-rendered anchor before the page's script
+was attached to it (`_fetch_earn` waits for `domcontentloaded` plus four seconds,
+nothing more) — was considered and is ruled out for this case by the account holder's
+answer; it stays unexplored for want of a case.
+
+**How to recognise a repeat:** a `keep_earning` flag on a card that was clicked, and
+the next `monitor.py` sample's balance up by exactly that card's value with no counter
+moved.
+
+Two things about the morning that are context, not cause:
+
+- Both cards were the previous day's. The featured pair appears between 08:49 and
+  09:19 BST — absent at the 08:49 run on 09-25 and the 07:56 run on 09-30, present at
+  the 09:19 run on 09-29, and today the old pair was still there at 08:22 and gone by
+  12:38 — and the old pair stays until the rotation, whether or not a new one replaces
+  it. `_43`, equally stale, credited normally, so staleness does not explain `_44`.
+- A run before the rotation followed by a run after it loses a pair outright: 09-25
+  (08:49) worked nothing of the kind, the 09-25 pair was still outstanding at 06:38 on
+  09-26, and the 11:08 run on 09-26 found it gone — 20 points. Under the timer's
+  07:30 + 0–3 h window about half the runs land before the rotation (two of the five so
+  far); the observation window's runs, at 10:00–12:00, never did.
 
 ## Tooling
 

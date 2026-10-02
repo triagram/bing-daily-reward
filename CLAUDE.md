@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Where to pick up
 
 **v1.0.0 is tagged (2026-09-26) and the daily run is scheduled.** All four tasks run
-from `rewards_bot.py` under `rewards-bot.timer`, 07:30 plus up to three hours, waiting
+from `rewards_bot.py` under `rewards-bot.timer`, 09:30 plus up to three hours, waiting
 for the desktop session. The observation window closed 14 of 14 on 09-16; a seven-day
 test period closed clean on 09-23. **Nothing is run by hand any more, and a second run
 on a clean day is harmful** — the search task fills the allowance to the quota.

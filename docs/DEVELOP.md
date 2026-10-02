@@ -1105,7 +1105,7 @@ Two things follow, one of them old:
   never a `goto`.
 - **The browser window is the bot's while a run is in progress.** Tabs opening to
   instagram.com or tiktok.com are the run working a social offer, not a stray click.
-  Under the timer the window still appears on the desktop (07:30–10:30); leave it.
+  Under the timer the window still appears on the desktop (09:30–12:30); leave it.
 
 ### Hypothesis: a referral daily-set card may not be completable at all
 

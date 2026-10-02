@@ -21,6 +21,17 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   dead constants dropped. This is what "packaging" turned out to mean; an installable
   package was declined — one machine, one account, absolute paths in the units.
 
+## Decided since v1.0.0
+
+- **2026-10-02 — the timer fires at 09:30, not 07:30** (plus the same 0–3 h spread).
+  Reason: the two featured-topic cards on /earn rotate between 08:49 and 09:19 local, a
+  run before that sees only the previous day's pair, and a before-run followed by an
+  after-run loses a pair outright (09-25/26, 20 points). 09:30–12:30 is also the
+  observation window's regime, 14 for 14 clean. Winter time moves the rotation earlier
+  in local terms, so the hour holds through the clock change. Scheduling only — nothing
+  about what the bot does on the page changed, so the one-at-a-time list below is not
+  consumed by it.
+
 ## Next, one at a time, after a clean week under the timer
 
 1. Wider inter-search gap (community defaults run minutes; this runs ~15 s median).
@@ -37,6 +48,10 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
 - Keep-earning's fallback for a card it cannot find is direct navigation, which is
   0 for 12 lifetime. When touched: bounded wait, one reload, then "card not found" —
   never a `goto`.
+- A card that is not on the page when the run happens is invisible to the run: nothing
+  outstanding, nothing to fail, no flag. A pair lost to timing (09-25/26) is therefore
+  silent; only the monitor's samples show it afterwards. The 09:30 timer removes the
+  known cause, not the blindness.
 
 ## Not planned
 

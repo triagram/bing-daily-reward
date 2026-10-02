@@ -80,7 +80,7 @@ systemctl --user daemon-reload
 systemctl --user enable --now rewards-bot.timer rewards-check.timer
 ```
 
-`rewards-bot.timer` fires at 07:30 local plus a random delay of up to three hours,
+`rewards-bot.timer` fires at 09:30 local plus a random delay of up to three hours,
 then waits for your desktop session if you are not logged in yet. Leave the window it
 opens alone — tabs to instagram.com or tiktok.com are it working a "follow us" offer.
 `rewards-check.timer` asks at 20:00 whether today was recorded at all. Details,

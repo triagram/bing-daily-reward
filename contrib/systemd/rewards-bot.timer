@@ -2,9 +2,15 @@
 Description=Run the Rewards tasks once a day, in the morning
 
 [Timer]
-# 07:30 plus up to three hours: somewhere in 07:30-10:30 local, different every day.
+# 09:30 plus up to three hours: somewhere in 09:30-12:30 local, different every day.
 # The reset is midnight UTC (Q3), so even the earliest start is hours into the day.
-OnCalendar=*-*-* 07:30:00
+# 09:30 rather than 07:30 since 2026-10-02: the two featured-topic cards on /earn rotate
+# between 08:49 and 09:19 local (07:49-08:19 UTC), and a run before the rotation only
+# sees the previous day's pair - a pair is lost whenever such a run is followed by one
+# after the rotation (09-25/26, 20 points). Winter time moves the rotation earlier in
+# local terms, not later, so 09:30 holds through the clock change. Evidence in
+# docs/DEVELOP.md, "A keep-earning card credited more than five minutes after its click".
+OnCalendar=*-*-* 09:30:00
 RandomizedDelaySec=3h
 # A day the machine was off is run at the next login. The run is idempotent: it reads
 # what is outstanding and does only that, so a second run on a day is harmless.

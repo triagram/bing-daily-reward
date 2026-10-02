@@ -5,8 +5,10 @@ Two things run on a timer here: the read-only monitor (below, the original), and
 
 ## The daily run
 
-`rewards-bot.timer` fires at 07:30 local and adds a random delay of up to three hours,
-so the run starts somewhere in 07:30–10:30, different every day. `rewards-bot.service`
+`rewards-bot.timer` fires at 09:30 local and adds a random delay of up to three hours,
+so the run starts somewhere in 09:30–12:30, different every day — after the featured
+cards on /earn have rotated, which they do between 08:49 and 09:19 local; a run before
+that only sees the previous day's pair. `rewards-bot.service`
 runs `rewards_bot.py`, which writes `logs/observation/<date>.log` itself and exits
 non-zero when the day is not clean; `OnFailure=` then runs `rewards-alert.service`,
 which turns the exit code into a sentence and shows it as a desktop notification.
@@ -34,8 +36,9 @@ in at 09:15 and the run starts within the minute; stay away all morning and it e
 5, which the alert words as "no desktop session this morning". A day the machine was
 off is caught up at boot (`Persistent=true`) and then waits for you the same way.
 
-Enabling the timer for the first time after 07:30 fires a catch-up run at once. To
-skip that, stamp the timer as already run today before enabling it:
+Enabling the timer for the first time after 09:30 fires a catch-up run at once, and so
+does moving `OnCalendar=` to a time that has already passed today. To skip that, stamp
+the timer as already run today before enabling (or restarting) it:
 `mkdir -p ~/.local/share/systemd/timers && touch ~/.local/share/systemd/timers/stamp-rewards-bot.timer`.
 
 Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification

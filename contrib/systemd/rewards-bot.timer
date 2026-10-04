@@ -12,8 +12,10 @@ Description=Run the Rewards tasks once a day, in the morning
 # docs/DEVELOP.md, "A keep-earning card credited more than five minutes after its click".
 OnCalendar=*-*-* 09:30:00
 RandomizedDelaySec=3h
-# A day the machine was off is run at the next login. The run is idempotent: it reads
-# what is outstanding and does only that, so a second run on a day is harmless.
+# A day the machine was off is run at the next login. Catch-up is for a day that did
+# not run at all: the flag-gated tasks are idempotent, but the search task adds a second
+# burst to a day that already ran (README.md, "Do not run it a second time"). So stamp
+# the timer before enabling or re-timing it, as contrib/systemd/README.md says.
 Persistent=true
 
 [Install]

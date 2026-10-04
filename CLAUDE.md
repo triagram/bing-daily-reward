@@ -8,7 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 from `rewards_bot.py` under `rewards-bot.timer`, 09:30 plus up to three hours, waiting
 for the desktop session. The observation window closed 14 of 14 on 09-16; a seven-day
 test period closed clean on 09-23. **Nothing is run by hand any more, and a second run
-on a clean day is harmful** — the search task fills the allowance to the quota.
+on a clean day is harmful** — the other tasks do nothing, but the search task draws a
+fresh count and adds it, to within four searches of the quota: a second burst and a
+near-full day, the profile the varying count exists to avoid. Nothing is lost by it;
+the cost is behavioural.
 `--dry-run` and `--history` are the ways to look. The `lyrics` tile is shelved;
 `recipe` is learned.
 

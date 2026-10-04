@@ -1216,6 +1216,21 @@ answer; it stays unexplored for want of a case.
 the next `monitor.py` sample's balance up by exactly that card's value with no counter
 moved.
 
+**Repeated 2026-10-04, and this time read rather than inferred.**
+`ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday` ("Do you know the answer?", 5 pts)
+read incomplete at 11:12:58 after its anchor-click and again on the 25-second re-check;
+the run closed at 120,157 with the flag and the alert fired at 11:17. The 12:20 sample
+read the same offer `isCompleted: true`, nothing outstanding, balance 120,162 — the
+card's five, to the point — and the card was still on the page, so no arithmetic is
+needed. The quiz page itself was worked: the keep-earning window measured +11 against
+10 advertised, the quiz's own per-question credits on top of Book Flights' 5, as on
+09-27 when the same pair measured +16. Two late credits in four days, against two in
+the previous forty-six. The 25 s wait is the wrong order of magnitude for this lag, and
+an end-of-run re-check would not reach it either — 10-01's claim read, five minutes
+after the click, still had nothing. The one place a later look could live is the 20:00
+`rewards-check` run, re-reading the flagged ids before saying anything; a proposal, not
+done.
+
 Two things about the morning that are context, not cause:
 
 - Both cards were the previous day's. The featured pair appears between 08:49 and

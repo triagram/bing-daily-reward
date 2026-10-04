@@ -68,9 +68,10 @@ then the "Ready to claim" pot is collected. A run takes about ten minutes, most 
 deliberate pacing between searches. It ends with a table of measured points per task.
 
 **Do not run it a second time on a day that was clean.** The tasks that read
-completion flags are idempotent, but the search task sizes itself to what is left of
-the day's allowance, so a re-run fills the day to the quota. Repeat a failed run; leave
-a clean one alone.
+completion flags are idempotent, but the search task draws a fresh count and adds it,
+stopping only four searches short of the quota. Nothing is lost, but the day ends with
+two bursts and a near-full allowance, which is the pattern the varying count exists to
+avoid. Repeat a failed run; leave a clean one alone.
 
 ## Let it run itself
 

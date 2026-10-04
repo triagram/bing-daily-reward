@@ -87,9 +87,9 @@ and the scheduled run's exit code read it, so the two cannot drift apart.
   alert script, which words it and sends it — a desktop notification always, a phone
   push when configured, never a point figure. An evening timer covers the case no
   failure can report: a run that never started.
-- Nothing runs twice on purpose. A second run on a clean day would fill the search
-  allowance to the quota, so the routine is one run, and the retry tools are for a
-  failed day.
+- Nothing runs twice on purpose. A second run on a clean day would add a second burst
+  of searches and leave the day four short of the quota, so the routine is one run,
+  and the retry tools are for a failed day.
 
 ## Ruled out
 

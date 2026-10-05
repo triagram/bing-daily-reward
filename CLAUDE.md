@@ -43,6 +43,7 @@ uv run playwright install chromium   # download the browser — separate step, e
 
 uv run python rewards_bot.py --dry-run   # read state and report, change nothing
 uv run python rewards_bot.py --history   # what past runs earned, per task, with flags
+uv run python rewards_bot.py --report    # the day's report as the phone gets it; reads runs.jsonl only
 uv run python rewards_bot.py --login     # sign in by hand; confirms the session works
 uv run python rewards_bot.py             # a full run — not on a day that already ran clean
 

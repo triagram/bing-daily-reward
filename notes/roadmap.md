@@ -40,6 +40,17 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   installation: Telegram or ntfy, either or both; this installation uses Telegram and
   may keep or drop the ntfy line at will. Nothing about ntfy needs keeping — the topic
   name was its only secret. Template: `contrib/systemd/alert.env.example`.
+- **2026-10-05 — a report to the phone after every run, with the figures.** Asked for
+  by the account holder, who wants the end-of-run table plus times and every error in
+  full, which supersedes the earlier rule that no push carries a point figure (the
+  failure sentence still carries none). Rendered by `rewards_bot.py --report` from
+  `runs.jsonl`, sent by `rewards-alert.sh report` under `ExecStopPost=`, phone only.
+  Shaped for Telegram's monospace block on a phone: aligned lines under thirty
+  characters, long detail below. The account holder's stated fallback, if the table
+  cannot be made to render across phone and desktop clients, is to drop the table;
+  the proposed shape of that is one `label value` line per task, unaligned, which no
+  client can break — not yet needed, not yet agreed. On a flagged day the report
+  replaces the phone copy of the failure sentence.
 
 ## Next, one at a time, after a clean week under the timer
 

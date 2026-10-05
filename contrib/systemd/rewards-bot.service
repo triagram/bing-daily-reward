@@ -12,6 +12,10 @@ WorkingDirectory=/projects/bing-daily-reward
 # the bot in it. The user manager lingers for the monitor's sake, so the timer fires
 # logged-in or not; the window the bot opens needs a session. See the script.
 ExecStart=/projects/bing-daily-reward/contrib/systemd/run-with-display.sh /home/mengyuan/.local/bin/uv run python rewards_bot.py
+# After every exit, clean or not: the day's report to the phone channels, rendered
+# from the run just recorded. A run that stopped before recording one (sign-in, busy
+# profile, no desktop) has no report, and OnFailure= speaks for it instead.
+ExecStopPost=/projects/bing-daily-reward/contrib/systemd/rewards-alert.sh report
 # Three hours of waiting, then a run of ten to fifteen minutes, plus up to five
 # waiting for the monitor's hold on the profile.
 TimeoutStartSec=14400

@@ -8,6 +8,7 @@ observe: where a total could not be read it says so.
     uv run python rewards_bot.py            # run today's tasks
     uv run python rewards_bot.py --dry-run  # read state and report, change nothing
     uv run python rewards_bot.py --history  # what past runs earned
+    uv run python rewards_bot.py --report [YYYY-MM-DD]  # the day's report, as the phone gets it
     uv run python rewards_bot.py --login    # sign in by hand; confirms the session works
 
 Exit codes: 0 clean (or nothing to do); 1 crashed; 2 ran but Flags is not empty;
@@ -41,6 +42,7 @@ from config import (
 )
 from utils.claim import claim_pending
 from utils.profile_lock import wait_for_profile
+from utils.run_report import render_report
 from utils.shortfall import Verdict, assess, flags_for
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
@@ -156,15 +158,43 @@ def print_history():
         )
 
 
+def print_report(argv: list[str]) -> int:
+    """
+    Print the day's report — what `rewards-alert.sh report` sends to the phone.
+
+    The date is the first YYYY-MM-DD after --report, else today. No record for that
+    day exits 1 with nothing on stdout, which the sender reads as "nothing to say": a
+    run that stopped before recording (sign-in, busy profile, no desktop) is the
+    failure alert's business, not the report's.
+    """
+    wanted = date.today().isoformat()
+    for arg in argv[argv.index("--report") + 1:]:
+        if len(arg) == 10 and arg[4] == "-" and arg[7] == "-":
+            wanted = arg
+            break
+    runs = [r for r in load_runs() if r.get("date") == wanted]
+    if not runs:
+        print(f"no run recorded for {wanted}", file=sys.stderr)
+        return 1
+    print(render_report(runs[-1]))
+    return 0
+
+
 def build_run_record(run_date: str, opening_total: int | None, closing_total: int | None,
-                     results: dict) -> dict:
+                     results: dict, *, started_at: str | None = None,
+                     opening: dict | None = None, closing: dict | None = None) -> dict:
     """
     The line runs.jsonl gets: one entry per task, in the shape --history reads.
 
     Explore on Bing carries two extras — the per-tile detail, which is the output that
     matters for a task whose crediting rule is unknown, and the topics shelved rather
     than attempted, so that a day with a shelved tile is not read as a day with one
-    fewer tile.
+    fewer tile. The daily set and keep-earning carry their per-item detail for the
+    same reason the report wants it: an error names an offer id, and the title beside
+    it is what a person reads.
+
+    `started_at`, `opening` and `closing` (balance, unclaimed, total) were added
+    2026-10-05 for the daily report; records before that lack them and are read fine.
     """
     overall = (closing_total - opening_total
                if closing_total is not None and opening_total is not None else None)
@@ -185,9 +215,16 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
         if name == "explore_on_bing":
             entry["tiles"] = res.per_tile
             entry["shelved"] = res.shelved
+        elif name == "keep_earning":
+            entry["offers"] = getattr(res, "per_offer", [])
+        elif name == "daily_set":
+            entry["cards"] = getattr(res, "per_card", [])
         tasks[name] = entry
     return {
         "date": run_date,
+        "started_at": started_at,
+        "opening": opening,
+        "closing": closing,
         "opening_total": opening_total,
         "closing_total": closing_total,
         "overall_delta": overall,
@@ -254,6 +291,8 @@ async def main():
     if "--history" in sys.argv:
         print_history()
         return
+    if "--report" in sys.argv:
+        sys.exit(print_report(sys.argv))
 
     dry_run = "--dry-run" in sys.argv
     login_mode = "--login" in sys.argv
@@ -265,6 +304,7 @@ async def main():
     console.print(f"[dim]{mode}[/dim]")
     start_day_log()
     console.print()
+    started_at = datetime.now().isoformat(timespec="seconds")
 
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -424,8 +464,14 @@ async def main():
                 f"'Ready to claim'.[/yellow] The pot does not drain on its own."
             )
 
-        record = build_run_record(date.today().isoformat(), opening.total_points,
-                                  closing.total_points, results)
+        record = build_run_record(
+            date.today().isoformat(), opening.total_points, closing.total_points, results,
+            started_at=started_at,
+            opening={"balance": opening.balance, "unclaimed": opening.ready_to_claim,
+                     "total": opening.total_points},
+            closing={"balance": closing.balance, "unclaimed": closing.ready_to_claim,
+                     "total": closing.total_points},
+        )
         record_run(record)
         console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]")
 

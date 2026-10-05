@@ -12,6 +12,10 @@ that only sees the previous day's pair. `rewards-bot.service`
 runs `rewards_bot.py`, which writes `logs/observation/<date>.log` itself and exits
 non-zero when the day is not clean; `OnFailure=` then runs `rewards-alert.service`,
 which turns the exit code into a sentence and shows it as a desktop notification.
+`ExecStopPost=` runs `rewards-alert.sh report` after every exit: the day's report,
+rendered by `rewards_bot.py --report` from the run just recorded, to the phone
+channels below. A run that stopped before recording anything has no report, and the
+failure sentence speaks for it.
 `rewards-check.timer` is the other half: at 20:00 it asks whether today was recorded at
 all, because a run that never started cannot report its own absence.
 
@@ -51,8 +55,16 @@ systemctl --user disable --now rewards-bot.timer # stop scheduling the run
 Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification
 is unconditional — the run needs the desktop session anyway, so if the notification
 cannot reach you, neither could the run. A phone push is added on top, through one or
-both of two channels, chosen per installation. The sentence is the same on every
-channel and never carries a point figure.
+both of two channels, chosen per installation, and carries two kinds of message:
+
+- **The failure sentence**, the same one the desktop shows, never with a point figure.
+- **The day's report**, after every run, clean or not: times, each task's done count
+  and points, the totals, and every error in full with its task and offer. Shaped for
+  a phone — aligned lines under thirty characters, long detail below them. On Telegram
+  it goes as a monospace block; ntfy shows it in a proportional font, so its columns
+  come out ragged there. On a flagged day the report replaces the phone copy of the
+  failure sentence, so a day is one push either way. `uv run python rewards_bot.py
+  --report` prints what would be sent, from `logs/runs.jsonl`, without sending.
 
 Configuration is `~/.config/bing-daily-reward/alert.env`, outside the repository, read
 as shell (`NAME=value`, no spaces, no quotes). Start from the template:

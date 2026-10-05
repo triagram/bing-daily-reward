@@ -87,7 +87,9 @@ opens alone — tabs to instagram.com or tiktok.com are it working a "follow us"
 `rewards-check.timer` asks at 20:00 whether today was recorded at all. Details are in
 [contrib/systemd/README.md](contrib/systemd/README.md).
 
-You will hear from it only when something is wrong:
+Every run ends with a report to your phone, if a phone channel is configured (below):
+the day's times, each task's done count and points, the totals, and any error in full.
+The desktop hears from it only when something is wrong:
 
 | Notification | Meaning | What to do |
 |---|---|---|
@@ -109,9 +111,9 @@ Three ways to use this, each more hands-off than the last:
    alerts; the table at the end of the run is the report.
 2. **On the timer** — the two units above. A failed day shows a desktop notification;
    a clean day is silent.
-3. **On the timer, with a phone push** — the same notification also sent to your
-   phone, through Telegram, ntfy, or both. Nothing else changes: the push adds a
-   channel, not a different message.
+3. **On the timer, with a phone push** — the failure notification also sent to your
+   phone, through Telegram, ntfy, or both, plus a short report after every run, clean
+   or not. The report is the only message that carries point figures.
 
 The push reads `~/.config/bing-daily-reward/alert.env`, a file outside the repository;
 `contrib/systemd/alert.env.example` is the template (copy it there, `chmod 600`). Set
@@ -132,6 +134,7 @@ channel. The step-by-step, with the error codes you might meet, is in
 
 ```bash
 uv run python rewards_bot.py --history       # every recorded run, per task, with flags
+uv run python rewards_bot.py --report        # today's report, as the phone gets it (or --report 2026-10-04)
 uv run python rewards_bot.py --dry-run       # read today's state, change nothing
 uv run python explore_on_bing.py --dry-run   # which Explore tiles are open, and what would be searched
 uv run python explore_on_bing.py             # retry the Explore tiles alone — after a failed day, not a clean one

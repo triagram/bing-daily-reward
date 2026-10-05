@@ -87,6 +87,13 @@ and the scheduled run's exit code read it, so the two cannot drift apart.
   alert script, which words it and sends it — a desktop notification always, a phone
   push when configured, never a point figure. An evening timer covers the case no
   failure can report: a run that never started.
+- The day's report is the one message that does carry figures, by the account
+  holder's decision on 2026-10-05. `ExecStopPost=` sends it through the same script
+  after every run, to the phone channels only, rendered from the run just recorded:
+  times, per-task done and points, the totals, and every error in full with the task
+  and the offer it belongs to. It is shaped for a phone — aligned lines under thirty
+  characters, long detail below them — and on a flagged day it replaces the phone
+  copy of the failure sentence, so a day is one push either way.
 - Nothing runs twice on purpose. A second run on a clean day would add a second burst
   of searches and leave the day four short of the quota, so the routine is one run,
   and the retry tools are for a failed day.

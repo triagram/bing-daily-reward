@@ -1,31 +1,32 @@
 # Bing Daily Reward Automation
 
-> Runs your Microsoft Rewards daily tasks in a real browser, measures what they
-> earned, and tells you only when something went wrong.
+> Does the Microsoft Rewards daily tasks in a real browser, checks what they earned,
+> and sends you a short report.
 
-Microsoft Rewards pays points for a handful of repetitive daily actions: the three
-"Daily set" cards, a batch of Bing searches, the "Keep earning" offers and the
-"Explore on Bing" tiles. This project drives a real Chromium window through all four
-with [Playwright](https://playwright.dev/python/), reusing a persistent browser profile
-so you sign in once. Every task reads the dashboard's own state, confirms each item
-individually, and reports the point delta it actually measured — or says "unknown"
-rather than inventing a number. Verified against a live account; the parser and the
-behavioural choices are covered by an offline test suite.
+Microsoft Rewards gives points for a few repetitive daily actions: the three "Daily
+set" cards, a batch of Bing searches, the "Keep earning" offers and the "Explore on
+Bing" tiles. This project works through all four in a real Chromium window using
+[Playwright](https://playwright.dev/python/). It keeps a persistent browser profile, so
+you only sign in once. Each task reads the dashboard's own state, checks every item
+individually, and reports the points it actually measured. If a total could not be
+read, it says so instead of guessing. The parser and the timing and volume choices have
+an offline test suite; the rest was checked against a live account.
 
-Once installed it runs itself: a systemd user timer starts it every morning at a
-random time, and a day that is not clean becomes a desktop notification and,
-optionally, a message on your phone.
+It can run on a systemd user timer, every morning at a random time. You get a short
+report on your phone after each run, and a desktop notification if something went
+wrong.
 
 - **How it is built and why:** [docs/DESIGN.md](docs/DESIGN.md)
 - **What the dashboard actually returns, open questions, findings:** [docs/DEVELOP.md](docs/DEVELOP.md)
-- **Scheduling and alerts in detail:** [contrib/systemd/README.md](contrib/systemd/README.md)
+- **Scheduling and notifications in detail:** [contrib/systemd/README.md](contrib/systemd/README.md)
 
 ---
 
-## Install
+## Installation
 
-Requirements: Python 3.13+, [uv](https://docs.astral.sh/uv/), and — for scheduled
-operation — a Linux desktop session managed by systemd (the bot opens a real window).
+Requirements: Python 3.13+, [uv](https://docs.astral.sh/uv/), and, if you want it to
+run on a schedule, a Linux desktop session with systemd user units (the bot opens a
+real browser window).
 
 ```bash
 git clone https://github.com/triagram/bing-daily-reward.git
@@ -35,45 +36,45 @@ uv run playwright install chromium   # the browser build Playwright drives
 ```
 
 > [!IMPORTANT]
-> The second step is easy to miss and does not fail loudly: `uv sync` installs the
-> Playwright *library*, not the *browser*. Skipping it produces an "Executable doesn't
-> exist" error at launch. `playwright` is pinned to an exact version for the same
-> reason — each release expects a matching Chromium build.
+> Don't skip the second step. `uv sync` installs the Playwright library but not the
+> browser, and without it the bot fails at launch with "Executable doesn't exist".
+> `playwright` is pinned to an exact version because each release expects a matching
+> Chromium build.
 
-## Sign in once
+## Signing in
 
 ```bash
 uv run python rewards_bot.py --login
 ```
 
-A Chromium window opens on the Rewards dashboard. Sign in there; the command confirms
-the session works by reading your balance, then exits. The session lives in
-`browser_session/` and is reused from then on.
+A Chromium window opens on the Rewards dashboard. Sign in there. The command reads your
+balance to confirm the session works, then exits. The session is kept in
+`browser_session/` and reused after that.
 
 > [!CAUTION]
-> **`browser_session/` must never be committed or shared.** It is a live Chromium
-> profile holding your Microsoft session cookies, which on Linux are trivially readable
-> by anyone who obtains the directory. It is git-ignored; keep it that way.
+> Never commit or share `browser_session/`. It is a Chromium profile with your
+> Microsoft session cookies, and on Linux anyone who gets the directory can read them.
+> It is in `.gitignore`; leave it there.
 
-## Run it
+## Running it
 
-By hand, once, to see it work:
+To run it once by hand:
 
 ```bash
 uv run python rewards_bot.py
 ```
 
-The four tasks run in sequence — Daily set, searches, Keep earning, Explore on Bing —
-then the "Ready to claim" pot is collected. A run takes about ten minutes, most of it
-deliberate pacing between searches. It ends with a table of measured points per task.
+It does the four tasks in order (Daily set, searches, Keep earning, Explore on Bing),
+then claims the "Ready to claim" pot. A run takes about ten minutes, most of it waiting
+between searches, and ends with a table of points per task.
 
-**Do not run it a second time on a day that was clean.** The tasks that read
-completion flags are idempotent, but the search task draws a fresh count and adds it,
-stopping only four searches short of the quota. Nothing is lost, but the day ends with
-two bursts and a near-full allowance, which is the pattern the varying count exists to
-avoid. Repeat a failed run; leave a clean one alone.
+**Don't run it twice on a day that went fine.** The other tasks only do what is still
+outstanding, but the search task picks a new count each time and adds it, stopping four
+searches short of the daily quota. You don't lose anything, but the day ends up with two
+bursts of searches and a nearly full quota, which is exactly the pattern the random
+count is meant to avoid. Re-run a failed day; leave a clean one alone.
 
-## Let it run itself
+## Running on a schedule
 
 ```bash
 cp contrib/systemd/rewards-*.{service,timer} ~/.config/systemd/user/
@@ -81,72 +82,73 @@ systemctl --user daemon-reload
 systemctl --user enable --now rewards-bot.timer rewards-check.timer
 ```
 
-`rewards-bot.timer` fires at 09:30 local plus a random delay of up to three hours,
-then waits for your desktop session if you are not logged in yet. Leave the window it
-opens alone — tabs to instagram.com or tiktok.com are it working a "follow us" offer.
-`rewards-check.timer` asks at 20:00 whether today was recorded at all. Details are in
+`rewards-bot.timer` starts the run at 09:30 local time plus a random delay of up to
+three hours. If you are not logged in yet, it waits for your desktop session. Leave the
+browser window alone while it runs; a tab opening instagram.com or tiktok.com is the bot
+working a "follow us" offer, not a stray click. `rewards-check.timer` checks at 20:00
+that today's run was recorded. Details are in
 [contrib/systemd/README.md](contrib/systemd/README.md).
 
-Every run ends with a report to your phone, if a phone channel is configured (below):
-the day's times, each task's done count and points, the totals, and any error in full.
-The desktop hears from it only when something is wrong:
+After each run you get a short report on your phone, if you have set that up (see
+below): when it ran, what each task did and earned, the totals, and any errors in full.
+On the desktop you only hear from it when something went wrong:
 
 | Notification | Meaning | What to do |
 |---|---|---|
-| *Today's run finished with flags — read logs/observation/\<date\>.log* | It ran, but a task earned nothing or too little, recorded an error, or did less than it attempted | Read the day's log; usually an Explore tile whose query has not been learned |
-| *Sign-in required — run: uv run python rewards_bot.py --login* | The session lapsed | Run `--login` in a terminal |
-| *Browser profile was busy for five minutes* | Something else holds `browser_session/` — usually a window left open | Close it |
-| *No desktop session this morning* | Nobody was logged in for three hours after the trigger; nothing was done | Log in and run `rewards_bot.py` by hand — this day has not run |
+| *Today's run finished with flags — read logs/observation/\<date\>.log* | It ran, but a task earned nothing or too little, hit an error, or did less than it attempted | Read the day's log. Often it is an Explore tile whose search phrase isn't known yet |
+| *Sign-in required — run: uv run python rewards_bot.py --login* | The session expired | Run `--login` in a terminal |
+| *Browser profile was busy for five minutes* | Something else has `browser_session/` open, usually a window left behind | Close it |
+| *No desktop session this morning* | Nobody was logged in for three hours after the trigger; nothing was done | Log in and run `rewards_bot.py` by hand; this day has not run |
 | *Today's run crashed (exit N)* | An unhandled error: page redesign, browser failed to start, network | `journalctl --user -u rewards-bot.service` |
 | *No run recorded today* (20:00) | The timer did not fire, or the machine was off | If the machine was on, look at the journal |
 
-A clean day sends nothing. So does a machine that is off all day — the evening check
-can only run on a machine that is on.
+A clean day sends no desktop notification. Neither does a machine that was off all day,
+since the evening check can only run if the machine is on.
 
-### Phone push (optional)
+### Notifications on your phone (optional)
 
-Three ways to use this, each more hands-off than the last:
+There are three ways to use this:
 
-1. **By hand** — `uv run python rewards_bot.py` when you think of it. No timer, no
-   alerts; the table at the end of the run is the report.
-2. **On the timer** — the two units above. A failed day shows a desktop notification;
-   a clean day is silent.
-3. **On the timer, with a phone push** — the failure notification also sent to your
-   phone, through Telegram, ntfy, or both, plus a short report after every run, clean
-   or not. The report is the only message that carries point figures.
+1. **By hand**: run `uv run python rewards_bot.py` when you think of it. No timer, no
+   notifications; the table at the end is your report.
+2. **On a timer**: the systemd units above. You get a desktop notification when a day
+   fails, and nothing otherwise.
+3. **On a timer, with your phone**: the failure notification also goes to your phone,
+   through Telegram or ntfy (or both), and you get a short report after every run,
+   good or bad. The report is the only message that includes point numbers.
 
-The push reads `~/.config/bing-daily-reward/alert.env`, a file outside the repository;
-`contrib/systemd/alert.env.example` is the template (copy it there, `chmod 600`). Set
-one channel or both:
+The settings live in `~/.config/bing-daily-reward/alert.env`, outside the repository.
+Copy `contrib/systemd/alert.env.example` there, `chmod 600` it, and fill in one or
+both:
 
-- **Telegram** — make a bot with @BotFather (`/newbot`), press *Start* in the chat it
-  links to, and put the token in `TELEGRAM_BOT_TOKEN`. Send the bot any message, then
-  `curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"` and take the
-  number at `"chat":{"id":…}` — not `update_id` — as `TELEGRAM_CHAT_ID`.
-- **ntfy** — pick a long random topic name, subscribe to it in the ntfy app, and put it
-  in `NTFY_TOPIC`. No account; the name is the only secret.
+- **Telegram**: create a bot with @BotFather (`/newbot`), open the chat it links to and
+  press *Start*, and put the token in `TELEGRAM_BOT_TOKEN`. Send the bot any message,
+  run `curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"`, and copy
+  the number from `"chat":{"id":…}` (not `update_id`) into `TELEGRAM_CHAT_ID`.
+- **ntfy**: pick a long random topic name, subscribe to it in the ntfy app, and put it
+  in `NTFY_TOPIC`. No account needed; the topic name is the only secret.
 
-Then `contrib/systemd/rewards-alert.sh test` sends one line through every configured
-channel. The step-by-step, with the error codes you might meet, is in
-[contrib/systemd/README.md](contrib/systemd/README.md#phone-push-optional).
+`contrib/systemd/rewards-alert.sh test` then sends a test message to every channel you
+configured. A longer walkthrough, including the error codes you might see, is in
+[contrib/systemd/README.md](contrib/systemd/README.md#notifications-on-your-phone-optional).
 
-## Look at what happened
+## Logs and history
 
 ```bash
 uv run python rewards_bot.py --history       # every recorded run, per task, with flags
-uv run python rewards_bot.py --report        # today's report, as the phone gets it (or --report 2026-10-04)
+uv run python rewards_bot.py --report        # today's report, as your phone gets it (or --report 2026-10-04)
 uv run python rewards_bot.py --dry-run       # read today's state, change nothing
 uv run python explore_on_bing.py --dry-run   # which Explore tiles are open, and what would be searched
-uv run python explore_on_bing.py             # retry the Explore tiles alone — after a failed day, not a clean one
+uv run python explore_on_bing.py             # retry the Explore tiles alone, after a failed day, not a clean one
 uv run python monitor.py --history           # the read-only state samples
 ```
 
-Every run appends one line to `logs/runs.jsonl` and everything it printed to
-`logs/observation/<date>.log`. `--history` renders the records, one row per run with
-the time it finished; its `Flags` column is the one to read — empty means clean.
-`logs/` and `captures/` are git-ignored.
+Each run adds one line to `logs/runs.jsonl` and saves everything it printed to
+`logs/observation/<date>.log`. `--history` shows the records, one row per run with the
+finishing time. The `Flags` column is the one to look at: empty means clean. `logs/`
+and `captures/` are git-ignored.
 
-The timer's own view of the same days:
+The same days as systemd saw them:
 
 ```bash
 systemctl --user list-timers 'rewards-*'                          # last and next trigger
@@ -160,29 +162,29 @@ Everything tunable is in `config.py`:
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the day's search count is drawn from — deliberately short of the allowance, and different every day |
-| `DAILY_SEARCH_ALLOWANCE` / `POINTS_PER_SEARCH` | `20` / `3` | The measured ceiling. The run reads the day's real figure from the dashboard; these document it and anchor the tests |
-| `KEEP_EARNING_MAX_PER_RUN` | `6` | Most Keep-earning offers in one run |
-| `RUN_EXPLORE_ON_BING` | `True` | Work the Explore on Bing tiles inside the daily run |
-| `EXPLORE_ON_BING_TILES_PER_DAY` | `4` | Searches held back from the allowance for the tiles |
-| `HEADLESS` | `False` | Run without a window. Untested against Microsoft's detection; leave it |
+| `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the day's search count is picked from. Deliberately below the quota, and different every day |
+| `DAILY_SEARCH_ALLOWANCE` / `POINTS_PER_SEARCH` | `20` / `3` | The measured daily quota. The run reads the real figure from the dashboard; these constants document it and are used by the tests |
+| `KEEP_EARNING_MAX_PER_RUN` | `6` | Maximum number of Keep earning offers per run |
+| `RUN_EXPLORE_ON_BING` | `True` | Do the Explore on Bing tiles as part of the daily run |
+| `EXPLORE_ON_BING_TILES_PER_DAY` | `4` | Searches kept back from the quota for the tiles |
+| `HEADLESS` | `False` | Run without a window. Not tested against Microsoft's detection; leave it off |
 
-Point values and allowances differ by market; the ones here were measured on the
-account this was built against.
+Point values and quotas differ by market; the ones here were measured on the account
+this was built against.
 
 ## Limitations
 
-- **Signing in is a person's job.** A scheduled run that meets the sign-in page stops
-  and tells you, rather than waiting on a prompt nobody will answer.
-- **Headless mode is untested.** It launches, but its detectability has not been
-  checked. The scheduled run uses a real window inside your desktop session.
+- **Signing in has to be done by hand.** A scheduled run that lands on the sign-in page
+  stops and tells you, instead of waiting at a prompt nobody will answer.
+- **Headless mode is untested.** It starts, but nobody has checked whether Microsoft
+  detects it. The scheduled run uses a real window in your desktop session.
 - **Quizzes are answered by clicking the first option.** They pay for wrong answers
   too, but less.
 - **Selectors will break** when Microsoft redesigns the dashboard. Reading the page's
-  own state is far more durable than matching CSS, but that state is not a published
-  contract either.
-- **Single account, no VPN or proxy — permanently.** Both are the most-cited causes of
-  suspension, and neither will be made easy here.
+  own state lasts longer than matching CSS classes, but it isn't a published API
+  either.
+- **One account, no VPN or proxy, and that won't change.** Both are the most commonly
+  reported causes of suspension, and this project won't make either easy.
 
 ## Tests
 
@@ -190,8 +192,9 @@ account this was built against.
 uv run pytest -q
 ```
 
-The suite parses an archived page and never opens a browser or touches an account, so
-it is free to run — and proves nothing about a live run. CI runs it on every push.
+The suite parses an archived copy of the page. It never opens a browser or touches an
+account, so it is safe to run anywhere, but it also proves nothing about a live run. CI
+runs it on every push.
 
 ---
 

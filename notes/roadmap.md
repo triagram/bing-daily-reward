@@ -31,17 +31,19 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   in local terms, so the hour holds through the clock change. Scheduling only — nothing
   about what the bot does on the page changed, so the one-at-a-time list below is not
   consumed by it.
+- **2026-10-05 — the phone push is Telegram.** BotFather accepted a new bot for the
+  account (it had refused on 2026-09-26, `NEWBOT_BLOCKED`); the token and chat id live
+  in `~/.config/bing-daily-reward/alert.env`, outside the repository, and the test line
+  arrived on the phone. The chat id is the `chat.id` field of `getUpdates`, not
+  `update_id` — the first attempt used the wrong one and got 400. ntfy stays wired for
+  a few days as a fallback, then its line goes; nothing about ntfy needs keeping, the
+  topic name was its only secret.
 
 ## Next, one at a time, after a clean week under the timer
 
 1. Wider inter-search gap (community defaults run minutes; this runs ~15 s median).
 2. An occasional click on a result rather than a scroll alone.
 3. Q8 — the `Edge` 0/30 counter, the largest unexplored surface on the account.
-
-## Pending on the outside
-
-- Telegram push: the account is refused new bots (`NEWBOT_BLOCKED`, 2026-09-26). ntfy
-  is in use meanwhile; both channels are wired.
 
 ## Known weak spot, not fixed
 

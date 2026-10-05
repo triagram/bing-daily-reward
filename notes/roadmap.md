@@ -37,9 +37,10 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   arrived on the phone. The chat id is the `chat.id` field of `getUpdates`, not
   `update_id` — the first attempt used the wrong one and got 400. By decision the same
   day, the push is an **optional layer with two equal channels**, chosen per
-  installation: Telegram or ntfy, either or both; this installation uses Telegram and
-  may keep or drop the ntfy line at will. Nothing about ntfy needs keeping — the topic
-  name was its only secret. Template: `contrib/systemd/alert.env.example`.
+  installation: Telegram or ntfy, either or both. This installation uses Telegram; its
+  ntfy line was dropped the same evening, once the first report had arrived on the
+  phone, so a day is one copy of each message. Nothing about ntfy needed keeping — the
+  topic name was its only secret. Template: `contrib/systemd/alert.env.example`.
 - **2026-10-05 — a report to the phone after every run, with the figures.** Asked for
   by the account holder, who wants the end-of-run table plus times and every error in
   full, which supersedes the earlier rule that no push carries a point figure (the

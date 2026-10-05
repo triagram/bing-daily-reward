@@ -41,18 +41,67 @@ does moving `OnCalendar=` to a time that has already passed today. To skip that,
 the timer as already run today before enabling (or restarting) it:
 `mkdir -p ~/.local/share/systemd/timers && touch ~/.local/share/systemd/timers/stamp-rewards-bot.timer`.
 
-Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification
-is unconditional. For a phone push, create `~/.config/bing-daily-reward/alert.env`
-(mode 600) with either or both of: `TELEGRAM_BOT_TOKEN=…` and `TELEGRAM_CHAT_ID=…` (a
-bot made with @BotFather — by anyone; the token is just a string — and the id of your
-own chat with it), or `NTFY_TOPIC=…` (a long random topic name, subscribed to in the
-ntfy app; no account needed). The file is outside the repository;
-`./rewards-alert.sh test` sends one line through every configured channel.
-
 ```bash
 ./rewards-alert.sh missing                       # silent if today is recorded
 systemctl --user disable --now rewards-bot.timer # stop scheduling the run
 ```
+
+## Phone push (optional)
+
+Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification
+is unconditional — the run needs the desktop session anyway, so if the notification
+cannot reach you, neither could the run. A phone push is added on top, through one or
+both of two channels, chosen per installation. The sentence is the same on every
+channel and never carries a point figure.
+
+Configuration is `~/.config/bing-daily-reward/alert.env`, outside the repository, read
+as shell (`NAME=value`, no spaces, no quotes). Start from the template:
+
+```bash
+mkdir -p ~/.config/bing-daily-reward
+cp alert.env.example ~/.config/bing-daily-reward/alert.env
+chmod 600 ~/.config/bing-daily-reward/alert.env
+```
+
+**Telegram.** Message @BotFather: `/newbot`, a display name, then a username ending in
+`bot`. It answers with the token — a password; it lives in this file and nowhere else.
+Open the `t.me/…` link in that answer and press *Start*: a bot cannot message someone
+who has never messaged it. Put the token in `TELEGRAM_BOT_TOKEN`, send the bot any
+message, then ask it who wrote:
+
+```bash
+. ~/.config/bing-daily-reward/alert.env && \
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"
+```
+
+The number at `"chat":{"id":…}` is `TELEGRAM_CHAT_ID`. Not `update_id` — that is the
+message's serial number, and using it gets `400 chat not found`. An empty `result`
+means the bot has not received your message yet.
+
+**ntfy.** Pick a long random topic name, subscribe to it in the ntfy app, put it in
+`NTFY_TOPIC`. No account, no token: the name is the only secret, and dropping the
+channel later means deleting the line and unsubscribing — nothing to keep.
+
+**Test**, through every configured channel at once:
+
+```bash
+./rewards-alert.sh test
+```
+
+The script swallows delivery errors on purpose — an alert must not fail by alerting —
+so if nothing arrives, send one message by hand and read the server's answer:
+
+```bash
+. ~/.config/bing-daily-reward/alert.env && \
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+     --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" --data-urlencode "text=test"
+```
+
+| Answer | Cause |
+|---|---|
+| `401 Unauthorized` | the token is wrong |
+| `400 Bad Request: chat not found` | wrong chat id, or *Start* was never pressed |
+| `403 Forbidden: bot was blocked by the user` | unblock the bot in its chat |
 
 The bot and the monitor share one browser profile. The monitor skips a sample while
 the bot holds it; the bot waits up to five minutes for the monitor, which holds it for

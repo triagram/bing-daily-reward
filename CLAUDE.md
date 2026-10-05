@@ -31,8 +31,9 @@ causes, ahead of search rate; every ban signal anyone names is behavioural. Do n
 Deferred, one at a time after a clean week under the timer: a wider inter-search gap,
 an occasional result click, then Q8 (the `Edge` 0/30 counter — the obvious next thing,
 and a new activity type, which is why it waits for the baseline). The phone push is
-Telegram since 2026-10-05; ntfy stays wired beside it until its line is removed from
-`~/.config/bing-daily-reward/alert.env`.
+optional and channel-agnostic — Telegram or ntfy, either or both, configured in
+`~/.config/bing-daily-reward/alert.env`; this installation uses Telegram (since
+2026-10-05).
 
 ## Commands
 

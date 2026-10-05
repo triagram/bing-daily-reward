@@ -35,9 +35,11 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   account (it had refused on 2026-09-26, `NEWBOT_BLOCKED`); the token and chat id live
   in `~/.config/bing-daily-reward/alert.env`, outside the repository, and the test line
   arrived on the phone. The chat id is the `chat.id` field of `getUpdates`, not
-  `update_id` — the first attempt used the wrong one and got 400. ntfy stays wired for
-  a few days as a fallback, then its line goes; nothing about ntfy needs keeping, the
-  topic name was its only secret.
+  `update_id` — the first attempt used the wrong one and got 400. By decision the same
+  day, the push is an **optional layer with two equal channels**, chosen per
+  installation: Telegram or ntfy, either or both; this installation uses Telegram and
+  may keep or drop the ntfy line at will. Nothing about ntfy needs keeping — the topic
+  name was its only secret. Template: `contrib/systemd/alert.env.example`.
 
 ## Next, one at a time, after a clean week under the timer
 

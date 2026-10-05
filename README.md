@@ -84,8 +84,8 @@ systemctl --user enable --now rewards-bot.timer rewards-check.timer
 `rewards-bot.timer` fires at 09:30 local plus a random delay of up to three hours,
 then waits for your desktop session if you are not logged in yet. Leave the window it
 opens alone — tabs to instagram.com or tiktok.com are it working a "follow us" offer.
-`rewards-check.timer` asks at 20:00 whether today was recorded at all. Details,
-including the phone push, are in [contrib/systemd/README.md](contrib/systemd/README.md).
+`rewards-check.timer` asks at 20:00 whether today was recorded at all. Details are in
+[contrib/systemd/README.md](contrib/systemd/README.md).
 
 You will hear from it only when something is wrong:
 
@@ -100,6 +100,33 @@ You will hear from it only when something is wrong:
 
 A clean day sends nothing. So does a machine that is off all day — the evening check
 can only run on a machine that is on.
+
+### Phone push (optional)
+
+Three ways to use this, each more hands-off than the last:
+
+1. **By hand** — `uv run python rewards_bot.py` when you think of it. No timer, no
+   alerts; the table at the end of the run is the report.
+2. **On the timer** — the two units above. A failed day shows a desktop notification;
+   a clean day is silent.
+3. **On the timer, with a phone push** — the same notification also sent to your
+   phone, through Telegram, ntfy, or both. Nothing else changes: the push adds a
+   channel, not a different message.
+
+The push reads `~/.config/bing-daily-reward/alert.env`, a file outside the repository;
+`contrib/systemd/alert.env.example` is the template (copy it there, `chmod 600`). Set
+one channel or both:
+
+- **Telegram** — make a bot with @BotFather (`/newbot`), press *Start* in the chat it
+  links to, and put the token in `TELEGRAM_BOT_TOKEN`. Send the bot any message, then
+  `curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"` and take the
+  number at `"chat":{"id":…}` — not `update_id` — as `TELEGRAM_CHAT_ID`.
+- **ntfy** — pick a long random topic name, subscribe to it in the ntfy app, and put it
+  in `NTFY_TOPIC`. No account; the name is the only secret.
+
+Then `contrib/systemd/rewards-alert.sh test` sends one line through every configured
+channel. The step-by-step, with the error codes you might meet, is in
+[contrib/systemd/README.md](contrib/systemd/README.md#phone-push-optional).
 
 ## Look at what happened
 

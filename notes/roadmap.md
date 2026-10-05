@@ -31,7 +31,7 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   in local terms, so the hour holds through the clock change. Scheduling only — nothing
   about what the bot does on the page changed, so the one-at-a-time list below is not
   consumed by it.
-- **2026-10-05 — the phone push is Telegram.** BotFather accepted a new bot for the
+- **2026-10-05 — phone notifications go through Telegram.** BotFather accepted a new bot for the
   account (it had refused on 2026-09-26, `NEWBOT_BLOCKED`); the token and chat id live
   in `~/.config/bing-daily-reward/alert.env`, outside the repository, and the test line
   arrived on the phone. The chat id is the `chat.id` field of `getUpdates`, not

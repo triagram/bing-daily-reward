@@ -1,23 +1,24 @@
 # Scheduling
 
 Two things run on a timer here: the read-only monitor (below, the original), and since
-2026-09-17 the daily run itself. Both are user units — no root, nothing system-wide.
+2026-09-17 the daily run itself. Both are user units, so no root and nothing
+system-wide.
 
 ## The daily run
 
-`rewards-bot.timer` fires at 09:30 local and adds a random delay of up to three hours,
-so the run starts somewhere in 09:30–12:30, different every day — after the featured
-cards on /earn have rotated, which they do between 08:49 and 09:19 local; a run before
-that only sees the previous day's pair. `rewards-bot.service`
-runs `rewards_bot.py`, which writes `logs/observation/<date>.log` itself and exits
-non-zero when the day is not clean; `OnFailure=` then runs `rewards-alert.service`,
-which turns the exit code into a sentence and shows it as a desktop notification.
-`ExecStopPost=` runs `rewards-alert.sh report` after every exit: the day's report,
-rendered by `rewards_bot.py --report` from the run just recorded, to the phone
-channels below. A run that stopped before recording anything has no report, and the
-failure sentence speaks for it.
-`rewards-check.timer` is the other half: at 20:00 it asks whether today was recorded at
-all, because a run that never started cannot report its own absence.
+`rewards-bot.timer` starts at 09:30 local time and adds a random delay of up to three
+hours, so the run begins somewhere between 09:30 and 12:30, at a different time each
+day. That is after the featured cards on /earn have rotated, which happens between
+08:49 and 09:19 local; a run before that only sees the previous day's pair.
+`rewards-bot.service` runs `rewards_bot.py`, which writes `logs/observation/<date>.log`
+itself and exits non-zero when the day was not clean. `OnFailure=` then runs
+`rewards-alert.service`, which turns the exit code into a one-line message and shows
+it as a desktop notification. `ExecStopPost=` runs `rewards-alert.sh report` after
+every exit, which sends the day's report (rendered by `rewards_bot.py --report` from
+the run just recorded) to the phone channels described below. A run that stopped
+before recording anything has no report; the failure notification covers that case.
+`rewards-check.timer` is the other half: at 20:00 it checks that today's run was
+recorded, because a run that never started cannot report its own absence.
 
 ```bash
 cp rewards-bot.{service,timer} rewards-alert.service rewards-check.{service,timer} \
@@ -32,13 +33,14 @@ systemctl --user list-timers 'rewards-*'        # when each next fires
 ```
 
 **Linger is on for this user** (the monitor needs it), so the bot's timer fires whether
-or not you are logged in — and the bot opens a real window, which needs your desktop
-session. `rewards-bot.service` therefore runs through `run-with-display.sh`: it waits
-up to three hours for the session's display to answer, re-reading `DISPLAY` from the
-user manager each minute (a fresh login re-imports it), then runs the bot in it. Log
-in at 09:15 and the run starts within the minute; stay away all morning and it exits
-5, which the alert words as "no desktop session this morning". A day the machine was
-off is caught up at boot (`Persistent=true`) and then waits for you the same way.
+or not you are logged in. But the bot opens a real window, which needs your desktop
+session. So `rewards-bot.service` runs through `run-with-display.sh`, which waits up to
+three hours for the session's display to appear, re-reading `DISPLAY` from the user
+manager every minute (a fresh login re-imports it), and then runs the bot in it. If
+you log in at 09:15 the run starts within the minute; if you stay away all morning it
+exits 5, which the notification reports as "no desktop session this morning". A day
+the machine was off is caught up at boot (`Persistent=true`) and then waits for you the
+same way.
 
 Enabling the timer for the first time after 09:30 fires a catch-up run at once, and so
 does moving `OnCalendar=` to a time that has already passed today. To skip that, stamp
@@ -50,24 +52,27 @@ the timer as already run today before enabling (or restarting) it:
 systemctl --user disable --now rewards-bot.timer # stop scheduling the run
 ```
 
-## Phone push (optional)
+## Notifications on your phone (optional)
 
-Alerts are worded and sent in one place, `rewards-alert.sh`. The desktop notification
-is unconditional — the run needs the desktop session anyway, so if the notification
-cannot reach you, neither could the run. A phone push is added on top, through one or
-both of two channels, chosen per installation, and carries two kinds of message:
+All messages are worded and sent in one place, `rewards-alert.sh`. The desktop
+notification is always sent. The run needs your desktop session anyway, so if the
+notification can't reach you, the run couldn't have happened either. Phone
+notifications are added on top, through Telegram, ntfy or both; you pick which. Two
+kinds of message go to the phone:
 
-- **The failure sentence**, the same one the desktop shows, never with a point figure.
-- **The day's report**, after every run, clean or not: times, each task's done count
-  and points, the totals, and every error in full with its task and offer. Shaped for
-  a phone — aligned lines under thirty characters, long detail below them. On Telegram
-  it goes as a monospace block; ntfy shows it in a proportional font, so its columns
-  come out ragged there. On a flagged day the report replaces the phone copy of the
-  failure sentence, so a day is one push either way. `uv run python rewards_bot.py
-  --report` prints what would be sent, from `logs/runs.jsonl`, without sending.
+- **The failure message**, the same one-liner the desktop shows, never with point
+  numbers.
+- **The daily report**, after every run, good or bad: when it ran, what each task did
+  and earned, the totals, and every error in full with its task and offer. It is
+  formatted for a phone screen: the aligned lines stay under thirty characters, and
+  anything longer goes below the table. On Telegram it is sent as a monospace block;
+  ntfy uses a proportional font, so the columns don't line up there. On a day with
+  problems, the report replaces the one-line failure message on your phone, so you get
+  one message a day either way. `uv run python rewards_bot.py --report` prints what
+  would be sent, from `logs/runs.jsonl`, without sending anything.
 
-Configuration is `~/.config/bing-daily-reward/alert.env`, outside the repository, read
-as shell (`NAME=value`, no spaces, no quotes). Start from the template:
+The settings are in `~/.config/bing-daily-reward/alert.env`, outside the repository,
+read as shell (`NAME=value`, no spaces, no quotes). Start from the template:
 
 ```bash
 mkdir -p ~/.config/bing-daily-reward
@@ -75,33 +80,34 @@ cp alert.env.example ~/.config/bing-daily-reward/alert.env
 chmod 600 ~/.config/bing-daily-reward/alert.env
 ```
 
-**Telegram.** Message @BotFather: `/newbot`, a display name, then a username ending in
-`bot`. It answers with the token — a password; it lives in this file and nowhere else.
-Open the `t.me/…` link in that answer and press *Start*: a bot cannot message someone
-who has never messaged it. Put the token in `TELEGRAM_BOT_TOKEN`, send the bot any
-message, then ask it who wrote:
+**Telegram.** Message @BotFather: `/newbot`, then a display name, then a username
+ending in `bot`. It replies with the token. Treat it like a password: it goes in this
+file and nowhere else. Open the `t.me/…` link in that reply and press *Start*; a bot
+cannot message someone who has never messaged it. Put the token in
+`TELEGRAM_BOT_TOKEN`, send the bot any message, and ask it who wrote:
 
 ```bash
 . ~/.config/bing-daily-reward/alert.env && \
 curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates"
 ```
 
-The number at `"chat":{"id":…}` is `TELEGRAM_CHAT_ID`. Not `update_id` — that is the
-message's serial number, and using it gets `400 chat not found`. An empty `result`
-means the bot has not received your message yet.
+The number at `"chat":{"id":…}` is your `TELEGRAM_CHAT_ID`. Don't use `update_id`;
+that is the message's serial number, and using it gets `400 chat not found`. An empty
+`result` means the bot has not received your message yet.
 
-**ntfy.** Pick a long random topic name, subscribe to it in the ntfy app, put it in
-`NTFY_TOPIC`. No account, no token: the name is the only secret, and dropping the
-channel later means deleting the line and unsubscribing — nothing to keep.
+**ntfy.** Pick a long random topic name, subscribe to it in the ntfy app, and put it in
+`NTFY_TOPIC`. No account, no token: the name is the only secret. If you drop the
+channel later, delete the line and unsubscribe; there is nothing to keep.
 
-**Test**, through every configured channel at once:
+**Test** all configured channels at once:
 
 ```bash
 ./rewards-alert.sh test
 ```
 
-The script swallows delivery errors on purpose — an alert must not fail by alerting —
-so if nothing arrives, send one message by hand and read the server's answer:
+The script deliberately ignores delivery errors (an alert should not fail by raising
+another alert), so if nothing arrives, send one message by hand and read the server's
+answer:
 
 ```bash
 . ~/.config/bing-daily-reward/alert.env && \
@@ -121,9 +127,9 @@ seconds. Neither needs the other to be running.
 
 ## Scheduled sampling
 
-`monitor.py` is worth running on a schedule rather than by hand — the questions in
+`monitor.py` is worth running on a schedule rather than by hand. The questions in
 [../../docs/DEVELOP.md](../../docs/DEVELOP.md#open-questions) are about change over
-time, and change needs regular observations.
+time, and that needs regular observations.
 
 ```bash
 cp rewards-monitor.{service,timer} ~/.config/systemd/user/

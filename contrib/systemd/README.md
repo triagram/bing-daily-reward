@@ -15,7 +15,7 @@ itself and exits non-zero when the day was not clean. `OnFailure=` then runs
 `rewards-alert.service`, which turns the exit code into a one-line message and shows
 it as a desktop notification. `ExecStopPost=` runs `rewards-alert.sh report` after
 every exit, which sends the day's report (rendered by `rewards_bot.py --report` from
-the run just recorded) to the phone channels described below. A run that stopped
+the run just recorded) through the push channels described below. A run that stopped
 before recording anything has no report; the failure notification covers that case.
 `rewards-check.timer` is the other half: at 20:00 it checks that today's run was
 recorded, because a run that never started cannot report its own absence.
@@ -52,24 +52,24 @@ the timer as already run today before enabling (or restarting) it:
 systemctl --user disable --now rewards-bot.timer # stop scheduling the run
 ```
 
-## Notifications on your phone (optional)
+## Push notifications
 
-All messages are worded and sent in one place, `rewards-alert.sh`. The desktop
-notification is always sent. The run needs your desktop session anyway, so if the
-notification can't reach you, the run couldn't have happened either. Phone
-notifications are added on top, through Telegram, ntfy or both; you pick which. Two
-kinds of message go to the phone:
+Optional. All messages are worded and sent in one place, `rewards-alert.sh`. The
+desktop notification is always sent. The run needs your desktop session anyway, so if
+the notification can't reach you, the run couldn't have happened either. Push
+notifications are added on top, through Telegram, ntfy or both; you pick which, and
+they reach whatever devices you have those apps on. Two kinds of message are pushed:
 
 - **The failure message**, the same one-liner the desktop shows, never with point
   numbers.
 - **The daily report**, after every run, good or bad: when it ran, what each task did
   and earned, the totals, and every error in full with its task and offer. It is
-  formatted for a phone screen: the aligned lines stay under thirty characters, and
+  formatted to fit a phone screen: the aligned lines stay under thirty characters, and
   anything longer goes below the table. On Telegram it is sent as a monospace block;
   ntfy uses a proportional font, so the columns don't line up there. On a day with
-  problems, the report replaces the one-line failure message on your phone, so you get
-  one message a day either way. `uv run python rewards_bot.py --report` prints what
-  would be sent, from `logs/runs.jsonl`, without sending anything.
+  problems, the report replaces the pushed one-line failure message, so you get one
+  push a day either way. `uv run python rewards_bot.py --report` prints what would be
+  sent, from `logs/runs.jsonl`, without sending anything.
 
 The settings are in `~/.config/bing-daily-reward/alert.env`, outside the repository,
 read as shell (`NAME=value`, no spaces, no quotes). Start from the template:

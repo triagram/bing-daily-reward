@@ -30,8 +30,8 @@ causes, ahead of search rate; every ban signal anyone names is behavioural. Do n
 
 Deferred, one at a time after a clean week under the timer: a wider inter-search gap,
 an occasional result click, then Q8 (the `Edge` 0/30 counter — the obvious next thing,
-and a new activity type, which is why it waits for the baseline). Phone notifications
-are optional and work over Telegram or ntfy, either or both, configured in
+and a new activity type, which is why it waits for the baseline). Push notifications
+are optional and go through Telegram or ntfy, either or both, configured in
 `~/.config/bing-daily-reward/alert.env`; this installation uses Telegram (since
 2026-10-05) and gets a daily report there after every run.
 
@@ -43,7 +43,7 @@ uv run playwright install chromium   # download the browser — separate step, e
 
 uv run python rewards_bot.py --dry-run   # read state and report, change nothing
 uv run python rewards_bot.py --history   # what past runs earned, per task, with flags
-uv run python rewards_bot.py --report    # the day's report as the phone gets it; reads runs.jsonl only
+uv run python rewards_bot.py --report    # the day's report as it is pushed; reads runs.jsonl only
 uv run python rewards_bot.py --login     # sign in by hand; confirms the session works
 uv run python rewards_bot.py             # a full run — not on a day that already ran clean
 

@@ -1,7 +1,7 @@
 # Bing Daily Reward Automation
 
 > Does the Microsoft Rewards daily tasks in a real browser, checks what they earned,
-> and sends you a short report.
+> and sends you a short daily report.
 
 Microsoft Rewards gives points for a few repetitive daily actions: the three "Daily
 set" cards, a batch of Bing searches, the "Keep earning" offers and the "Explore on
@@ -12,13 +12,13 @@ individually, and reports the points it actually measured. If a total could not 
 read, it says so instead of guessing. The parser and the timing and volume choices have
 an offline test suite; the rest was checked against a live account.
 
-It can run on a systemd user timer, every morning at a random time. You get a short
-report on your phone after each run, and a desktop notification if something went
-wrong.
+It can run on a systemd user timer, every morning at a random time. After each run it
+sends a short report as a push notification (Telegram or ntfy), and a desktop
+notification if something went wrong.
 
 - **How it is built and why:** [docs/DESIGN.md](docs/DESIGN.md)
 - **What the dashboard actually returns, open questions, findings:** [docs/DEVELOP.md](docs/DEVELOP.md)
-- **Scheduling and notifications in detail:** [contrib/systemd/README.md](contrib/systemd/README.md)
+- **Automation and notifications in detail:** [contrib/systemd/README.md](contrib/systemd/README.md)
 
 ---
 
@@ -41,7 +41,7 @@ uv run playwright install chromium   # the browser build Playwright drives
 > `playwright` is pinned to an exact version because each release expects a matching
 > Chromium build.
 
-## Signing in
+## Login
 
 ```bash
 uv run python rewards_bot.py --login
@@ -56,7 +56,7 @@ balance to confirm the session works, then exits. The session is kept in
 > Microsoft session cookies, and on Linux anyone who gets the directory can read them.
 > It is in `.gitignore`; leave it there.
 
-## Running it
+## Usage
 
 To run it once by hand:
 
@@ -74,7 +74,7 @@ searches short of the daily quota. You don't lose anything, but the day ends up 
 bursts of searches and a nearly full quota, which is exactly the pattern the random
 count is meant to avoid. Re-run a failed day; leave a clean one alone.
 
-## Running on a schedule
+## Automation
 
 ```bash
 cp contrib/systemd/rewards-*.{service,timer} ~/.config/systemd/user/
@@ -89,9 +89,9 @@ working a "follow us" offer, not a stray click. `rewards-check.timer` checks at 
 that today's run was recorded. Details are in
 [contrib/systemd/README.md](contrib/systemd/README.md).
 
-After each run you get a short report on your phone, if you have set that up (see
-below): when it ran, what each task did and earned, the totals, and any errors in full.
-On the desktop you only hear from it when something went wrong:
+After each run it sends a short report as a push notification, if you have set that
+up (see below): when it ran, what each task did and earned, the totals, and any errors
+in full. On the desktop you only hear from it when something went wrong:
 
 | Notification | Meaning | What to do |
 |---|---|---|
@@ -105,17 +105,18 @@ On the desktop you only hear from it when something went wrong:
 A clean day sends no desktop notification. Neither does a machine that was off all day,
 since the evening check can only run if the machine is on.
 
-### Notifications on your phone (optional)
+### Notifications
 
 There are three ways to use this:
 
-1. **By hand**: run `uv run python rewards_bot.py` when you think of it. No timer, no
+1. **Manual**: run `uv run python rewards_bot.py` when you think of it. No timer, no
    notifications; the table at the end is your report.
-2. **On a timer**: the systemd units above. You get a desktop notification when a day
+2. **Automated**: the systemd units above. You get a desktop notification when a day
    fails, and nothing otherwise.
-3. **On a timer, with your phone**: the failure notification also goes to your phone,
-   through Telegram or ntfy (or both), and you get a short report after every run,
-   good or bad. The report is the only message that includes point numbers.
+3. **Automated, with push notifications**: the failure notification is also pushed
+   through Telegram or ntfy (or both), to whatever devices you have them on, and you
+   get a short report after every run, good or bad. The report is the only message
+   that includes point numbers.
 
 The settings live in `~/.config/bing-daily-reward/alert.env`, outside the repository.
 Copy `contrib/systemd/alert.env.example` there, `chmod 600` it, and fill in one or
@@ -130,13 +131,13 @@ both:
 
 `contrib/systemd/rewards-alert.sh test` then sends a test message to every channel you
 configured. A longer walkthrough, including the error codes you might see, is in
-[contrib/systemd/README.md](contrib/systemd/README.md#notifications-on-your-phone-optional).
+[contrib/systemd/README.md](contrib/systemd/README.md#push-notifications).
 
-## Logs and history
+## Logs
 
 ```bash
 uv run python rewards_bot.py --history       # every recorded run, per task, with flags
-uv run python rewards_bot.py --report        # today's report, as your phone gets it (or --report 2026-10-04)
+uv run python rewards_bot.py --report        # today's report, as it is pushed (or --report 2026-10-04)
 uv run python rewards_bot.py --dry-run       # read today's state, change nothing
 uv run python explore_on_bing.py --dry-run   # which Explore tiles are open, and what would be searched
 uv run python explore_on_bing.py             # retry the Explore tiles alone, after a failed day, not a clean one
@@ -186,7 +187,7 @@ this was built against.
 - **One account, no VPN or proxy, and that won't change.** Both are the most commonly
   reported causes of suspension, and this project won't make either easy.
 
-## Tests
+## Testing
 
 ```bash
 uv run pytest -q

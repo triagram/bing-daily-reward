@@ -19,7 +19,7 @@ from config import (
 )
 from utils import keywords
 from utils.humanizer import daily_search_count, search_gap
-from utils.shortfall import flags_for
+from utils.shortfall import flags_for, warnings_for
 from utils.state_reader import searches_remaining
 
 DAY = date(2026, 8, 17)
@@ -287,8 +287,9 @@ def test_well_under_is_flagged_as_short():
 # --------------------------------------------------------------------------- #
 
 
-def _task(verdict="ok", errors=(), attempted=3, done=3):
-    return {"verdict": verdict, "errors": list(errors), "attempted": attempted, "done": done}
+def _task(verdict="ok", errors=(), attempted=3, done=3, warnings=()):
+    return {"verdict": verdict, "errors": list(errors), "attempted": attempted, "done": done,
+            "warnings": list(warnings)}
 
 
 def test_a_clean_run_has_no_flags():
@@ -304,6 +305,27 @@ def test_a_bad_verdict_flags_the_task():
 def test_an_error_flags_a_task_whose_verdict_was_ok():
     # 2026-08-19: a card failed outright, 20 of 30 cleared the tolerance, verdict ok.
     assert flags_for({"daily_set": _task(errors=["Child2: not confirmed"])}) == ["daily_set:1err"]
+
+
+def test_an_item_that_failed_its_retry_is_a_warning_not_a_flag():
+    """The account holder's rule of 2026-10-11: retry once, then warn, do not alert."""
+    tasks = {"keep_earning": _task(attempted=3, done=2,
+                                   warnings=["WW_x_1: not marked complete after anchor-click, "
+                                             "nor after a retry (anchor-click)"])}
+    assert flags_for(tasks) == []
+    assert warnings_for(tasks) == ["keep_earning:1warn"]
+
+
+def test_a_task_that_got_nothing_done_is_still_a_flag_however_it_was_warned():
+    tasks = {"explore_on_bing": _task(verdict="idle", attempted=2, done=0,
+                                      warnings=["jewelry: …", "hotel: …"])}
+    assert flags_for(tasks) == ["explore_on_bing:0/2"]
+
+
+def test_records_from_before_the_warning_rule_read_as_they_did():
+    old = {"verdict": "ok", "errors": [], "attempted": 3, "done": 2}
+    assert flags_for({"keep_earning": old}) == ["keep_earning:2/3"]
+    assert warnings_for({"keep_earning": old}) == []
 
 
 def test_doing_less_than_attempted_flags_even_with_no_error_recorded():
@@ -370,8 +392,10 @@ class _Task:
     """The slice of a task result the run record reads."""
 
     def __init__(self, attempted, done, points, expected, errors=(), *, searches=False,
-                 per_tile=None, shelved=None):
+                 per_tile=None, shelved=None, warnings=None, warned_points=0):
         self.attempted = attempted
+        if warnings is not None:
+            self.warnings, self.warned_points = list(warnings), warned_points
         if searches:
             self.submitted = done
         else:
@@ -404,6 +428,22 @@ def test_the_run_record_reads_done_from_whichever_field_the_task_has():
     assert record["tasks"]["searches"]["verdict"] == "ok"
     assert record["claim"] == {"clicked": True, "moved": 3, "error": None}
     assert "tiles" not in record["tasks"]["daily_set"]
+
+
+def test_a_warned_item_does_not_come_back_as_a_short_verdict():
+    """
+    Five offers worth 55; the two 15s failed their retries. Judged against all 55, the
+    25 measured is short — a flag by another name for items that were only warnings.
+    """
+    from rewards_bot import build_run_record
+
+    record = build_run_record("2026-10-11", 100, 125, {
+        "keep_earning": _Task(5, 3, 25, 55, warnings=["a: …", "b: …"], warned_points=30),
+    })
+    task = record["tasks"]["keep_earning"]
+    assert task["verdict"] == "ok"
+    assert task["warnings"] == ["a: …", "b: …"]
+    assert flags_for(record["tasks"]) == []
 
 
 def test_the_run_record_keeps_explore_tiles_and_what_was_shelved():

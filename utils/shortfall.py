@@ -93,14 +93,30 @@ def flags_for(tasks: dict) -> list[str]:
 
     `--history` prints these; a scheduled run turns a non-empty list into its exit
     code. Both read this function so the two can never drift apart.
+
+    Since 2026-10-11 an item that failed, was retried once and failed again is a
+    *warning*, not a flag: the account holder's rule (notes/roadmap.md), on the evidence
+    that a retry usually fixes it and one missed item is not worth an alert. Warned
+    items count towards "everything attempted accounted for". What stays a flag is a
+    task that got nothing done at all, which looks like breakage, not chance.
     """
     flags = []
     for name, task in tasks.items():
         verdict = task.get("verdict")
+        done, attempted = task.get("done"), task.get("attempted")
+        warned = len(task.get("warnings") or [])
         if verdict in ("zero", "short", "unknown"):
             flags.append(f"{name}:{verdict}")
         elif task.get("errors"):
             flags.append(f"{name}:{len(task['errors'])}err")
-        elif task.get("done") is not None and task.get("done") != task.get("attempted"):
-            flags.append(f"{name}:{task['done']}/{task['attempted']}")
+        elif attempted and done == 0:
+            flags.append(f"{name}:0/{attempted}")
+        elif done is not None and done + warned != attempted:
+            flags.append(f"{name}:{done}/{attempted}")
     return flags
+
+
+def warnings_for(tasks: dict) -> list[str]:
+    """Items that failed even on their retry, one entry per task — reported, not flagged."""
+    return [f"{name}:{len(task['warnings'])}warn"
+            for name, task in tasks.items() if task.get("warnings")]

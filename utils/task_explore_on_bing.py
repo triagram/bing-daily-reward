@@ -54,7 +54,7 @@ from utils.humanizer import (
     reconcile_late_completions,
 )
 from utils.retry import retry_async
-from utils.state_reader import fetch_state
+from utils.state_reader import fetch_search_progress, fetch_state, searches_remaining
 
 logger = logging.getLogger("bing_rewards")
 
@@ -259,7 +259,12 @@ class ExploreOnBingResult:
     total_after: int | None = None
     per_tile: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    # Tiles that failed, were retried once (or could not be), and are still undone:
+    # reported, not flagged.
+    warnings: list[str] = field(default_factory=list)
     expected_points: int = 0
+    # The advertised value of the warned tiles, which the verdict leaves out.
+    warned_points: int = 0
     # Open tiles left alone on purpose. Recorded so that --history can tell a day
     # with a shelved tile from a day with one fewer tile.
     shelved: list[str] = field(default_factory=list)
@@ -273,7 +278,8 @@ class ExploreOnBingResult:
     def summary(self) -> str:
         earned = self.points_earned
         measured = f"{earned:+d} points measured" if earned is not None else "points UNKNOWN"
-        return f"{self.completed}/{self.attempted} tiles confirmed complete; {measured}"
+        warned = f"; {len(self.warnings)} warning(s)" if self.warnings else ""
+        return f"{self.completed}/{self.attempted} tiles confirmed complete; {measured}{warned}"
 
 
 async def _fetch_earn(page: Page):
@@ -387,6 +393,29 @@ async def _work_tile(page: Page, context: BrowserContext, offer: Offer) -> tuple
     return searched, f"tile-click+search:{term!r}" if searched else "opened but could not search"
 
 
+# A retry types one more search. It is made only while at least this many remain in the
+# day's allowance, so that the day never lands exactly on the quota — the one figure the
+# varying search count exists to stay under.
+RETRY_NEEDS_SEARCHES_LEFT = 2
+
+# What the page shows on every tile; the payload carries no points for this family.
+TILE_POINTS = 10
+
+
+async def _attempt_tile(state_page: Page, context: BrowserContext,
+                        offer: Offer) -> tuple[bool, str]:
+    """One whole attempt at a tile: reload /earn, open it, search, re-read its own flag."""
+    await _fetch_earn(state_page)
+    await dismiss_all_modals_and_drawers(state_page)
+    worked, method = await _work_tile(state_page, context, offer)
+    if not worked:
+        return False, method
+    await asyncio.sleep(3.0)
+    check = await _fetch_earn(state_page)
+    now = next((o for o in check.offers if o.offer_id == offer.offer_id), None)
+    return bool(now and now.is_completed), method
+
+
 async def run_explore_on_bing(
     context: BrowserContext,
     state_page: Page | None = None,
@@ -412,7 +441,7 @@ async def run_explore_on_bing(
     todo = outstanding_tiles(earn)
     result.attempted = len(todo)
     # The payload carries no points for these; the page renders +10 on every one seen.
-    result.expected_points = 10 * len(todo)
+    result.expected_points = TILE_POINTS * len(todo)
 
     locked = [o for o in earn.offers
               if "exploreonbing" in o.offer_id and o.raw.get("isLocked")]
@@ -489,6 +518,8 @@ async def run_explore_on_bing(
                 r["confirmed"] = True
                 r["late"] = True
 
+    await _retry_undone(state_page, context, todo, result, _recheck)
+
     try:
         after = await fetch_state(state_page)
         result.total_after = after.total_points
@@ -503,3 +534,64 @@ async def run_explore_on_bing(
 
     logger.info(f"✅ [Explore on Bing] {result.summary()}")
     return result
+
+
+async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Offer],
+                        result: ExploreOnBingResult, recheck) -> None:
+    """
+    One more attempt at every tile still undone; what fails again is a warning.
+
+    The account holder's rule of 2026-10-11 (notes/roadmap.md): a retry has usually
+    fixed a failed tile — `personalloan` on 09-28 passed on the same words eight
+    minutes after failing — and one that survives it is not worth an alert. Each
+    retry is a typed search, so the day's allowance is read once first and a retry
+    that would reach the quota is skipped; that tile is a warning too.
+    """
+    by_id = {o.offer_id: o for o in todo}
+    undone = [r for r in result.per_tile if not r["confirmed"]]
+    if not undone:
+        return
+
+    searches_left = searches_remaining(await fetch_search_progress(state_page))
+    still_undone: dict[str, str] = {}
+    not_retried: dict[str, str] = {}
+
+    for record in undone:
+        topic, offer = record["topic"], by_id[record["offer_id"]]
+        first = record["method"] or "no attempt"
+        # Whatever the first attempt recorded is superseded by what happens next.
+        result.errors = [e for e in result.errors if not e.startswith(f"{topic}: ")]
+
+        if searches_left is None or searches_left < RETRY_NEEDS_SEARCHES_LEFT:
+            why = ("today's search allowance could not be read" if searches_left is None
+                   else "a retry would reach the daily search quota")
+            not_retried[topic] = f"{topic}: not marked complete after {first}; not retried, {why}"
+            continue
+
+        logger.info(f"   ↻ {topic}: one more attempt, searching {query_for(offer)!r}")
+        try:
+            confirmed, method = await _attempt_tile(state_page, context, offer)
+        except Exception as e:
+            logger.warning(f"     retry raised: {e}")
+            confirmed, method = False, f"error: {e}"
+        searches_left -= 1
+        record["retry"] = method
+        if confirmed:
+            record["confirmed"] = True
+            result.completed += 1
+            logger.info("     ✓ confirmed complete on the retry")
+        else:
+            still_undone[topic] = (f"{topic}: not marked complete after {first}, "
+                                   f"nor after a retry ({method})")
+        await random_sleep(5.0, 12.0)
+
+    late = await reconcile_late_completions(still_undone, recheck)
+    for topic, message in {**still_undone, **not_retried}.items():
+        record = next(r for r in result.per_tile if r["topic"] == topic)
+        if topic in late:
+            record["confirmed"] = record["late"] = True
+            result.completed += 1
+            continue
+        result.warnings.append(message)
+        result.warned_points += TILE_POINTS
+        logger.warning(f"     △ {topic} still incomplete — a warning, not an error")

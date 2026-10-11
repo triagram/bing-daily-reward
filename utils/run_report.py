@@ -87,30 +87,37 @@ def _total_line(record: dict) -> str:
     return f"Total  {opening:,} → {closing:,}"
 
 
-def _titles_by_id(entry: dict) -> dict[str, str]:
-    """Offer ids to human titles, from whatever per-item detail the task recorded."""
+def _titles_by_key(entry: dict) -> dict[str, str]:
+    """
+    Human titles by whatever key the task's messages lead with.
+
+    Keep earning leads with the offer id, the daily set with its slot ("Child2"),
+    Explore with the topic ("jewelry"); each maps to the title the page shows.
+    """
     out = {}
     for key in ("offers", "cards", "tiles"):
         for item in entry.get(key) or []:
-            offer_id = item.get("offer_id")
             title = item.get("title") or item.get("topic")
-            if offer_id and title:
-                out[offer_id] = title
+            for handle in ("offer_id", "slot", "topic"):
+                if item.get(handle) and title and item[handle] != title:
+                    out[item[handle]] = title
     return out
 
 
-def _error_lines(task_name: str, entry: dict) -> list[str]:
-    errors = entry.get("errors") or []
-    if not errors:
+def _item_lines(task_name: str, entry: dict, field: str, marker: str,
+                noun: str) -> list[str]:
+    """One heading per task, then each item's message in full, its title first."""
+    messages = entry.get(field) or []
+    if not messages:
         return []
-    titles = _titles_by_id(entry)
-    noun = "error" if len(errors) == 1 else "errors"
-    lines = [f"⚠ {_TASK_LABELS.get(task_name, task_name)} — {len(errors)} {noun}"]
-    for raw in errors:
-        offer_id, sep, message = raw.partition(": ")
-        if sep and offer_id in titles:
-            lines.append(f"• {titles[offer_id]}: {message}")
-            lines.append(f"  ({offer_id})")
+    titles = _titles_by_key(entry)
+    plural = noun if len(messages) == 1 else f"{noun}s"
+    lines = [f"{marker} {_TASK_LABELS.get(task_name, task_name)} — {len(messages)} {plural}"]
+    for raw in messages:
+        handle, sep, message = raw.partition(": ")
+        if sep and handle in titles:
+            lines.append(f"• {titles[handle]}: {message}")
+            lines.append(f"  ({handle})")
         else:
             lines.append(f"• {raw}")
     return lines
@@ -130,9 +137,12 @@ def render_report(record: dict) -> str:
     tasks = record.get("tasks") or {}
     flags = flags_for(tasks)
 
-    lines = [_title_line(record), _time_line(record)]
-    lines.append("✓ clean" if not flags else f"⚠ {' '.join(flags)}")
-    lines.append("")
+    warned = sum(len(entry.get("warnings") or []) for entry in tasks.values())
+    status = "✓ clean" if not flags else f"⚠ {' '.join(flags)}"
+    if warned:
+        status += f", {warned} warning" + ("" if warned == 1 else "s")
+
+    lines = [_title_line(record), _time_line(record), status, ""]
 
     lines.append(_row("Task", "Done", "Points"))
     for name, entry in tasks.items():
@@ -149,7 +159,8 @@ def render_report(record: dict) -> str:
     detail = []
     for name, entry in tasks.items():
         detail += _verdict_lines(name, entry)
-        detail += _error_lines(name, entry)
+        detail += _item_lines(name, entry, "errors", "⚠", "error")
+        detail += _item_lines(name, entry, "warnings", "△", "warning")
         shelved = entry.get("shelved") or []
         if shelved:
             detail.append(f"Shelved, not attempted: {', '.join(shelved)}")

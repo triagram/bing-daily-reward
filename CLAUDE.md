@@ -57,7 +57,7 @@ uv run python recon.py               # read-only deep capture: screenshots, DOM,
 uv run pytest -q                     # the offline suite; no browser, no account
 ```
 
-`uv run pytest -q` runs the suite (111 tests, ~1 s). It parses a synthetic fixture and
+`uv run pytest -q` runs the suite (127 tests, ~1 s). It parses a synthetic fixture and
 never opens a browser or touches the account, so it is free to run — and proves nothing
 about a live run. There is no linter. CI runs the same suite on a clean machine on every
 push to main.

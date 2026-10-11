@@ -88,10 +88,10 @@ logger = logging.getLogger("bing_rewards")
 #
 # `lyrics` failed on "the lyrics of your favorite song" and again on "Bohemian Rhapsody
 # lyrics", and is still unexplained. It was briefly written off as a malformed tile
-# because it carried no description — that reading was wrong: a tile loses its
-# description *after* being activated, so the empty text was a consequence of the failed
-# attempt rather than its cause. No override is kept for it; the next appearance starts
-# from a clean tile.
+# because it carried no description. That reading was wrong, and so was the next one,
+# that activation removes the text: the prompt was on the page throughout, in a row the
+# parser did not follow until 2026-10-11 (DEVELOP.md). No override is kept for it; the
+# next appearance starts from a clean tile.
 #
 # `recipe` is the second of that kind. Its prompt arrived as "new\u00a0recipes" with a
 # non-breaking space, which looked like the whole story; normalisation now strips those
@@ -159,8 +159,9 @@ VERIFIED_QUERIES: dict[str, str] = {
     # on this topic "the retry fixed it" was already dead before the entity was tried.
     "recipe": "new chicken curry recipes",
     # 2026-09-28. The prompt verbatim, not a substitution: it completed 08-31 and 09-14
-    # and failed 09-28. Carried so that a same-day retry searches the prompt rather than
-    # falling to the title — an activated tile no longer shows its description.
+    # and failed 09-28. Carried so that a same-day retry would search the prompt rather
+    # than the title, on the belief that an activated tile no longer shows its
+    # description. Corrected 2026-10-11: it does, and the parser now reads it. Harmless.
     "personalloan": "compare personal and student loan options",
 }
 
@@ -178,9 +179,9 @@ SHELVED_TOPICS: dict[str, str] = {
     # favorite song", 09-02), song alone ("Bohemian Rhapsody lyrics", 09-02), the title
     # ("Learn song lyrics", 09-16), and the shape three independent forum reports say
     # works — "<artist> <song> lyrics" ("queen bohemian rhapsody lyrics", 09-16). Every
-    # search credited its 3; the tile never flipped. It also arrived on 09-16 already
-    # activated from 09-02 — no description, and nobody had clicked it — so it cannot
-    # carry a prompt again until it completes. See DEVELOP.md.
+    # search credited its 3; the tile never flipped. Corrected 2026-10-11: the title
+    # search on 09-16 was a parser gap, not a missing prompt; the other three failures
+    # stand. See DEVELOP.md.
     "lyrics": "2026-09-16: four failures across three query shapes",
 }
 

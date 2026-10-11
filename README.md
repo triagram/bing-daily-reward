@@ -95,7 +95,7 @@ in full. On the desktop you only hear from it when something went wrong:
 
 | Notification | Meaning | What to do |
 |---|---|---|
-| *Today's run finished with flags — read logs/observation/\<date\>.log* | It ran, but a task got nothing done, earned too little, or hit an error | Read the day's log |
+| *Today's run finished with flags — read logs/observation/\<date\>.log* | It ran, but a task with two or more cards got none of them done, earned too little, or hit an error | Read the day's log |
 | *Sign-in required — run: uv run python rewards_bot.py --login* | The session expired | Run `--login` in a terminal |
 | *Browser profile was busy for five minutes* | Something else has `browser_session/` open, usually a window left behind | Close it |
 | *No desktop session this morning* | Nobody was logged in for three hours after the trigger; nothing was done | Log in and run `rewards_bot.py` by hand; this day has not run |

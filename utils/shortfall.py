@@ -79,6 +79,13 @@ def assess(expected: int, measured: int | None, attempted: int,
                      f"earned {measured} pts against {expected} advertised")
 
 
+# One item failing its retry looks like chance; every item of a task failing together
+# looks like breakage. Below this many items, a task with nothing done is only warned —
+# the account holder's choice of 2026-10-11, since a lone failed card on a Friday or a
+# Saturday is the ordinary case, not a broken page.
+MIN_ITEMS_FOR_BREAKAGE = 2
+
+
 def flags_for(tasks: dict) -> list[str]:
     """
     Why a recorded run is not clean — one entry per task, empty when it is.
@@ -98,7 +105,8 @@ def flags_for(tasks: dict) -> list[str]:
     *warning*, not a flag: the account holder's rule (notes/roadmap.md), on the evidence
     that a retry usually fixes it and one missed item is not worth an alert. Warned
     items count towards "everything attempted accounted for". What stays a flag is a
-    task that got nothing done at all, which looks like breakage, not chance.
+    task of `MIN_ITEMS_FOR_BREAKAGE` or more items that got none of them done, which
+    looks like breakage, not chance.
     """
     flags = []
     for name, task in tasks.items():
@@ -109,7 +117,7 @@ def flags_for(tasks: dict) -> list[str]:
             flags.append(f"{name}:{verdict}")
         elif task.get("errors"):
             flags.append(f"{name}:{len(task['errors'])}err")
-        elif attempted and done == 0:
+        elif attempted and attempted >= MIN_ITEMS_FOR_BREAKAGE and done == 0:
             flags.append(f"{name}:0/{attempted}")
         elif done is not None and done + warned != attempted:
             flags.append(f"{name}:{done}/{attempted}")

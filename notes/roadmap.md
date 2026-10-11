@@ -80,6 +80,10 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   fewer than one search in the day's allowance, and that tile is a warning too. It also
   retires the 20:00 re-check proposed for the late credits of 10-01 and 10-04: an offer
   whose credit lags past its retry is now a warning, not an alert.
+  **Relaxed the same evening, by the account holder's choice:** a task with only one
+  item that fails its retry is a warning too; "nothing done" flags only from two items
+  up (`MIN_ITEMS_FOR_BREAKAGE`). The cost, stated before the choice: on a one-item day
+  a broken page and a lone unlucky card look the same, and now both are only a warning.
 
 ## Next, one at a time, after a clean week under the timer
 

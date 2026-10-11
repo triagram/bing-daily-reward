@@ -72,7 +72,8 @@ and diffs after, bundling open → interact → linger → close into one call.
 
 **One judgement about a day.** `flags_for()` decides whether a recorded run is clean —
 no bad verdict, no recorded error, everything attempted either done or warned, and no
-task that got nothing done at all — and both `--history` and the scheduled run's exit
+task of two or more items that got none of them done — and both `--history` and the
+scheduled run's exit
 code read it, so the two cannot drift apart. A task is judged on the items that were
 not warned, so a warned item cannot come back as a "short" verdict.
 

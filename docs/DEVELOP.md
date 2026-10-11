@@ -676,6 +676,12 @@ entry in `VERIFIED_QUERIES` exists only so that a retry would not fall to the ti
 is the prompt verbatim, so it is harmless and stays. A same-day retry can now read a
 tile's prompt off the page, which the 09-04 finding said it could not.
 
+**Retried the same evening, 20:25, on the prompt read off the live page: ✓, +13.** A
+dry run first showed `jewelry` open and about to search "stunning jewelry for any
+occasion", the fixed parser's first live use by the Explore tool. Like every same-day
+pass on the ledger, this one pair cannot separate "the prompt fixed it" from "a second
+attempt fixed it"; the title was the wrong thing to type either way.
+
 ### Streak arithmetic, which favours consistency over extraction
 
 Read off `/earn` on 2026-08-18:

@@ -108,6 +108,47 @@ def test_flagged_day_names_the_task_the_offer_and_the_problem():
     assert "  (ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday)" in text
 
 
+WARNED_RUN = copy.deepcopy(CLEAN_RUN)
+WARNED_RUN["tasks"]["keep_earning"] = {
+    "attempted": 3, "done": 2, "points": 15, "expected": 25, "verdict": "ok", "errors": [],
+    "warnings": ["WW_Bing_MonthlyFeaturedTopic_20260930_44: not marked complete after "
+                 "anchor-click, nor after a retry (anchor-click)"],
+    "offers": [{"offer_id": "WW_Bing_MonthlyFeaturedTopic_20260930_44",
+                "title": "Mars exploration", "points": 10, "method": "anchor-click",
+                "confirmed": False}],
+}
+WARNED_RUN["tasks"]["explore_on_bing"]["done"] = 3
+WARNED_RUN["tasks"]["explore_on_bing"]["warnings"] = [
+    "jewelry: not marked complete after tile-click+search:'Shine bright', nor after a retry "
+    "(tile-click+search:'Shine bright')"]
+WARNED_RUN["tasks"]["explore_on_bing"]["tiles"] = [
+    {"offer_id": "ENUS_jewelry_exploreonbing_activation_Evergreen", "topic": "jewelry",
+     "title": "Shine bright", "confirmed": False}]
+
+
+def test_a_warned_day_reads_clean_and_counts_its_warnings():
+    lines = render_report(WARNED_RUN).splitlines()
+    assert lines[2] == "✓ clean, 2 warnings"
+
+
+def test_each_warning_names_its_task_its_item_and_the_whole_message():
+    text = render_report(WARNED_RUN)
+    assert "△ Keep earning — 1 warning" in text
+    assert ("• Mars exploration: not marked complete after anchor-click, "
+            "nor after a retry (anchor-click)") in text
+    assert "  (WW_Bing_MonthlyFeaturedTopic_20260930_44)" in text
+    assert "△ Explore — 1 warning" in text
+    assert "• Shine bright: not marked complete after" in text
+    assert "  (jewelry)" in text
+
+
+def test_warnings_stay_below_the_table():
+    text = render_report(WARNED_RUN)
+    assert text.index("△") > text.index("Total  ")
+    for row in _table_rows(text):
+        assert len(row) <= TABLE_WIDTH, row
+
+
 def test_long_detail_sits_below_the_table_not_in_it():
     text = render_report(FLAGGED_RUN)
     rows = _table_rows(text)

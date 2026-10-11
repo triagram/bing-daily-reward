@@ -43,7 +43,7 @@ from config import (
 from utils.claim import claim_pending
 from utils.profile_lock import wait_for_profile
 from utils.run_report import render_report
-from utils.shortfall import Verdict, assess, flags_for
+from utils.shortfall import Shortfall, Verdict, assess, flags_for, warnings_for
 from utils.state_reader import fetch_state
 from utils.task_daily_set import run_daily_set
 from utils.task_explore_on_bing import run_explore_on_bing
@@ -136,7 +136,8 @@ def print_history():
 
         claim = run.get("claim") or {}
         moved = claim.get("moved")
-        flags = " ".join(flags_for(tasks))
+        flags = " ".join(flags_for(tasks)
+                         + [f"[dim]{w}[/dim]" for w in warnings_for(tasks)])
         overall = run.get("overall_delta")
         # Under the timer the start moves every day; the record carries the finish.
         finished = f"{run.get('date', '?')} {run.get('at', '')[11:16]}".strip()
@@ -180,6 +181,20 @@ def print_report(argv: list[str]) -> int:
     return 0
 
 
+def verdict_for(res) -> Shortfall:
+    """
+    Judge a task on the items that were not warned.
+
+    A warned item failed, was retried and failed again, and is reported as a warning
+    rather than flagged (notes/roadmap.md, 2026-10-11). Leaving its advertised points
+    in the expected total would let the same missing item come back as a "short"
+    verdict, which is a flag by another name.
+    """
+    warned = getattr(res, "warnings", [])
+    return assess(res.expected_points - getattr(res, "warned_points", 0),
+                  res.points_earned, res.attempted - len(warned))
+
+
 def build_run_record(run_date: str, opening_total: int | None, closing_total: int | None,
                      results: dict, *, started_at: str | None = None,
                      opening: dict | None = None, closing: dict | None = None) -> dict:
@@ -208,9 +223,9 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
             "done": getattr(res, "completed", getattr(res, "submitted", None)),
             "points": res.points_earned,
             "expected": res.expected_points,
-            "verdict": assess(res.expected_points, res.points_earned,
-                              res.attempted).verdict.value,
+            "verdict": verdict_for(res).verdict.value,
             "errors": res.errors,
+            "warnings": list(getattr(res, "warnings", [])),
         }
         if name == "explore_on_bing":
             entry["tiles"] = res.per_tile
@@ -416,25 +431,27 @@ async def main():
         table.add_column("Done", justify="right")
         table.add_column("Points", justify="right")
         table.add_column("Errors", justify="right")
+        table.add_column("Warnings", justify="right")
         for name, res in results.items():
             if name == "claim":
                 moved = res.claimed
                 table.add_row("claim (moved, not earned)",
                               "yes" if res.clicked else "—",
                               f"{moved:+d}" if moved else "0",
-                              "1" if res.error else "0")
+                              "1" if res.error else "0", "")
                 continue
             earned = res.points_earned
             done = (f"{res.submitted}/{res.attempted}" if name == "searches"
                     else f"{res.completed}/{res.attempted}")
             table.add_row(name, done,
                           f"{earned:+d}" if earned is not None else "unknown",
-                          str(len(res.errors)))
+                          str(len(res.errors)), str(len(getattr(res, "warnings", []))))
         overall = (closing.total_points - opening.total_points
                    if closing.total_points is not None and opening.total_points is not None
                    else None)
         table.add_row("[bold]overall[/bold]", "",
-                      f"[bold]{overall:+d}[/bold]" if overall is not None else "unknown", "")
+                      f"[bold]{overall:+d}[/bold]" if overall is not None else "unknown",
+                      "", "")
         console.print()
         console.print(table)
 
@@ -444,7 +461,7 @@ async def main():
         for name, res in results.items():
             if name == "claim":
                 continue
-            verdict = assess(res.expected_points, res.points_earned, res.attempted)
+            verdict = verdict_for(res)
             if verdict.is_problem:
                 problems.append((name, verdict))
 
@@ -478,6 +495,9 @@ async def main():
         flags = flags_for(record["tasks"])
         if flags:
             console.print(f"[bold yellow]⚠ Flags: {' '.join(flags)}[/bold yellow]")
+        warned = warnings_for(record["tasks"])
+        if warned:
+            console.print(f"[yellow]△ Warnings, not flags: {' '.join(warned)}[/yellow]")
         console.print()
 
         await context.close()

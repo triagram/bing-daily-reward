@@ -99,15 +99,18 @@ async def main():
         table.add_column("Tiles", justify="right")
         table.add_column("Points", justify="right")
         table.add_column("Errors", justify="right")
+        table.add_column("Warnings", justify="right")
         earned = result.points_earned
         table.add_row(f"{result.completed}/{result.attempted}",
                       f"{earned:+d}" if earned is not None else "unknown",
-                      str(len(result.errors)))
+                      str(len(result.errors)), str(len(result.warnings)))
         console.print()
         console.print(table)
 
         for err in result.errors:
             console.print(f"  [yellow]{err}[/yellow]")
+        for warning in result.warnings:
+            console.print(f"  [dim]△ {warning}[/dim]")
 
         # The first run of this task completed none of four and left nothing behind to
         # examine — the console was the only record and it scrolled away. For a task
@@ -124,6 +127,7 @@ async def main():
                 "expected": result.expected_points,
                 "tiles": result.per_tile,
                 "errors": result.errors,
+                "warnings": result.warnings,
             }, ensure_ascii=False) + "\n")
         console.print(f"[dim]Recorded in {RUN_LOG}[/dim]")
 

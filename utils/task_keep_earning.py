@@ -58,9 +58,13 @@ class KeepEarningResult:
     total_after: int | None = None
     per_offer: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    # Offers that failed, were retried once, and failed again: reported, not flagged.
+    warnings: list[str] = field(default_factory=list)
     # What the page advertised for the work this run set out to do. Compared against
     # what was actually measured, to tell a working run from a silently broken one.
     expected_points: int = 0
+    # The advertised value of the warned offers, which the verdict leaves out.
+    warned_points: int = 0
 
     @property
     def points_earned(self) -> int | None:
@@ -71,7 +75,8 @@ class KeepEarningResult:
     def summary(self) -> str:
         earned = self.points_earned
         measured = f"{earned:+d} points measured" if earned is not None else "points UNKNOWN"
-        return f"{self.completed}/{self.attempted} offers confirmed complete; {measured}"
+        warned = f"; {len(self.warnings)} warning(s)" if self.warnings else ""
+        return f"{self.completed}/{self.attempted} offers confirmed complete; {measured}{warned}"
 
 
 async def _fetch_earn(page: Page):
@@ -180,6 +185,20 @@ async def _open_offer(page: Page, context: BrowserContext, offer: Offer) -> tupl
             pass
 
     return True, method
+
+
+async def _attempt_offer(state_page: Page, context: BrowserContext,
+                         offer: Offer) -> tuple[bool, str]:
+    """One whole attempt at an offer: reload /earn, open its card, re-read its own flag."""
+    await _fetch_earn(state_page)
+    await dismiss_all_modals_and_drawers(state_page)
+    opened, method = await _open_offer(state_page, context, offer)
+    if not opened:
+        return False, method
+    await asyncio.sleep(3.0)
+    check = await _fetch_earn(state_page)
+    now = next((o for o in check.offers if o.offer_id == offer.offer_id), None)
+    return bool(now and now.is_completed), method
 
 
 async def run_keep_earning(
@@ -297,6 +316,8 @@ async def run_keep_earning(
                 r["confirmed"] = True
                 r["late"] = True
 
+    await _retry_undone(state_page, context, todo, result, _recheck)
+
     # Totals last, so a credit that arrived during the wait is counted rather than
     # leaving the run short against its own corrected completion count.
     try:
@@ -313,3 +334,51 @@ async def run_keep_earning(
 
     logger.info(f"✅ [Keep earning] {result.summary()}")
     return result
+
+
+async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Offer],
+                        result: KeepEarningResult, recheck) -> None:
+    """
+    One more attempt at every offer still undone; what fails again is a warning.
+
+    The account holder's rule of 2026-10-11 (notes/roadmap.md): a retry has usually
+    fixed a failed item, and one that survives it is not worth an alert. It runs after
+    the late-credit wait, so an offer that was only slow is not clicked twice, and its
+    own wait afterwards gives the retry the same chance to land.
+    """
+    by_id = {o.offer_id: o for o in todo}
+    undone = [r for r in result.per_offer if not r["confirmed"]]
+    still_undone: dict[str, str] = {}
+
+    for record in undone:
+        offer = by_id[record["offer_id"]]
+        logger.info(f"   ↻ {offer.title!r}: one more attempt")
+        try:
+            confirmed, method = await _attempt_offer(state_page, context, offer)
+        except Exception as e:
+            logger.warning(f"     retry raised: {e}")
+            confirmed, method = False, f"error: {e}"
+        record["retry"] = method
+        # Whatever the first attempt recorded is superseded by the retry's outcome.
+        result.errors = [e for e in result.errors if not e.startswith(f"{offer.offer_id}: ")]
+        if confirmed:
+            record["confirmed"] = True
+            result.completed += 1
+            logger.info("     ✓ confirmed complete on the retry")
+        else:
+            still_undone[offer.offer_id] = (
+                f"{offer.offer_id}: not marked complete after "
+                f"{record['method'] or 'no attempt'}, nor after a retry ({method})")
+        await random_sleep(4.0, 10.0)
+
+    late = await reconcile_late_completions(still_undone, recheck)
+    for offer_id, message in still_undone.items():
+        record = next(r for r in result.per_offer if r["offer_id"] == offer_id)
+        if offer_id in late:
+            record["confirmed"] = record["late"] = True
+            result.completed += 1
+            continue
+        result.warnings.append(message)
+        result.warned_points += by_id[offer_id].points or 0
+        logger.warning(f"     △ {record['title']!r} still incomplete after a retry "
+                       "— a warning, not an error")

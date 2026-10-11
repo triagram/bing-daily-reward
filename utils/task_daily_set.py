@@ -54,9 +54,13 @@ class DailySetResult:
     total_after: int | None = None
     per_card: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    # Cards that failed, were retried once, and failed again: reported, not flagged.
+    warnings: list[str] = field(default_factory=list)
     # What the page advertised for the work this run set out to do. Compared against
     # what was actually measured, to tell a working run from a silently broken one.
     expected_points: int = 0
+    # The advertised value of the warned cards, which the verdict leaves out.
+    warned_points: int = 0
 
     @property
     def points_earned(self) -> int | None:
@@ -68,7 +72,8 @@ class DailySetResult:
     def summary(self) -> str:
         earned = self.points_earned
         measured = f"{earned:+d} points measured" if earned is not None else "points UNKNOWN"
-        return f"{self.completed}/{self.attempted} cards confirmed complete; {measured}"
+        warned = f"; {len(self.warnings)} warning(s)" if self.warnings else ""
+        return f"{self.completed}/{self.attempted} cards confirmed complete; {measured}{warned}"
 
 
 async def _open_card(page: Page, context: BrowserContext, offer: Offer) -> tuple[bool, str]:
@@ -133,6 +138,35 @@ async def _is_complete(page: Page, offer: Offer, day: date) -> bool:
     return bool(now and now.is_completed)
 
 
+async def _attempt_card(state_page: Page, context: BrowserContext, offer: Offer,
+                        day: date) -> tuple[bool, str]:
+    """
+    One whole attempt at a card: reload the dashboard, open it, re-read its own flag.
+
+    Never raises: a failure of any kind comes back as (False, what happened), so that
+    every way of failing gets the same single retry.
+    """
+    try:
+        await retry_async(
+            lambda: state_page.goto(REWARDS_URL, wait_until="domcontentloaded",
+                                    timeout=30000),
+            what=f"dashboard load for {offer.slot}",
+        )
+        await asyncio.sleep(2.5)
+        await dismiss_all_modals_and_drawers(state_page)
+
+        opened, method = await _open_card(state_page, context, offer)
+        if not opened:
+            return False, method
+
+        # Verify this specific card rather than assuming the click worked.
+        await asyncio.sleep(3.0)
+        return await _is_complete(state_page, offer, day), method
+    except Exception as e:
+        logger.warning(f"     {offer.slot}: {e}")
+        return False, f"error: {e}"
+
+
 async def run_daily_set(
     context: BrowserContext,
     state_page: Page | None = None,
@@ -183,57 +217,28 @@ async def run_daily_set(
         logger.info(f"   → {offer.slot}: {offer.title!r} ({offer.points} pts)")
         record = {"slot": offer.slot, "offer_id": offer.offer_id, "title": offer.title,
                   "points": offer.points, "method": None, "confirmed": False}
-        try:
-            await retry_async(
-                lambda: state_page.goto(REWARDS_URL, wait_until="domcontentloaded",
-                                        timeout=30000),
-                what=f"dashboard load before {offer.slot}",
-            )
-            await asyncio.sleep(2.5)
-            await dismiss_all_modals_and_drawers(state_page)
 
-            opened, method = await _open_card(state_page, context, offer)
-            record["method"] = method
-            if not opened:
-                result.errors.append(f"{offer.slot}: {method}")
-                result.per_card.append(record)
-                continue
+        confirmed, method = await _attempt_card(state_page, context, offer, day)
+        if not confirmed:
+            # One more go, whatever went wrong. _is_complete re-reads state, so a click
+            # that landed and was merely read stale is not repeated: reaching here means
+            # the card is genuinely undone.
+            logger.info(f"     not confirmed ({method}); one more attempt")
+            await random_sleep(4.0, 7.0)
+            confirmed, retry_method = await _attempt_card(state_page, context, offer, day)
+            method = f"{method}+retry:{retry_method}"
 
-            # Verify this specific card rather than assuming the click worked.
-            await asyncio.sleep(3.0)
-            confirmed = await _is_complete(state_page, offer, day)
-
-            if not confirmed:
-                # One more go, but only after re-reading state — a click that did
-                # land followed by a stale read must not be repeated. _is_complete
-                # already re-read, so reaching here means it is genuinely undone.
-                logger.info(f"     not registered yet; one more attempt")
-                await random_sleep(4.0, 7.0)
-                await retry_async(
-                    lambda: state_page.goto(REWARDS_URL, wait_until="domcontentloaded",
-                                            timeout=30000),
-                    what=f"dashboard reload for {offer.slot}",
-                )
-                await asyncio.sleep(2.5)
-                await dismiss_all_modals_and_drawers(state_page)
-                _, method = await _open_card(state_page, context, offer)
-                record["method"] = f"{record['method']}+retry:{method}"
-                await asyncio.sleep(3.0)
-                confirmed = await _is_complete(state_page, offer, day)
-
-            record["confirmed"] = confirmed
-            if confirmed:
-                result.completed += 1
-                logger.info(f"     ✓ confirmed complete")
-            else:
-                logger.warning(f"     ✗ still incomplete after {record['method']}")
-                result.errors.append(
-                    f"{offer.slot}: not marked complete after {record['method']}")
-        except Exception as e:
-            result.errors.append(f"{offer.slot}: {e}")
-            logger.warning(f"     error: {e}")
-        finally:
-            result.per_card.append(record)
+        record["method"], record["confirmed"] = method, confirmed
+        if confirmed:
+            result.completed += 1
+            logger.info(f"     ✓ confirmed complete")
+        else:
+            # Failed twice: a warning, not an error, by the account holder's rule of
+            # 2026-10-11 (notes/roadmap.md). The late-credit pass below can still clear it.
+            logger.warning(f"     △ still incomplete after {method} — a warning, not an error")
+            result.warnings.append(f"{offer.slot}: not marked complete after {method}")
+            result.warned_points += offer.points or 0
+        result.per_card.append(record)
 
         await random_sleep(3.0, 8.0)
 
@@ -249,11 +254,12 @@ async def run_daily_set(
     late = await reconcile_late_completions(pending, _recheck)
     for slot in late:
         result.completed += 1
-        result.errors = [e for e in result.errors if e != pending[slot]]
+        result.warnings = [w for w in result.warnings if w != pending[slot]]
         for r in result.per_card:
             if r["slot"] == slot:
                 r["confirmed"] = True
                 r["late"] = True
+                result.warned_points -= r["points"] or 0
 
     try:
         after = await fetch_state(state_page)

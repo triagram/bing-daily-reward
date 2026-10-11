@@ -68,6 +68,13 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   applies from the first topic that fails repeatedly with nothing found to fix it. Its
   shape then is a warn-only list beside the shelf: attempted, a failure shown in the
   daily report, no exit 2 and no alert.
+  **Refined the same evening, superseding "seen enough times":** whenever an item fails,
+  retry it once; if the retry fails too, it is a warning, not an error. The account
+  holder's reason: a retry has usually fixed it. The ledger half-agrees — 8 of 11
+  same-day retries passed, but 7 of those also changed the query; with the same words
+  it is 1 for 2 (`personalloan` ✓, `recipe` ✗). Item-level only: a task that earns
+  nothing, an unreadable total, a crash or a sign-in stays an error. Implementation
+  proposed, awaiting a go-ahead.
 
 ## Next, one at a time, after a clean week under the timer
 

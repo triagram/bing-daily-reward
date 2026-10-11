@@ -316,10 +316,24 @@ def test_an_item_that_failed_its_retry_is_a_warning_not_a_flag():
     assert warnings_for(tasks) == ["keep_earning:1warn"]
 
 
-def test_a_task_that_got_nothing_done_is_still_a_flag_however_it_was_warned():
+def test_a_task_whose_items_all_failed_is_still_a_flag_however_they_were_warned():
     tasks = {"explore_on_bing": _task(verdict="idle", attempted=2, done=0,
                                       warnings=["jewelry: …", "hotel: …"])}
     assert flags_for(tasks) == ["explore_on_bing:0/2"]
+
+
+def test_a_lone_item_that_failed_its_retry_is_only_a_warning():
+    """A Saturday's single keep-earning card failing twice is chance, not breakage."""
+    tasks = {"keep_earning": _task(verdict="idle", attempted=1, done=0,
+                                   warnings=["ENstar_x: not marked complete after anchor-click, "
+                                             "nor after a retry (anchor-click)"])}
+    assert flags_for(tasks) == []
+    assert warnings_for(tasks) == ["keep_earning:1warn"]
+
+
+def test_a_lone_item_that_simply_failed_is_still_a_flag():
+    """Without the retry's warning — an old record, or an error — nothing changes."""
+    assert flags_for({"keep_earning": _task(attempted=1, done=0)}) == ["keep_earning:0/1"]
 
 
 def test_records_from_before_the_warning_rule_read_as_they_did():

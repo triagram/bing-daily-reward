@@ -57,7 +57,7 @@ uv run python recon.py               # read-only deep capture: screenshots, DOM,
 uv run pytest -q                     # the offline suite; no browser, no account
 ```
 
-`uv run pytest -q` runs the suite (127 tests, ~1 s). It parses a synthetic fixture and
+`uv run pytest -q` runs the suite (142 tests, ~1 s). It parses a synthetic fixture and
 never opens a browser or touches the account, so it is free to run — and proves nothing
 about a live run. There is no linter. CI runs the same suite on a clean machine on every
 push to main.
@@ -105,7 +105,10 @@ The design is in `docs/DESIGN.md`. These are the parts of it that a plausible-lo
 change would break:
 
 - **Measure; never assert.** Every task confirms items **individually** by re-reading
-  that item's own `isCompleted`; anything that does not flip is reported failed. Do not
+  that item's own `isCompleted`; anything that does not flip gets **one retry**, and if it
+  still does not flip it is reported as a **warning** — in the daily report, never as
+  done, but not a flag (2026-10-11, `notes/roadmap.md`). A task with nothing done at
+  all is still a flag. Explore retries never land the day on the search quota. Do not
   reintroduce a point figure that was not observed. Compare **balance + unclaimed**
   (`DashboardState.total_points`), never the balance alone.
 - **Read state through `utils/dashboard_state.py`**, a pure function over the page's

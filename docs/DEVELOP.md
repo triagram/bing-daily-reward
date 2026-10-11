@@ -1294,7 +1294,9 @@ the previous forty-six. The 25 s wait is the wrong order of magnitude for this l
 an end-of-run re-check would not reach it either — 10-01's claim read, five minutes
 after the click, still had nothing. The one place a later look could live is the 20:00
 `rewards-check` run, re-reading the flagged ids before saying anything; a proposal, not
-done.
+done. *Retired 2026-10-11:* an item that fails now gets one retry and, failing again, is a
+warning in the daily report rather than a flag, so a late credit no longer raises an
+alert at all (`notes/roadmap.md`).
 
 Two things about the morning that are context, not cause:
 

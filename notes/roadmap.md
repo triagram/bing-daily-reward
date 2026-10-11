@@ -73,8 +73,13 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   holder's reason: a retry has usually fixed it. The ledger half-agrees — 8 of 11
   same-day retries passed, but 7 of those also changed the query; with the same words
   it is 1 for 2 (`personalloan` ✓, `recipe` ✗). Item-level only: a task that earns
-  nothing, an unreadable total, a crash or a sign-in stays an error. Implementation
-  proposed, awaiting a go-ahead.
+  nothing, an unreadable total, a crash or a sign-in stays an error. **Implemented the
+  same evening, on the account holder's go-ahead:** the daily set retries any failure
+  at once, as it already did for one kind; keep-earning and Explore retry after the
+  late-credit wait, then wait again; an Explore retry is skipped when it would leave
+  fewer than one search in the day's allowance, and that tile is a warning too. It also
+  retires the 20:00 re-check proposed for the late credits of 10-01 and 10-04: an offer
+  whose credit lags past its retry is now a warning, not an alert.
 
 ## Next, one at a time, after a clean week under the timer
 

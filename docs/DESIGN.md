@@ -33,8 +33,11 @@ others. `utils/humanizer.py` is the shared toolbox. A task returns a structured 
 ## Principles
 
 **Measure; never assert.** State is read before and after; every item is confirmed by
-re-reading its own `isCompleted`, so what does not flip is reported failed rather than
-counted done. No point figure is printed that was not observed — where a total cannot
+re-reading its own `isCompleted`, so what does not flip is reported rather than counted
+done. An item that does not flip gets one retry; if it still does not flip it is
+reported as a *warning* — shown in full in the daily report, never assumed done, but
+not a flag (the account holder's rule of 2026-10-11: a retry usually fixes it, and one
+missed item is not worth an alert). No point figure is printed that was not observed — where a total cannot
 be read the run says "unknown", which is its own failure. The number compared is
 **balance plus unclaimed**, because earnings land in the "Ready to claim" pot as often
 as in the balance, and a balance-only comparison reads zero for a run that did earn.
@@ -68,8 +71,10 @@ also functional, since queries that arrive too fast are not counted.
 and diffs after, bundling open → interact → linger → close into one call.
 
 **One judgement about a day.** `flags_for()` decides whether a recorded run is clean —
-no bad verdict, no recorded error, everything attempted done — and both `--history`
-and the scheduled run's exit code read it, so the two cannot drift apart.
+no bad verdict, no recorded error, everything attempted either done or warned, and no
+task that got nothing done at all — and both `--history` and the scheduled run's exit
+code read it, so the two cannot drift apart. A task is judged on the items that were
+not warned, so a warned item cannot come back as a "short" verdict.
 
 ## Unattended operation
 

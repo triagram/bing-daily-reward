@@ -20,6 +20,7 @@ Two layers:
 
 import glob
 import gzip
+import json
 from datetime import date
 from pathlib import Path
 
@@ -32,6 +33,8 @@ from utils.dashboard_state import (
     iter_objects_containing,
     merge_offer_objects,
     parse_dashboard,
+    split_rows,
+    text_from_children,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "dashboard_min.html"
@@ -268,6 +271,107 @@ def test_latest_real_capture_still_parses():
     assert state.offers, "no offers in a real capture"
     assert state.counters, "no activity counters in a real capture"
     assert any(o.is_daily_set for o in state.offers)
+
+
+REAL_EARN = sorted(glob.glob(str(Path(__file__).parent.parent / "captures" / "samples" / "earn-*.html.gz")))
+
+
+@pytest.mark.skipif(not REAL_EARN, reason="no local captures; synthetic coverage still applies")
+def test_every_explore_tile_in_the_latest_real_capture_has_its_prompt():
+    """
+    The drift guard for the 2026-10-11 failure: a tile whose prompt the parser cannot
+    see is searched by its title instead, and that does not credit.
+    """
+    state = parse_dashboard(gzip.decompress(Path(REAL_EARN[-1]).read_bytes()).decode("utf-8"))
+    tiles = [o for o in state.offers if "exploreonbing" in o.offer_id]
+    assert tiles, "no Explore on Bing tiles in a real capture"
+    assert all(o.description for o in tiles), [o.offer_id for o in tiles if not o.description]
+
+
+# --------------------------------------------------------------------------- #
+# Text that lives in another row of the stream
+# --------------------------------------------------------------------------- #
+
+JEWELRY_ID = "ENUS_jewelry_exploreonbing_activation_Evergreen"
+JEWELRY_PROMPT = "Search on Bing to find stunning jewelry for any occasion"
+# A text row is length-prefixed in UTF-8 bytes, so the sample text carries multi-byte
+# characters: counting characters instead would land mid-way into the next row.
+SVG_PATH_TEXT = "M5 13h6 — café ✓"
+
+
+def _page(stream: str, chunks: int = 3) -> str:
+    """Wrap a flight stream in __next_f pushes, cut at arbitrary points as the server does."""
+    size = -(-len(stream) // chunks)
+    pieces = [stream[i:i + size] for i in range(0, len(stream), size)]
+    pushes = "".join(f"<script>self.__next_f.push({json.dumps([1, piece])})</script>"
+                     for piece in pieces)
+    return f"<html><body>{pushes}</body></html>"
+
+
+def _outlined_tile_stream() -> str:
+    """
+    The shape served on 2026-10-11: the tile's text block is its own row, and the tile
+    holds only "$L75" where the text used to be. Around it, the row kinds that must not
+    be read as text — a hint row with no id, a client-component import, a text row.
+    """
+    text_bytes = len(SVG_PATH_TEXT.encode("utf-8"))
+    tile = {
+        "offerId": JEWELRY_ID, "isCompleted": False, "isLocked": False,
+        "href": "https://www.bing.com/?rwAutoFlyout=exb",
+        "children": ["$", "$L13", None, {"children": ["$", "div", None, {"children": [
+            ["$", "svg", None, {"d": "$74"}],
+            ["$", "img", None, {"alt": "Shine bright\u200b"}],
+            "$L75",
+            "$L76",
+        ]}]}],
+    }
+    text_block = ["$", "div", None, {"className": "flex grow flex-col gap-0.5", "children": [
+        ["$", "p", None, {"children": "Shine bright\u200b"}],
+        ["$", "p", None, {"children": JEWELRY_PROMPT}],
+    ]}]
+    return (
+        ':HL["/_next/static/css/app.css","style"]\n'
+        '13:I["/_next/static/chunks/card.js","Card"]\n'
+        f"74:T{text_bytes:x},{SVG_PATH_TEXT}"
+        f"75:{json.dumps(text_block)}\n"
+        "76:null\n"
+        f"0:{json.dumps([tile])}\n"
+    )
+
+
+def test_a_tile_whose_text_sits_in_its_own_row_keeps_its_prompt():
+    state = parse_dashboard(_page(_outlined_tile_stream()))
+    tile = next(o for o in state.offers if o.offer_id == JEWELRY_ID)
+    assert tile.title == "Shine bright"
+    assert tile.description == JEWELRY_PROMPT
+
+
+def test_without_following_rows_only_the_title_survives():
+    """The 2026-10-11 failure, pinned: the image alt gives the title, the prompt is lost."""
+    stream = _outlined_tile_stream()
+    tile = next(iter_objects_containing(stream, "offerId"))
+    assert text_from_children(tile) == ("Shine bright", None)
+
+
+def test_text_rows_are_measured_in_bytes_and_hint_rows_have_no_id():
+    rows = split_rows(_outlined_tile_stream())
+    assert set(rows) == {"75", "0"}, "only the JSON rows are kept, and none is cut short"
+    assert json.loads(rows["75"])[3]["children"][1][3]["children"] == JEWELRY_PROMPT
+
+
+def test_imports_and_text_rows_are_not_read_as_text():
+    state = parse_dashboard(_page(_outlined_tile_stream()))
+    tile = next(o for o in state.offers if o.offer_id == JEWELRY_ID)
+    assert "café" not in (tile.description or "") and "Card" not in (tile.title or "")
+
+
+def test_a_row_that_refers_to_itself_does_not_loop():
+    tile = {"offerId": JEWELRY_ID, "isCompleted": False, "children": ["$L80"]}
+    looping = ["$", "div", None, {"children": [["$", "p", None, {"children": "Shine bright"}],
+                                               "$L80"]}]
+    stream = f"80:{json.dumps(looping)}\n0:{json.dumps([tile])}\n"
+    state = parse_dashboard(_page(stream, chunks=1))
+    assert next(o for o in state.offers if o.offer_id == JEWELRY_ID).title == "Shine bright"
 
 
 # --------------------------------------------------------------------------- #

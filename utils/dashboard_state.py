@@ -23,7 +23,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Iterator, Any
+from typing import Any, Callable, Iterator
 from urllib.parse import parse_qs, unquote, urlparse
 
 logger = logging.getLogger("bing_rewards")
@@ -186,10 +186,85 @@ def normalise_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def strings_in(node: Any, out: list[str] | None = None) -> list[str]:
-    """Every human-readable string under a React children tree, in document order."""
+# One row of the flight stream is `<hex id>:<payload>\n`, with two exceptions: a text
+# row, `<hex id>:T<hex byte length>,<text>`, is length-prefixed and has no newline, and
+# a hint row has no id at all (`:HL[...]`). Measured 2026-10-11 against all 472 archived
+# pages: every one splits end to end this way, and every JSON row in them parses.
+_ROW_ID = re.compile(rb"[0-9a-f]*")
+
+# A reference to another row: "$L75" (lazy) or "$75". The row it names may be a client
+# component import, raw text, or an ordinary JSON model, and only the last holds
+# rendered text. Path references ("$43:props:children:...") point into rows already
+# sent — shared icons and toasts — and are deliberately not followed.
+ROW_REFERENCE = re.compile(r"^\$L?([0-9a-f]+)$")
+
+
+def split_rows(stream: str) -> dict[str, str]:
+    """The stream's JSON rows by id, as raw text. Text, import and hint rows are skipped."""
+    data = stream.encode("utf-8")  # text-row lengths count UTF-8 bytes
+    rows: dict[str, str] = {}
+    pos = 0
+    while pos < len(data):
+        colon = data.find(b":", pos)
+        if colon == -1 or not _ROW_ID.fullmatch(data[pos:colon]):
+            break  # not a layout this understands; keep what was read so far
+        row_id = data[pos:colon].decode()
+        start = colon + 1
+
+        if data[start:start + 1] == b"T":
+            comma = data.find(b",", start)
+            try:
+                text_bytes = int(data[start + 1:comma], 16)
+            except ValueError:
+                break
+            pos = comma + 1 + text_bytes
+            continue
+
+        newline = data.find(b"\n", start)
+        end = len(data) if newline == -1 else newline
+        if row_id and data[start:start + 1] in (b"[", b"{"):
+            rows[row_id] = data[start:end].decode("utf-8")
+        pos = end + 1
+    return rows
+
+
+def row_resolver(stream: str) -> Callable[[str], Any]:
+    """Look up a row by id, parsed; None for anything that is not a JSON row."""
+    rows: dict[str, str] | None = None
+    parsed: dict[str, Any] = {}
+
+    def resolve(row_id: str) -> Any:
+        nonlocal rows
+        if rows is None:
+            rows = split_rows(stream)
+        if row_id not in parsed:
+            try:
+                parsed[row_id] = json.loads(rows[row_id]) if row_id in rows else None
+            except ValueError:
+                parsed[row_id] = None
+        return parsed[row_id]
+
+    return resolve
+
+
+def strings_in(node: Any, out: list[str] | None = None,
+               resolve: Callable[[str], Any] | None = None,
+               _followed: set[str] | None = None) -> list[str]:
+    """
+    Every human-readable string under a React children tree, in document order.
+
+    With `resolve`, a reference to another row ("$L75") is followed and that row's text
+    read in its place. Without it, and for any reference that leads nowhere readable,
+    the reference is skipped like every other React placeholder.
+    """
     out = [] if out is None else out
+    followed = set() if _followed is None else _followed
     if isinstance(node, str):
+        reference = ROW_REFERENCE.match(node) if resolve else None
+        if reference and reference.group(1) not in followed:
+            followed.add(reference.group(1))
+            strings_in(resolve(reference.group(1)), out, resolve, followed)
+            return out
         text = normalise_text(node)
         # React's own placeholders ($L13, $undefined, $5f:props:...) are not text.
         if text and not text.startswith("$"):
@@ -199,18 +274,20 @@ def strings_in(node: Any, out: list[str] | None = None) -> list[str]:
         # text, and including them made every tile's title come out as "div".
         items = node[3:] if len(node) >= 4 and node[0] == "$" else node
         for item in items:
-            strings_in(item, out)
+            strings_in(item, out, resolve, followed)
     elif isinstance(node, dict):
         for key in ("alt", "children"):
             if key in node:
-                strings_in(node[key], out)
+                strings_in(node[key], out, resolve, followed)
         for key, value in node.items():
             if key not in ("alt", "children") and isinstance(value, (list, dict)):
-                strings_in(value, out)
+                strings_in(value, out, resolve, followed)
     return out
 
 
-def text_from_children(obj: dict) -> tuple[str | None, str | None]:
+def text_from_children(obj: dict,
+                       resolve: Callable[[str], Any] | None = None
+                       ) -> tuple[str | None, str | None]:
     """
     Recover an offer's title and description from its rendered subtree.
 
@@ -221,9 +298,14 @@ def text_from_children(obj: dict) -> tuple[str | None, str | None]:
     is not something a person would type; the page had "Search on Bing to see what time
     it is in a different time zone" written on it the whole time.
 
+    Since the page deployment of 2026-10-09 a tile's text block can arrive in a row of
+    its own, the tile holding only "$L75" where the text used to be. `resolve` follows
+    that; without it the title still comes from the image's `alt`, the description is
+    lost, and the search falls back to the title — the `jewelry` failure of 2026-10-11.
+
     Returns (title, description), either of which may be None.
     """
-    texts = strings_in(obj.get("children"))
+    texts = strings_in(obj.get("children"), resolve=resolve)
     if not texts:
         return None, None
     title = texts[0]
@@ -417,6 +499,7 @@ def parse_dashboard(html: str) -> DashboardState:
         return DashboardState()
 
     state = DashboardState()
+    resolve = row_resolver(stream)
 
     # One card ships as more than one object, so group by id before building Offers.
     grouped: dict[str, list[dict]] = {}
@@ -435,7 +518,7 @@ def parse_dashboard(html: str) -> DashboardState:
         # as a nameless, valueless card that looks exactly like a banner.
         title, description = obj.get("title"), obj.get("description")
         if title is None or description is None:
-            from_children = text_from_children(obj)
+            from_children = text_from_children(obj, resolve)
             title = title if title is not None else from_children[0]
             description = description if description is not None else from_children[1]
 

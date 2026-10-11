@@ -95,15 +95,17 @@ in full. On the desktop you only hear from it when something went wrong:
 
 | Notification | Meaning | What to do |
 |---|---|---|
-| *Today's run finished with flags — read logs/observation/\<date\>.log* | It ran, but a task earned nothing or too little, hit an error, or did less than it attempted | Read the day's log. Often it is an Explore tile whose search phrase isn't known yet |
+| *Today's run finished with flags — read logs/observation/\<date\>.log* | It ran, but a task got nothing done, earned too little, or hit an error | Read the day's log |
 | *Sign-in required — run: uv run python rewards_bot.py --login* | The session expired | Run `--login` in a terminal |
 | *Browser profile was busy for five minutes* | Something else has `browser_session/` open, usually a window left behind | Close it |
 | *No desktop session this morning* | Nobody was logged in for three hours after the trigger; nothing was done | Log in and run `rewards_bot.py` by hand; this day has not run |
 | *Today's run crashed (exit N)* | An unhandled error: page redesign, browser failed to start, network | `journalctl --user -u rewards-bot.service` |
 | *No run recorded today* (20:00) | The timer did not fire, or the machine was off | If the machine was on, look at the journal |
 
-A clean day sends no desktop notification. Neither does a machine that was off all day,
-since the evening check can only run if the machine is on.
+A clean day sends no desktop notification. Neither does a single card that failed: every
+card gets one retry, and one that still fails is listed as a warning in the daily report
+instead of raising an alert. A machine that was off all day sends nothing either, since
+the evening check can only run if the machine is on.
 
 ### Notifications
 

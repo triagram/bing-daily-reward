@@ -502,6 +502,12 @@ as `lyrics` did on 09-16. `recipe` returned on 09-18 **with** its prompt and was
 re-tested on it — and failed a third time. So the seven can be re-tested when they
 recur; see the correction under the activated-state finding below.
 
+> **Corrected 2026-10-11: the text never left the page.** Every "absent" in this finding
+> and in the two tables after it is the parser's reading, not the page's. The prompt was
+> there each time, in a row of the flight stream the parser did not follow. The layout
+> leans towards tiles just tried and failed, but untouched tiles have it too. See
+> [The prompt was on the page all along](#the-prompt-was-on-the-page-all-along--a-parser-gap-2026-10-11).
+
 **A tile loses its description once activated — corrected 2026-09-04.** `lyrics` was
 written off on 09-02 as a malformed card, on the evidence that its whole subtree held one
 string where a working tile holds four. That reading was **wrong**, and the captures say
@@ -616,6 +622,59 @@ perks rather than points.
 **Level up activities** read "Search with Bing for 7 days in a row" (in progress) and
 "Set Bing as your default search engine for 14 days" (completed) — conditions met by
 persistence, with nothing to automate.
+
+### The prompt was on the page all along — a parser gap, 2026-10-11
+
+The daily run searched the `jewelry` tile by its title, "Shine bright", and the tile did
+not flip; the run flagged `explore_on_bing:1err`. The same tile had completed on its
+prompt, "stunning jewelry for any occasion", on 08-30, 09-13 and 09-27. It had not
+credited by the 12:33 sample, seventy minutes after the attempt.
+
+The prompt was on the page. The monitor's 06:03 capture, five hours before the run,
+carries it — but not inside the tile. Since at least 08-17 the page has sometimes shipped
+a tile's text block as a row of its own, the tile holding only a reference to it:
+
+```
+tile children:  … ["$","img",null,{"alt":"Shine bright"}] … "$L75", "$L76" …
+row 75:         ["$","div",null,{… "Shine bright" … "Search on Bing to find stunning jewelry for any occasion" …}]
+```
+
+`strings_in()` treated every string starting with `$` as a React placeholder. That is
+right for `$L13`, a client component, and wrong for `$L75`, which is content. The title
+survived through the image's `alt`, the description came out empty, and `query_for()`
+fell back to the title. Fixed in `dashboard_state.py` by following such references to
+JSON rows (`4896a8e`). Measured over every archived page:
+
+| Check | Result |
+|---|---|
+| Pages whose stream splits into rows end to end | 472 of 472 |
+| Offers compared, old parser against new | 9966 |
+| Fields that changed | 29 descriptions, each from empty to the tile's prompt |
+| Explore tile observations still without a prompt | 0 of 1761 |
+
+**What it corrects.** "A tile loses its description once activated" (09-04) and "the
+description is replaced while activated-and-incomplete and restored on completion"
+(09-16) were both read off the parser, and both are wrong about the page. The layout is
+not independent of activation, but it is not confined to it either. Of the 29 recovered
+observations, 13 came within a day of a failed attempt and one fourteen days after one
+(`lyrics`, 09-16 06:02, the single sighting "activation persists across rotation" rested
+on); 10 were on tiles the bot had never attempted, and 5 on tiles whose last attempt had
+completed, this morning's `jewelry` among them. What decides the layout is unknown; the
+fix makes it not matter.
+
+**Where it bit.** Three of 211 tile attempts on record searched a title:
+
+```
+09-16 10:30  lyrics     'Learn song lyrics'      ✗
+09-28 10:42  insurance  'Protect what matters'   ✓
+10-11 11:23  jewelry    'Shine bright'           ✗
+```
+
+So one of the four `lyrics` failures was this bug. The other three (the prompt, the song
+alone, artist and song) stand, and the shelving is not reopened here. `personalloan`'s
+entry in `VERIFIED_QUERIES` exists only so that a retry would not fall to the title; it
+is the prompt verbatim, so it is harmless and stays. A same-day retry can now read a
+tile's prompt off the page, which the 09-04 finding said it could not.
 
 ### Streak arithmetic, which favours consistency over extraction
 

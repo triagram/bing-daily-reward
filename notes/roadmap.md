@@ -52,6 +52,22 @@ Decisions about what comes next, so they are not re-litigated. Dated when made.
   the proposed shape of that is one `label value` line per task, unaligned, which no
   client can break — not yet needed, not yet agreed. On a flagged day the report
   replaces the phone copy of the failure sentence.
+- **2026-10-11 — a failure that keeps coming back at random is a warning, not an
+  error.** The account holder's rule, stated after the `jewelry` failure: once a kind of
+  failure has been seen enough times to be sure it cannot be reliably fixed (likely
+  Microsoft's side), report it as a warning rather than a flag; missing one Explore tile
+  is acceptable. It was remembered as agreed earlier, but nothing on record said it —
+  the nearest thing is the shelf (`SHELVED_TOPICS`), which goes further: a shelved topic
+  is not attempted at all. **Not implemented, because nothing qualifies yet.** Of the 14
+  tile failures since 08-25: 8 were followed by a pass once the query named something
+  concrete (whether the wording or the second attempt did it is unseparated for most,
+  see DEVELOP.md); 2 were the parser gap of 2026-10-11; 1, `personalloan` 09-28, same
+  words failing then passing, was fixed by a plain retry; the last 3 are `lyrics`,
+  already on the shelf, which never flags. So every topic that has failed now
+  completes except the one already shelved, and each flag so far led to a fix. The rule
+  applies from the first topic that fails repeatedly with nothing found to fix it. Its
+  shape then is a warn-only list beside the shelf: attempted, a failure shown in the
+  daily report, no exit 2 and no alert.
 
 ## Next, one at a time, after a clean week under the timer
 

@@ -13,8 +13,7 @@ Bing" tiles. This project works through all four in a real Chromium window using
 [Playwright](https://playwright.dev/python/). It keeps a persistent browser profile, so
 you only sign in once. Each task reads the dashboard's own state, checks every item
 individually, and reports the points it actually measured. If a total could not be
-read, it says so instead of guessing. The parser and the timing and volume choices have
-an offline test suite; the rest was checked against a live account.
+read, it says so instead of guessing.
 
 It can run on a systemd user timer, every morning at a random time. After each run it
 sends a short report as a push notification (Telegram or ntfy), and a desktop
@@ -42,8 +41,6 @@ uv run playwright install chromium   # the browser build Playwright drives
 > [!IMPORTANT]
 > Don't skip the second step. `uv sync` installs the Playwright library but not the
 > browser, and without it the bot fails at launch with "Executable doesn't exist".
-> `playwright` is pinned to an exact version because each release expects a matching
-> Chromium build.
 
 ## Login
 
@@ -188,7 +185,7 @@ Everything tunable is in `config.py`:
 | Constant | Default | Meaning |
 |---|---|---|
 | `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the day's search count is picked from. Deliberately below the quota, and different every day |
-| `DAILY_SEARCH_ALLOWANCE` / `POINTS_PER_SEARCH` | `20` / `3` | The measured daily quota. The run reads the real figure from the dashboard; these constants document it and are used by the tests |
+| `DAILY_SEARCH_ALLOWANCE` / `POINTS_PER_SEARCH` | `20` / `3` | The measured daily quota. The run reads the real figure from the dashboard |
 | `KEEP_EARNING_MAX_PER_RUN` | `6` | Maximum number of Keep earning offers per run |
 | `RUN_EXPLORE_ON_BING` | `True` | Do the Explore on Bing tiles as part of the daily run |
 | `EXPLORE_ON_BING_TILES_PER_DAY` | `4` | Searches kept back from the quota for the tiles |
@@ -202,9 +199,7 @@ Everything tunable is in `config.py`:
   detects it. The scheduled run uses a real window in your desktop session.
 - **Quizzes are answered by clicking the first option.** They pay for wrong answers
   too, but less.
-- **Selectors will break** when Microsoft redesigns the dashboard. Reading the page's
-  own state lasts longer than matching CSS classes, but it isn't a published API
-  either.
+- **A dashboard redesign will break it** until the code is updated.
 - **One account, no VPN or proxy, and that won't change.** Both are the most commonly
   reported causes of suspension, and this project won't make either easy.
 

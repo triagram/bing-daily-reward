@@ -3,6 +3,10 @@
 > Does the Microsoft Rewards daily tasks in a real browser, checks what they earned,
 > and sends you a short daily report.
 
+**Status:** complete. Development is paused: it changes only when a bug shows up or
+Microsoft changes the dashboard. Last confirmed working on 2026-10-18, on a UK (en-GB)
+account; task sets, point values and quotas differ by market.
+
 Microsoft Rewards gives points for a few repetitive daily actions: the three "Daily
 set" cards, a batch of Bing searches, the "Keep earning" offers and the "Explore on
 Bing" tiles. This project works through all four in a real Chromium window using
@@ -189,9 +193,6 @@ Everything tunable is in `config.py`:
 | `RUN_EXPLORE_ON_BING` | `True` | Do the Explore on Bing tiles as part of the daily run |
 | `EXPLORE_ON_BING_TILES_PER_DAY` | `4` | Searches kept back from the quota for the tiles |
 | `HEADLESS` | `False` | Run without a window. Not tested against Microsoft's detection; leave it off |
-
-Point values and quotas differ by market; the ones here were measured on the account
-this was built against.
 
 ## Limitations
 

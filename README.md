@@ -89,9 +89,7 @@ working a "follow us" offer, not a stray click. `rewards-check.timer` checks at 
 that today's run was recorded. Details are in
 [contrib/systemd/README.md](contrib/systemd/README.md).
 
-After each run it sends a short report as a push notification, if you have set that
-up (see below): when it ran, what each task did and earned, the totals, and any errors
-in full. On the desktop you only hear from it when something went wrong:
+On the desktop you only hear from it when something went wrong:
 
 | Notification | Meaning | What to do |
 |---|---|---|
@@ -102,10 +100,9 @@ in full. On the desktop you only hear from it when something went wrong:
 | *Today's run crashed (exit N)* | An unhandled error: page redesign, browser failed to start, network | `journalctl --user -u rewards-bot.service` |
 | *No run recorded today* (20:00) | The timer did not fire, or the machine was off | If the machine was on, look at the journal |
 
-A clean day sends no desktop notification. Neither does a single card that failed: every
-card gets one retry, and one that still fails is listed as a warning in the daily report
-instead of raising an alert. A machine that was off all day sends nothing either, since
-the evening check can only run if the machine is on.
+A failed card does not raise a notification: every card gets one retry, and one that
+still fails is listed as a warning in the daily report. Neither does a day the machine
+was off, since the evening check can only run if the machine is on.
 
 ### Notifications
 
@@ -116,9 +113,10 @@ There are three ways to use this:
 2. **Automated**: the systemd units above. You get a desktop notification when a day
    fails, and nothing otherwise.
 3. **Automated, with push notifications**: the failure notification is also pushed
-   through Telegram or ntfy (or both), to whatever devices you have them on, and you
-   get a short report after every run, good or bad. The report is the only message
-   that includes point numbers.
+   through Telegram or ntfy (or both), to whatever devices you have them on, and after
+   every run, good or bad, you get a short report: when it ran, what each task did and
+   earned, the totals, and any errors in full. It is the only message with point
+   numbers.
 
 The settings live in `~/.config/bing-daily-reward/alert.env`, outside the repository.
 Copy `contrib/systemd/alert.env.example` there, `chmod 600` it, and fill in one or

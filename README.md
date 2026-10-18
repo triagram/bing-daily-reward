@@ -213,9 +213,10 @@ this was built against.
 uv run pytest -q
 ```
 
-The suite parses an archived copy of the page. It never opens a browser or touches an
-account, so it is safe to run anywhere, but it also proves nothing about a live run. CI
-runs it on every push.
+The suite parses a synthetic copy of the dashboard, plus any real captures on disk, and
+one module drives a local Chromium against fixed HTML (it skips where Chromium is not
+installed). Nothing in it reaches the network or an account, so it is safe to run
+anywhere, but it also proves nothing about a live run. CI runs it on every push.
 
 ---
 

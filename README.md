@@ -135,6 +135,26 @@ both:
 configured. A longer walkthrough, including the error codes you might see, is in
 [contrib/systemd/README.md](contrib/systemd/README.md#push-notifications).
 
+## Uninstall
+
+To stop the daily run but keep everything, so it can be switched back on later:
+
+```bash
+systemctl --user disable --now rewards-bot.timer rewards-check.timer rewards-monitor.timer
+```
+
+The `enable --now` line under *Automation* switches it back on. To remove it completely,
+also:
+
+```bash
+rm ~/.config/systemd/user/rewards-*.{service,timer}
+systemctl --user daemon-reload
+```
+
+Then delete the two things that hold secrets: `browser_session/` (your Microsoft session
+cookies) and `~/.config/bing-daily-reward/alert.env` (your Telegram token or ntfy topic).
+What is left is the repository folder itself.
+
 ## Logs
 
 ```bash

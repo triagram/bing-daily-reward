@@ -218,6 +218,8 @@ anywhere, but it also proves nothing about a live run. CI runs it on every push.
 
 ## Disclaimer
 
+This project is not affiliated with or endorsed by Microsoft.
+
 Automating Microsoft Rewards very likely violates the
 [Microsoft Rewards Terms of Service](https://www.microsoft.com/rewards/terms).
 Accounts found to be using automation can have their points revoked or be suspended

@@ -21,8 +21,8 @@ def daily_search_count(day: date | None = None) -> int:
     How many searches to run today.
 
     Stops well short of the 20-search allowance, and varies. Finishing exactly on the
-    quota is itself a signature — nobody searches until their allowance runs out and
-    then stops mid-afternoon — and a fixed count every day is another. Seeded by the
+    quota is itself a signature - nobody searches until their allowance runs out and
+    then stops mid-afternoon - and a fixed count every day is another. Seeded by the
     date, so a given day is reproducible while consecutive days differ.
 
     This trades points for a lower profile: 8-15 searches earn 24-45 of the 60
@@ -157,7 +157,7 @@ async def find_offer_anchor(page: Page, destination: str | None,
 
     - The first word of the query is not unique. "How crystals form" and "How do
       magnets work" were both on the page, both reduced to the needle `How`, and
-      `.first` clicked the same card twice — so the second offer reported a successful
+      `.first` clicked the same card twice - so the second offer reported a successful
       `anchor-click` while never being opened, and never completed.
     - Percent-encoding case varies between cards. One card rendered
       `ru=%2fsearch%3fq%3dweekly+quiz` and another `%2Fsearch%3Fq%3Dtechnology`, on the
@@ -171,7 +171,7 @@ async def find_offer_anchor(page: Page, destination: str | None,
     two the needle approach got wrong.
 
     The needle remains as a fallback for a page whose anchors differ from the payload's
-    destination, but only when it identifies **one** anchor — an ambiguous needle is
+    destination, but only when it identifies **one** anchor - an ambiguous needle is
     the bug above, so clicking its first match is worse than not clicking at all.
     """
     if destination:
@@ -211,7 +211,7 @@ async def reconcile_late_completions(
 
     Crediting lags. On 2026-08-21 an Explore offer was checked about twenty seconds
     after its card was worked, reported as failed, and was marked complete on the next
-    read ten minutes later — with the balance up by exactly its five points. The run had
+    read ten minutes later - with the balance up by exactly its five points. The run had
     already recorded an error and a `short` verdict for work that succeeded.
 
     That matters more than the miscount. `Flags` fires on a recorded error, and the
@@ -223,7 +223,7 @@ async def reconcile_late_completions(
     to fix an occasional case, and the items still have the rest of the run to settle in.
 
     Returns the keys that turned out complete, for the caller to subtract from its own
-    errors — leaving the error behind would defeat the point of asking again.
+    errors - leaving the error behind would defeat the point of asking again.
     """
     if not unconfirmed:
         return set()
@@ -241,7 +241,7 @@ async def reconcile_late_completions(
 
     late = set(unconfirmed) & completed
     for key in late:
-        logger.info(f"     ✓ {key} completed after all — credit was late")
+        logger.info(f"     ✓ {key} completed after all - credit was late")
     return late
 
 async def execute_action_and_cleanup_new_tab(

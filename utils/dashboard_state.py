@@ -2,7 +2,7 @@
 Parse the Microsoft Rewards dashboard's embedded state out of its HTML.
 
 The dashboard is a Next.js app using React Server Components. It makes no separate
-data request — the state arrives serialised inside the HTML document, in a stream of
+data request - the state arrives serialised inside the HTML document, in a stream of
 `self.__next_f.push([1, "<chunk>"])` calls that concatenate into React's flight
 format. That stream is the ground truth behind every card the page draws.
 
@@ -85,7 +85,7 @@ class Offer:
         The search term this offer sends you to, if any.
 
         Every daily-set destination points at bing.com/search, so the path identifies
-        nothing — the query does. Two shapes occur and both have to be handled: a
+        nothing - the query does. Two shapes occur and both have to be handled: a
         direct `…/search?q=Sport+events+near+me`, and a redirect
         `…/rewards/checkuser?ru=%2Fsearch%3Fq%3DNelson+mandela…` that hides the real
         target one level down. Without unwrapping `ru`, two of the three cards each
@@ -171,7 +171,7 @@ ZERO_WIDTH = "\u200b\u200c\u200d\ufeff"
 
 # Characters that look like a space and are not one. A tile's prompt on 2026-09-04 read
 # "new\u00a0recipes" with a non-breaking space, which was typed into the search box
-# exactly as written — an invisible character that no person would ever enter. Whether
+# exactly as written - an invisible character that no person would ever enter. Whether
 # it is what stopped the tile completing is unproven; typing it was wrong regardless,
 # and removing it removes the variable.
 SPACE_LOOKALIKES = re.compile(r"[\u00a0\u2007\u202f\u2000-\u200a\u3000]")
@@ -195,7 +195,7 @@ _ROW_ID = re.compile(rb"[0-9a-f]*")
 # A reference to another row: "$L75" (lazy) or "$75". The row it names may be a client
 # component import, raw text, or an ordinary JSON model, and only the last holds
 # rendered text. Path references ("$43:props:children:...") point into rows already
-# sent — shared icons and toasts — and are deliberately not followed.
+# sent - shared icons and toasts - and are deliberately not followed.
 ROW_REFERENCE = re.compile(r"^\$L?([0-9a-f]+)$")
 
 
@@ -291,8 +291,8 @@ def text_from_children(obj: dict,
     """
     Recover an offer's title and description from its rendered subtree.
 
-    Some offer families ship no `title` and no `description` of their own — the
-    "Explore on Bing" tiles are the case that forced this — and render both inside
+    Some offer families ship no `title` and no `description` of their own - the
+    "Explore on Bing" tiles are the case that forced this - and render both inside
     `children`, the title as an image `alt` and the description as a text node. Guessing
     what such a tile is about from its id produced searches like `timezonedates`, which
     is not something a person would type; the page had "Search on Bing to see what time
@@ -301,7 +301,7 @@ def text_from_children(obj: dict,
     Since the page deployment of 2026-10-09 a tile's text block can arrive in a row of
     its own, the tile holding only "$L75" where the text used to be. `resolve` follows
     that; without it the title still comes from the image's `alt`, the description is
-    lost, and the search falls back to the title — the `jewelry` failure of 2026-10-11.
+    lost, and the search falls back to the title - the `jewelry` failure of 2026-10-11.
 
     Returns (title, description), either of which may be None.
     """
@@ -320,11 +320,11 @@ def merge_offer_objects(objs: list[dict]) -> dict:
     A card is not one object. On 2026-08-19 each daily-set card arrived as two: the
     rendered element, carrying `offerId`, `isCompleted`, `href` and `children`, and the
     data behind it, carrying `title`, `points`, `destination` and `date`. Neither is
-    complete alone — the element has no points, the data has no children.
+    complete alone - the element has no points, the data has no children.
 
     The previous version deduplicated on `(offerId, title, points, isCompleted)`. Since
     the two copies disagree on exactly those fields, both survived, and a three-card
-    daily set parsed as six outstanding — three of them with no title, no points and no
+    daily set parsed as six outstanding - three of them with no title, no points and no
     destination to open. The comment there already said "keep the richest copy"; this is
     that, implemented.
 
@@ -367,7 +367,7 @@ def extract_flight_stream(html: str) -> str:
     Reassemble the React flight stream from the page's __next_f.push() calls.
 
     Each call looks like `self.__next_f.push([1,"…"])`. The argument is valid JSON,
-    so it is parsed rather than unescaped by hand — the chunks contain quotes and
+    so it is parsed rather than unescaped by hand - the chunks contain quotes and
     backslashes that ad-hoc unescaping gets wrong.
     """
     chunks: list[str] = []
@@ -425,7 +425,7 @@ def iter_objects_containing(text: str, key: str) -> Iterator[dict]:
     Yield the smallest balanced JSON object around each occurrence of `key`.
 
     Scanning with a stack means inner objects close first, so each occurrence is
-    claimed by the tightest object that encloses it — an outer wrapper holding the
+    claimed by the tightest object that encloses it - an outer wrapper holding the
     same key is skipped rather than returned as a duplicate. This is what makes the
     result trustworthy where a regex window would bleed into the neighbouring object.
     """
@@ -476,7 +476,7 @@ def extract_ready_to_claim(stream: str) -> int | None:
     Unlike the balance, which arrives as a clean `{"balance": N}` field, this number
     exists only inside the rendered element tree: a label node carrying the text
     "Ready to claim", followed by a heading node holding the digits. Matching on
-    presentation is more fragile than reading a field — a restyle breaks it — so this
+    presentation is more fragile than reading a field - a restyle breaks it - so this
     returns None rather than guessing, and callers should treat None as "unknown"
     rather than "zero".
     """
@@ -495,7 +495,7 @@ def parse_dashboard(html: str) -> DashboardState:
     """Parse a dashboard or /earn HTML document into structured state."""
     stream = extract_flight_stream(html)
     if not stream:
-        logger.warning("No __next_f flight stream found — page layout may have changed.")
+        logger.warning("No __next_f flight stream found - page layout may have changed.")
         return DashboardState()
 
     state = DashboardState()

@@ -5,7 +5,7 @@ Run the "Explore on Bing" tiles, separately from the daily run.
     uv run python explore_on_bing.py --dry-run  # read state and report, change nothing
 
 With `RUN_EXPLORE_ON_BING` on (the default), rewards_bot.py works the tiles itself and
-this file is the retry and dry-run tool: run it after a day on which a tile failed —
+this file is the retry and dry-run tool: run it after a day on which a tile failed -
 never after a clean one, since its searches also count against the allowance. With the
 switch off it is the only thing that works the tiles, and belongs after the daily run.
 
@@ -49,7 +49,7 @@ async def main():
     dry_run = "--dry-run" in sys.argv
 
     console.print("\n[bold cyan]Explore on Bing[/bold cyan]")
-    mode = "dry run — reading state only" if dry_run else "working today's unlocked tiles"
+    mode = "dry run - reading state only" if dry_run else "working today's unlocked tiles"
     console.print(f"[dim]{mode}[/dim]\n")
 
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -71,17 +71,17 @@ async def main():
         if dry_run:
             earn = await _fetch_earn(page)
             tiles = [o for o in earn.offers if "exploreonbing" in o.offer_id]
-            table = Table(title=f"Explore on Bing — {date.today()}")
+            table = Table(title=f"Explore on Bing - {date.today()}")
             table.add_column("Topic", style="cyan")
             table.add_column("State")
             table.add_column("Would search")
             for o in sorted(tiles, key=lambda o: (bool(o.raw.get("isLocked")), o.offer_id)):
                 if o.is_completed:
-                    state, term = "[green]done[/green]", "—"
+                    state, term = "[green]done[/green]", "-"
                 elif o.raw.get("isLocked") or o.raw.get("isDisabled"):
-                    state, term = "[dim]locked (tomorrow)[/dim]", "—"
+                    state, term = "[dim]locked (tomorrow)[/dim]", "-"
                 elif topic_of(o) in SHELVED_TOPICS:
-                    state, term = "[yellow]shelved[/yellow]", "—"
+                    state, term = "[yellow]shelved[/yellow]", "-"
                 else:
                     state, term = "[bold]open[/bold]", repr(query_for(o))
                 table.add_row(topic_of(o) or "?", state, term)
@@ -113,7 +113,7 @@ async def main():
             console.print(f"  [dim]△ {warning}[/dim]")
 
         # The first run of this task completed none of four and left nothing behind to
-        # examine — the console was the only record and it scrolled away. For a task
+        # examine - the console was the only record and it scrolled away. For a task
         # whose point is to find out how these credit, per-tile detail is the output
         # that matters, not the total.
         RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -133,8 +133,8 @@ async def main():
 
         if result.attempted and not result.completed:
             console.print(
-                "\n[bold red]No tile completed.[/bold red] The mechanism assumed here — "
-                "open the tile, then search its topic in what it opens — is unproven. "
+                "\n[bold red]No tile completed.[/bold red] The mechanism assumed here - "
+                "open the tile, then search its topic in what it opens - is unproven. "
                 "This is the result that says so; nothing was silently counted."
             )
 

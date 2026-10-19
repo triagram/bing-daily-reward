@@ -4,7 +4,7 @@
 #   run-with-display.sh /home/mengyuan/.local/bin/uv run python rewards_bot.py
 #
 # Why this exists: the user manager lingers (the read-only monitor needs it), so the
-# bot's timer fires whether or not anyone is logged in — and the bot opens a real
+# bot's timer fires whether or not anyone is logged in - and the bot opens a real
 # window. Without this, a logged-out morning is a failed launch, a false "crashed"
 # alert, and no catch-up, since the timer did fire. With it, the run waits for you:
 # log in at 09:15 and it starts within the minute; stay away all morning and it
@@ -35,7 +35,7 @@ while :; do
     exec "$@"
   fi
   if [ "$(date +%s)" -ge "$deadline" ]; then
-    echo "No desktop session answered within ${WINDOW_S}s — nobody logged in; nothing was done." >&2
+    echo "No desktop session answered within ${WINDOW_S}s - nobody logged in; nothing was done." >&2
     exit $EXIT_NO_DISPLAY
   fi
   sleep "$POLL_S"

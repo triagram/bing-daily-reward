@@ -112,7 +112,7 @@ async def run_daily_searches(
 
     `per_search_balance` reads the balance after every single search instead of only
     at the ends. It roughly doubles the run time, so it is off by default, but it is
-    the only way to attribute a gain to a particular search — a before/after pair
+    the only way to attribute a gain to a particular search - a before/after pair
     around a batch cannot say which query earned the points, or whether earning
     stopped partway because a quota filled.
 
@@ -125,7 +125,7 @@ async def run_daily_searches(
     Requires `per_search_balance`.
 
     `log_path` appends one JSON line per search as it happens. Writing results only
-    at the end loses everything if the run is interrupted — which is exactly how the
+    at the end loses everything if the run is interrupted - which is exactly how the
     first attempt at measuring the daily allowance was lost. Incremental writes mean
     a killed run still yields every search it completed.
 
@@ -139,7 +139,7 @@ async def run_daily_searches(
         state_page = await context.new_page()
     result = SearchResult()
 
-    # None means "however many today calls for" — a varying count short of the
+    # None means "however many today calls for" - a varying count short of the
     # allowance, rather than the same maximum every day.
     if search_count is None:
         search_count = daily_search_count()
@@ -147,7 +147,7 @@ async def run_daily_searches(
 
         # Then cap it by what the day has left. Drawing a count blind assumes a clean
         # start, so manual searching earlier in the day pushes the total onto the
-        # quota — the one number the varying count exists to stay under. Observed
+        # quota - the one number the varying count exists to stay under. Observed
         # rather than assumed: the points breakdown reports the real figure.
         progress = await fetch_search_progress(state_page)
         remaining = searches_remaining(progress, reserve_searches)
@@ -155,7 +155,7 @@ async def run_daily_searches(
             held = f" after holding {reserve_searches} back" if reserve_searches else ""
             logger.info(
                 f"   Allowance so far today: {progress[0]}/{progress[1]} points "
-                f"— room for {remaining} more searches{held}"
+                f"- room for {remaining} more searches{held}"
             )
             if remaining < search_count:
                 logger.info(f"   Trimming {search_count} → {remaining} to stay within it")
@@ -164,7 +164,7 @@ async def run_daily_searches(
             logger.warning("   Could not read today's allowance; using the drawn count")
 
     if search_count <= 0:
-        logger.info("✅ [Searches] Allowance already spent today — nothing to do.")
+        logger.info("✅ [Searches] Allowance already spent today - nothing to do.")
         if owns_state_page:
             await state_page.close()
         return result
@@ -259,7 +259,7 @@ async def run_daily_searches(
                     if zero_streak >= stop_after_zero:
                         logger.info(
                             f"   Stopping: {zero_streak} consecutive searches earned "
-                            f"nothing — the allowance is spent."
+                            f"nothing - the allowance is spent."
                         )
                         break
 

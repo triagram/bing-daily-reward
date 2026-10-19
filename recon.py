@@ -2,7 +2,7 @@
 Read-only reconnaissance of the Microsoft Rewards dashboard.
 
 Opens the existing signed-in session, visits the dashboard and /earn, and records
-what the page actually fetches — every JSON response, any promising data object the
+what the page actually fetches - every JSON response, any promising data object the
 page hangs off `window`, full-page screenshots, and the DOM subtrees around the task
 cards. Everything lands in captures/<timestamp>/.
 
@@ -49,7 +49,7 @@ OUT_ROOT = Path(__file__).parent / "captures"
 INTERESTING_HOSTS = ("rewards.bing.com", "www.bing.com", "bing.com", "login.live.com")
 
 # Values under keys matching this are replaced with a placeholder. Point totals and
-# completion flags are deliberately NOT redacted — they are the whole reason for the
+# completion flags are deliberately NOT redacted - they are the whole reason for the
 # capture, and they say nothing about who the account belongs to.
 SENSITIVE_KEY = re.compile(
     r"(token|auth|secret|password|cookie|session|signature|"
@@ -147,7 +147,7 @@ async def capture(out_dir: Path, do_redact: bool):
             await asyncio.sleep(1.5)
 
             if "login.live.com" in page.url or "signin" in page.url:
-                logger.error("Session is not signed in — run rewards_bot.py once to log in first.")
+                logger.error("Session is not signed in - run rewards_bot.py once to log in first.")
                 await context.close()
                 return None
 
@@ -158,7 +158,7 @@ async def capture(out_dir: Path, do_redact: bool):
                 await page.content(), encoding="utf-8"
             )
 
-            # Probe for data the page parked on `window` — some dashboards stash their
+            # Probe for data the page parked on `window` - some dashboards stash their
             # whole state there, which would be an even cleaner source than the network.
             try:
                 globals_found = await page.evaluate(
@@ -182,7 +182,7 @@ async def capture(out_dir: Path, do_redact: bool):
                     (out_dir / f"globals_{label}.json").write_text(
                         json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
                     )
-                    logger.info(f"  🌐 globals_{label}.json — keys: {', '.join(globals_found)}")
+                    logger.info(f"  🌐 globals_{label}.json - keys: {', '.join(globals_found)}")
                 else:
                     logger.info(f"  🌐 no promising window globals on {label}")
             except Exception as e:
@@ -216,7 +216,7 @@ async def main():
 
     console.print("\n[bold cyan]🔍 Rewards state capture (read-only)[/bold cyan]")
     console.print(
-        "[dim]Navigation and scrolling only — no clicks, no searches, no claims.[/dim]"
+        "[dim]Navigation and scrolling only - no clicks, no searches, no claims.[/dim]"
     )
     console.print(
         f"[dim]Redaction: {'on' if do_redact else '[bold red]OFF[/bold red]'}"
@@ -238,13 +238,13 @@ async def main():
     else:
         console.print("[yellow]No JSON responses captured.[/yellow]")
         console.print(
-            f"[dim]{len(request_log)} requests were logged to requests.json — "
+            f"[dim]{len(request_log)} requests were logged to requests.json - "
             "the data may arrive as HTML or as a non-JSON content type. "
             "Check that file and the DOM dumps.[/dim]"
         )
 
     console.print(f"\n[bold green]✅ Capture written to {out_dir}[/bold green]")
-    console.print("[dim]Review it before sharing — then hand over the directory.[/dim]\n")
+    console.print("[dim]Review it before sharing - then hand over the directory.[/dim]\n")
 
 
 if __name__ == "__main__":

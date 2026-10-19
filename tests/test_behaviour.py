@@ -101,7 +101,7 @@ def test_count_stays_inside_its_range():
 
 def test_count_never_reaches_the_allowance():
     """
-    Landing exactly on the quota is a signature in itself — nobody searches until
+    Landing exactly on the quota is a signature in itself - nobody searches until
     their allowance runs out and then stops.
     """
     counts = [daily_search_count(date(2026, 1, 1) + __import__("datetime").timedelta(days=i))
@@ -283,7 +283,7 @@ def test_well_under_is_flagged_as_short():
 
 
 # --------------------------------------------------------------------------- #
-# Flags — the one judgement about a day
+# Flags - the one judgement about a day
 # --------------------------------------------------------------------------- #
 
 
@@ -332,7 +332,7 @@ def test_a_lone_item_that_failed_its_retry_is_only_a_warning():
 
 
 def test_a_lone_item_that_simply_failed_is_still_a_flag():
-    """Without the retry's warning — an old record, or an error — nothing changes."""
+    """Without the retry's warning - an old record, or an error - nothing changes."""
     assert flags_for({"keep_earning": _task(attempted=1, done=0)}) == ["keep_earning:0/1"]
 
 
@@ -447,7 +447,7 @@ def test_the_run_record_reads_done_from_whichever_field_the_task_has():
 def test_a_warned_item_does_not_come_back_as_a_short_verdict():
     """
     Five offers worth 55; the two 15s failed their retries. Judged against all 55, the
-    25 measured is short — a flag by another name for items that were only warnings.
+    25 measured is short - a flag by another name for items that were only warnings.
     """
     from rewards_bot import build_run_record
 
@@ -549,7 +549,7 @@ def test_app_only_offers_are_recognised_by_id_and_by_title():
 
 def test_app_only_offers_never_reach_a_run():
     """
-    Not because they fail — because they crowd out work that would have succeeded.
+    Not because they fail - because they crowd out work that would have succeeded.
 
     On 2026-09-02 five arrived at 10 points each, sorted to the front of a run capped at
     six, and "Quote of the day" was never attempted. Their destinations are ordinary

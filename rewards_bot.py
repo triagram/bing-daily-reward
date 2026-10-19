@@ -1,5 +1,5 @@
 """
-Entry point — runs the day's Rewards tasks and reports what they actually earned.
+Entry point - runs the day's Rewards tasks and reports what they actually earned.
 
 Each task returns a structured result rather than only logging, and the run ends with
 a table of measured point deltas. Nothing here prints a point figure it did not
@@ -13,7 +13,7 @@ observe: where a total could not be read it says so.
 
 Exit codes: 0 clean (or nothing to do); 1 crashed; 2 ran but Flags is not empty;
 3 no session and no terminal to sign in from; 4 the browser profile stayed busy.
-A scheduled run that finds the sign-in page stops there and records nothing —
+A scheduled run that finds the sign-in page stops there and records nothing -
 somebody has to run --login in a terminal.
 
 Everything the terminal shows is also appended, as plain text, to
@@ -53,7 +53,7 @@ from utils.task_searches import run_daily_searches
 RUN_LOG = Path(__file__).parent / "logs" / "runs.jsonl"
 OBSERVATION_DIR = Path(__file__).parent / "logs" / "observation"
 
-# The run finished, but a task is flagged — the observation window's criterion, from
+# The run finished, but a task is flagged - the observation window's criterion, from
 # flags_for(). Under a timer this is the difference between "boring" and "look".
 EXIT_FLAGGED = 2
 # No session, and no terminal to wait for one in. Distinct from a crash (1) so that
@@ -63,7 +63,7 @@ EXIT_SIGN_IN_REQUIRED = 3
 EXIT_PROFILE_BUSY = 4
 
 # Recorded so the day's log file can be written from what was actually shown, table
-# and warnings included — the tee that the observation window relied on, built in.
+# and warnings included - the tee that the observation window relied on, built in.
 console = Console(record=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -123,7 +123,7 @@ def print_history():
         def cell(name: str) -> str:
             task = tasks.get(name)
             if not task:
-                return "[dim]—[/dim]"
+                return "[dim]-[/dim]"
             points = task.get("points")
             done, attempted = task.get("done"), task.get("attempted")
             if points is None:
@@ -145,7 +145,7 @@ def print_history():
             finished,
             cell("daily_set"), cell("searches"), cell("keep_earning"),
             cell("explore_on_bing"),
-            f"{moved:+d}" if moved else "[dim]—[/dim]",
+            f"{moved:+d}" if moved else "[dim]-[/dim]",
             f"[bold]{overall:+d}[/bold]" if overall is not None else "[yellow]?[/yellow]",
             flags or "",
         )
@@ -161,7 +161,7 @@ def print_history():
 
 def print_report(argv: list[str]) -> int:
     """
-    Print the day's report — what `rewards-alert.sh report` sends to the phone.
+    Print the day's report - what `rewards-alert.sh report` sends to the phone.
 
     The date is the first YYYY-MM-DD after --report, else today. No record for that
     day exits 1 with nothing on stdout, which the sender reads as "nothing to say": a
@@ -201,7 +201,7 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
     """
     The line runs.jsonl gets: one entry per task, in the shape --history reads.
 
-    Explore on Bing carries two extras — the per-tile detail, which is the output that
+    Explore on Bing carries two extras - the per-tile detail, which is the output that
     matters for a task whose crediting rule is unknown, and the topics shelved rather
     than attempted, so that a day with a shelved tile is not read as a day with one
     fewer tile. The daily set and keep-earning carry their per-item detail for the
@@ -258,7 +258,7 @@ def sign_in_required(url: str) -> bool:
 
 async def wait_for_sign_in(page, context) -> None:
     """
-    Block until a person has signed in — or stop, if there is no person.
+    Block until a person has signed in - or stop, if there is no person.
 
     The persistent profile keeps the session for weeks, so this is rare, but when it
     happens under a timer there is nobody at the keyboard: input() on a stdin that is
@@ -314,7 +314,7 @@ async def main():
 
     console.print("\n[bold cyan]Microsoft Rewards[/bold cyan]")
     mode = ("signing in" if login_mode
-            else "dry run — reading state only" if dry_run
+            else "dry run - reading state only" if dry_run
             else "running today's tasks")
     console.print(f"[dim]{mode}[/dim]")
     start_day_log()
@@ -325,7 +325,7 @@ async def main():
 
     # The monitor holds the profile for seconds; wait it out rather than lose the day.
     if not await wait_for_profile(USER_DATA_DIR):
-        logger.error("The browser profile is still in use after five minutes — a browser "
+        logger.error("The browser profile is still in use after five minutes - a browser "
                      "window or another run has it open. Nothing was done.")
         sys.exit(EXIT_PROFILE_BUSY)
 
@@ -353,11 +353,11 @@ async def main():
             # Success means the session is usable, not that ENTER was pressed: the
             # balance has to be readable, which is what every run needs from it.
             if opening.total_points is None:
-                console.print("[bold red]Signed in, but the balance cannot be read — "
+                console.print("[bold red]Signed in, but the balance cannot be read - "
                               "the session is not usable yet.[/bold red]")
                 await context.close()
                 sys.exit(1)
-            console.print(f"  session works — balance [bold]{opening.balance}[/bold], "
+            console.print(f"  session works - balance [bold]{opening.balance}[/bold], "
                           f"total [bold]{opening.total_points}[/bold]\n")
             await context.close()
             return
@@ -382,10 +382,10 @@ async def main():
             ids = [o.offer_id for o in outstanding]
             if len(set(ids)) != len(ids):
                 console.print("\n[bold red]⚠ The same offer id is listed more than "
-                              "once — the parser is double-counting.[/bold red]")
+                              "once - the parser is double-counting.[/bold red]")
             elif len(outstanding) > 3:
                 console.print(f"\n[bold yellow]⚠ {len(outstanding)} outstanding for a "
-                              "three-card set, with distinct ids — more than one offer "
+                              "three-card set, with distinct ids - more than one offer "
                               "family is matching is_daily_set.[/bold yellow]")
             await context.close()
             return
@@ -436,7 +436,7 @@ async def main():
             if name == "claim":
                 moved = res.claimed
                 table.add_row("claim (moved, not earned)",
-                              "yes" if res.clicked else "—",
+                              "yes" if res.clicked else "-",
                               f"{moved:+d}" if moved else "0",
                               "1" if res.error else "0", "")
                 continue

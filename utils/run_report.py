@@ -3,15 +3,15 @@ The day's report, rendered from a run record for a phone screen.
 
 `rewards_bot.py --report` prints this for a recorded day and `rewards-alert.sh report`
 sends it, after every run, through the phone channels in alert.env. It is the one
-message this project sends that carries point figures — by the account holder's
+message this project sends that carries point figures - by the account holder's
 decision on 2026-10-05, which supersedes the earlier rule that no push does. The
 failure alert still carries none.
 
 Why the shape is what it is: Telegram shows a monospace block on a phone at roughly
 thirty characters before it wraps, and it wraps rather than scrolls, so an aligned
 line wider than that is torn in two. Every aligned line here stays within
-`TABLE_WIDTH`, which a test holds it to. Lines that may be long — error messages,
-offer ids — come after the table, one per line, where wrapping harms nothing.
+`TABLE_WIDTH`, which a test holds it to. Lines that may be long - error messages,
+offer ids - come after the table, one per line, where wrapping harms nothing.
 
 ntfy renders the same text in a proportional font, so its columns come out ragged.
 Known cost; the content is identical.
@@ -112,7 +112,7 @@ def _item_lines(task_name: str, entry: dict, field: str, marker: str,
         return []
     titles = _titles_by_key(entry)
     plural = noun if len(messages) == 1 else f"{noun}s"
-    lines = [f"{marker} {_TASK_LABELS.get(task_name, task_name)} — {len(messages)} {plural}"]
+    lines = [f"{marker} {_TASK_LABELS.get(task_name, task_name)} - {len(messages)} {plural}"]
     for raw in messages:
         handle, sep, message = raw.partition(": ")
         if sep and handle in titles:
@@ -128,7 +128,7 @@ def _verdict_lines(task_name: str, entry: dict) -> list[str]:
         return []
     shortfall = assess(entry.get("expected") or 0, entry.get("points"),
                        entry.get("attempted") or 0)
-    return [f"⚠ {_TASK_LABELS.get(task_name, task_name)} — {shortfall.verdict.value}: "
+    return [f"⚠ {_TASK_LABELS.get(task_name, task_name)} - {shortfall.verdict.value}: "
             f"{shortfall.message}"]
 
 
@@ -147,11 +147,11 @@ def render_report(record: dict) -> str:
     lines.append(_row("Task", "Done", "Points"))
     for name, entry in tasks.items():
         attempted = entry.get("attempted") or 0
-        done = f"{entry.get('done')}/{attempted}" if attempted else "—"
+        done = f"{entry.get('done')}/{attempted}" if attempted else "-"
         lines.append(_row(_label(name), done, _points(entry.get("points"))))
     claim = record.get("claim")
     if claim:
-        lines.append(_row("Claim (moved)", "yes" if claim.get("clicked") else "—",
+        lines.append(_row("Claim (moved)", "yes" if claim.get("clicked") else "-",
                           _points(claim.get("moved"))))
     lines.append(_row("Earned", "", _points(record.get("overall_delta"))))
     lines.append(_total_line(record))
@@ -165,7 +165,7 @@ def render_report(record: dict) -> str:
         if shelved:
             detail.append(f"Shelved, not attempted: {', '.join(shelved)}")
     if claim and claim.get("error"):
-        detail.append(f"⚠ Claim — {claim['error']}")
+        detail.append(f"⚠ Claim - {claim['error']}")
     if detail:
         lines.append("")
         lines += detail

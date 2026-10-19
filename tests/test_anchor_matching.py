@@ -3,7 +3,7 @@ Anchor location, against the two shapes that broke a run on 2026-08-21.
 
 These need a browser because the defects were in DOM matching, not in string building:
 a selector that looks correct fails on real markup. Nothing here goes near the network
-or the account — the page is set from a literal string — but chromium has to exist, so
+or the account - the page is set from a literal string - but chromium has to exist, so
 the module skips rather than fails where it does not (CI installs the library, not the
 browser).
 
@@ -116,7 +116,7 @@ def test_no_destination_and_no_query_yields_nothing(browser):
 # --------------------------------------------------------------------------- #
 #
 # Measured 2026-08-23 against a live capture: seven tiles, one distinct href between
-# them. Matching the destination — the right answer for every other card on the site —
+# them. Matching the destination - the right answer for every other card on the site -
 # picks the same card every time, which is what made three tiles look like a broken
 # mechanism when they had simply never been clicked.
 

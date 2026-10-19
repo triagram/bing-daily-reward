@@ -2,8 +2,8 @@
 Bounded retry with backoff, for operations that are safe to repeat.
 
 A single slow page load currently costs a whole task, and the tasks are worth 10-30
-points each. Most of what fails here is transient — a navigation timing out, a page
-still hydrating — and simply doing it again a moment later works.
+points each. Most of what fails here is transient - a navigation timing out, a page
+still hydrating - and simply doing it again a moment later works.
 
 **Only idempotent operations belong here.** Loading a page and reading state can be
 repeated freely; clicking a task card cannot. If a click succeeded but the check that
@@ -36,14 +36,14 @@ async def retry_async(
     itself a pattern, and these retries happen against the same host the rest of the
     run is talking to.
 
-    Raises the last exception if every attempt fails — a caller that wanted a default
+    Raises the last exception if every attempt fails - a caller that wanted a default
     should use `retry_or_none`.
     """
     last: Exception | None = None
     for attempt in range(1, attempts + 1):
         try:
             return await action()
-        except Exception as e:  # noqa: BLE001 — the point is to survive anything transient
+        except Exception as e:  # noqa: BLE001 - the point is to survive anything transient
             last = e
             if attempt == attempts:
                 break

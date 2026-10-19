@@ -2,7 +2,7 @@
 Collect points sitting in "Ready to claim".
 
 Earnings do not all land in the balance. A sizeable share arrives in a separate pot
-shown as "Ready to claim", and that pot **does not drain on its own** — it was observed
+shown as "Ready to claim", and that pot **does not drain on its own** - it was observed
 holding 115-121 points across several days and an overnight boundary without moving.
 Left alone it simply accumulates unspendable.
 
@@ -59,7 +59,7 @@ async def claim_pending(page: Page) -> ClaimResult:
 
     The tile is itself a button whose text reads "Ready to claim / <n> / Claim", so it
     is matched on the word rather than on a class name. Success is judged by the pot
-    shrinking, not by the click landing — the same rule the tasks follow.
+    shrinking, not by the click landing - the same rule the tasks follow.
     """
     result = ClaimResult()
 
@@ -77,14 +77,14 @@ async def claim_pending(page: Page) -> ClaimResult:
         result.balance_after = result.balance_before
         return result
 
-    logger.info(f"💰 [Claim] {result.pending_before} points pending — claiming ...")
+    logger.info(f"💰 [Claim] {result.pending_before} points pending - claiming ...")
 
     try:
         await page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3.0)
 
         # Claiming takes two steps. The "Ready to claim" tile is itself a button, but
-        # pressing it only opens a panel — the pot does not move. The panel then
+        # pressing it only opens a panel - the pot does not move. The panel then
         # carries a separate "Claim points" control that performs the claim. An
         # earlier version stopped after the first click and would have reported
         # success; the pot not shrinking is what caught it.

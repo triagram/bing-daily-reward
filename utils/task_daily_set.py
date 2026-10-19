@@ -1,5 +1,5 @@
 """
-Task 1 — the day's Daily Set cards.
+Task 1 - the day's Daily Set cards.
 
 Rewritten around the dashboard's own state. The previous version collected card
 locators once, reused them across page navigations, and picked the first three matches
@@ -177,7 +177,7 @@ async def run_daily_set(
 
     Only cards whose offer id carries that date are touched. The dashboard serves
     yesterday's, today's and tomorrow's at once, so a run without this filter acts on
-    the wrong day — which is what the previous version did.
+    the wrong day - which is what the previous version did.
     """
     day = day or date.today()
     result = DailySetResult()
@@ -235,7 +235,7 @@ async def run_daily_set(
         else:
             # Failed twice: a warning, not an error, by the account holder's rule of
             # 2026-10-11 (notes/roadmap.md). The late-credit pass below can still clear it.
-            logger.warning(f"     △ still incomplete after {method} — a warning, not an error")
+            logger.warning(f"     △ still incomplete after {method} - a warning, not an error")
             result.warnings.append(f"{offer.slot}: not marked complete after {method}")
             result.warned_points += offer.points or 0
         result.per_card.append(record)

@@ -10,7 +10,7 @@
 # this proves a fresh clone works.
 #
 # It never touches a Microsoft account. The tests parse a synthetic fixture and make
-# no network requests — the browser is never launched.
+# no network requests - the browser is never launched.
 
 name: tests
 

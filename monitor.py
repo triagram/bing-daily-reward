@@ -2,7 +2,7 @@
 Take a read-only sample of Rewards account state.
 
 Loads the dashboard, records what it says, and appends one line to
-logs/state_samples.jsonl. It never searches, clicks a task, or claims anything —
+logs/state_samples.jsonl. It never searches, clicks a task, or claims anything -
 the only request it makes is the one your browser makes when you open the dashboard.
 
 Each run also archives the raw HTML under captures/samples/. That matters more than
@@ -10,8 +10,8 @@ it looks: when the parser turns out to have missed a field, the archive can be
 re-parsed with the improved parser instead of going back to the account for another
 sample. Collect once, analyse many times.
 
-Run it daily and the questions we currently cannot answer — where the search counter
-lives, what resets overnight, whether points credit with a lag — answer themselves
+Run it daily and the questions we currently cannot answer - where the search counter
+lives, what resets overnight, whether points credit with a lag - answer themselves
 from the diffs.
 
     uv run python monitor.py            # take a sample
@@ -110,7 +110,7 @@ def load_history() -> list[dict]:
 
 
 def show_diff(previous: dict | None, current: dict):
-    """Report what moved since the last sample — the reason for sampling at all."""
+    """Report what moved since the last sample - the reason for sampling at all."""
     if not previous:
         console.print("[dim]No earlier sample to compare against.[/dim]")
         return
@@ -186,7 +186,7 @@ def print_history():
             record.get("sampled_at", "?"),
             str(balance),
             delta,
-            counters or "—",
+            counters or "-",
             str(record.get("outstanding_today", "?")),
         )
     console.print(table)
@@ -198,7 +198,7 @@ def profile_in_use() -> bool:
 
     Chromium allows only one process per user-data-dir. On a schedule this matters:
     a sample firing while the bot runs, or while the profile is open by hand, would
-    fail noisily or disturb the other session. Skipping is the right response — the
+    fail noisily or disturb the other session. Skipping is the right response - the
     next sample is only hours away.
     """
     return profile_lock.profile_in_use(USER_DATA_DIR)
@@ -224,7 +224,7 @@ async def take_sample(note: str) -> dict | None:
             await asyncio.sleep(4.0)
 
             if "login.live.com" in page.url or "signin" in page.url:
-                console.print("[red]Not signed in — sample aborted.[/red]")
+                console.print("[red]Not signed in - sample aborted.[/red]")
                 return None
 
             html = await page.content()
@@ -281,7 +281,7 @@ async def main():
 
     if profile_in_use():
         console.print(
-            "[yellow]Browser profile is in use — skipping this sample.[/yellow]\n"
+            "[yellow]Browser profile is in use - skipping this sample.[/yellow]\n"
             "[dim]Close the browser or wait for the current run to finish.[/dim]\n"
         )
         return

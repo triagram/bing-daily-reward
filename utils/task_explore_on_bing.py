@@ -1,5 +1,5 @@
 """
-Task 4 — the "Explore on Bing" tiles on /earn.
+Task 4 - the "Explore on Bing" tiles on /earn.
 
 A different offer family from `task_keep_earning.py`, and the reason that module was
 renamed: these render under their own heading and nothing here overlaps with it.
@@ -15,7 +15,7 @@ Three things about them shape this module:
 
 **They are worked, not clicked.** Every other offer in this project links to
 `bing.com/search?q=…` and completes on arrival. These link to the Bing *home page* with
-`rwAutoFlyout=exb`, and the account holder — who has done them by hand — reports it
+`rwAutoFlyout=exb`, and the account holder - who has done them by hand - reports it
 takes opening the tile **and** searching the topic, together. So the tile arms the offer
 for the session it opens, and the search has to happen inside that session.
 
@@ -28,7 +28,7 @@ building a `?q=` URL.
 **Availability comes from `isLocked`, never from the page.** A locked tile renders first
 in the section, in greyscale, and one browser profile has been seen showing the locked
 four as though they were open. An attempt on a locked tile earns nothing however it is
-searched — that is what an early manual test proved, having tested nothing else.
+searched - that is what an early manual test proved, having tested nothing else.
 
 Deliberately not wired into `rewards_bot.py`. It runs from `explore_on_bing.py` so that
 an unproven task cannot put a `zero` verdict into the daily run's Flags column, which is
@@ -74,14 +74,14 @@ logger = logging.getLogger("bing_rewards")
 #   financemarket  "the latest price of a specific stock" ✗  ->  "the latest price of Microsoft stock" ✓
 #   hotel          "hotels to stay at on your next …"     ✗  ->  "hotels to stay at in Edinburgh"      ✓
 #
-# All six name something Bing cannot supply for itself — a route, a product, a company, a
+# All six name something Bing cannot supply for itself - a route, a product, a company, a
 # word, a zone, a ticker. The last three were confirmed 3 of 3 on 2026-09-05 at 20:08, on
 # the same three tiles that had failed six hours earlier.
 #
 # One thing that comparison does *not* separate: those tiles had already been activated by
 # the failed attempt, so "the query fixed it" and "a second pass on an activated tile
-# fixed it" both fit. `recipe` and `lyrics` argue against the second — both failed their
-# same-day retry on an activated tile — but not decisively. The clean test costs nothing:
+# fixed it" both fit. `recipe` and `lyrics` argue against the second - both failed their
+# same-day retry on an activated tile - but not decisively. The clean test costs nothing:
 # topics recur (`mattress` passed 08-29 and again 09-05, `flowerdelivery` 08-28 and 09-03),
 # so these three will come round on unactivated tiles and either complete first time or
 # not. Do not add an override anywhere on the strength of the pattern alone.
@@ -97,15 +97,15 @@ logger = logging.getLogger("bing_rewards")
 # non-breaking space, which looked like the whole story; normalisation now strips those
 # at extraction (`dashboard_state.normalise_text`). It is not the story. A same-day retry
 # on 2026-09-04 typed the corrected "new recipes" and the tile still did not complete, so
-# the override that carried it was deleted rather than tuned — an entry that does not fix
+# the override that carried it was deleted rather than tuned - an entry that does not fix
 # anything is exactly the unmeasured guess this list refuses to hold. Unexplained, like
 # `lyrics`, and starting clean on its next appearance.
 #
 # Placeholders it *can* resolve are fine and need no entry: "a restaurant near you" and
 # "compare internet plans in your area" both completed untouched.
 #
-# The tempting generalisation — that Bing verticals need a concrete entity before they
-# render anything — does not survive 2026-08-25. `rentalcars`, `concerttickets` and
+# The tempting generalisation - that Bing verticals need a concrete entity before they
+# render anything - does not survive 2026-08-25. `rentalcars`, `concerttickets` and
 # `internetproviders` are all verticals, all searched with a placeholder and no entity
 # ("book rental cars for your next adventure", "tickets for concerts near you"), and all
 # three completed. So flights and shopping are exceptions whose common factor is not yet
@@ -118,11 +118,11 @@ logger = logging.getLogger("bing_rewards")
 VERIFIED_QUERIES: dict[str, str] = {
     "flight": "flights from London to Paris",
     "shopping": "buy wireless headphones",
-    # 2026-08-28. Failed on the prompt verbatim — "open roles at a specific company" —
+    # 2026-08-28. Failed on the prompt verbatim - "open roles at a specific company" -
     # and completed once the placeholder alone was substituted, nothing else changed.
     "jobs": "open roles at Microsoft",
     # 2026-09-05. Three of that day's four tiles failed together, and all three prompts
-    # read as an unfilled placeholder — "a word you don't understand", "a different time
+    # read as an unfilled placeholder - "a word you don't understand", "a different time
     # zone", "a specific stock". The fourth, "top-rated mattresses at great prices", named
     # a real thing and completed in the same run, which is what rules out the account
     # rather than the queries: every search those failing tiles typed still credited 3
@@ -141,7 +141,7 @@ VERIFIED_QUERIES: dict[str, str] = {
     #   09-06 12:30  'hotels to stay at on your next adventure'  ✗
     #   09-06 19:26  'hotels to stay at in Edinburgh'            ✓
     #
-    # It was not "the first valid attempt" — 08-30 was valid and passed. And it is not
+    # It was not "the first valid attempt" - 08-30 was valid and passed. And it is not
     # "this topic rather than a bad day": the identical query on the identical topic
     # passed one week and failed the next, with 08-23 discounted only because the
     # mechanism itself was wrong then.
@@ -150,11 +150,11 @@ VERIFIED_QUERIES: dict[str, str] = {
     # fixed it. The same doubt reaches every entry above: each was verified by a *second
     # attempt the same day*, and hotel now shows an attempt can fail and then succeed
     # with nothing changed at all. `recipe` and `lyrics` keep that from being the whole
-    # story — both failed their same-day retries — but an unactivated re-test is the only
+    # story - both failed their same-day retries - but an unactivated re-test is the only
     # thing that can separate these, and none of the seven has had one yet.
     "hotel": "hotels to stay at in Edinburgh",
-    # 2026-09-18. Three failures on the prompt verbatim, "new recipes" — 09-04 at 14:57
-    # and again at 18:09 with nothing changed, and 09-18 at 14:57 — then completed at
+    # 2026-09-18. Three failures on the prompt verbatim, "new recipes" - 09-04 at 14:57
+    # and again at 18:09 with nothing changed, and 09-18 at 14:57 - then completed at
     # 20:47 on the first try with a dish named. The sharpest separation in the ledger:
     # on this topic "the retry fixed it" was already dead before the entity was tried.
     "recipe": "new chicken curry recipes",
@@ -178,7 +178,7 @@ SHELVED_TOPICS: dict[str, str] = {
     # Four attempts, four failures, three query shapes: the prompt ("the lyrics of your
     # favorite song", 09-02), song alone ("Bohemian Rhapsody lyrics", 09-02), the title
     # ("Learn song lyrics", 09-16), and the shape three independent forum reports say
-    # works — "<artist> <song> lyrics" ("queen bohemian rhapsody lyrics", 09-16). Every
+    # works - "<artist> <song> lyrics" ("queen bohemian rhapsody lyrics", 09-16). Every
     # search credited its 3; the tile never flipped. Corrected 2026-10-11: the title
     # search on 09-16 was a parser gap, not a missing prompt; the other three failures
     # stand. See DEVELOP.md.
@@ -211,7 +211,7 @@ def query_for(offer: Offer) -> str | None:
 
     The first run searched the topic token out of the offer id, because these tiles
     parsed with no title and no description. That produced `timezonedates` and
-    `financemarket` — strings nobody would ever type — and completed none of four. The
+    `financemarket` - strings nobody would ever type - and completed none of four. The
     text was in the tile the whole time, one level down in its rendered children:
     "Search on Bing to see what time it is in a different time zone."
 
@@ -247,7 +247,7 @@ def outstanding_tiles(state) -> list[Offer]:
 
 
 def shelved_tiles(state) -> list[Offer]:
-    """Open tiles this run leaves alone on purpose — reported, never attempted."""
+    """Open tiles this run leaves alone on purpose - reported, never attempted."""
     return [o for o in _open_tiles(state) if topic_of(o) in SHELVED_TOPICS]
 
 
@@ -321,8 +321,8 @@ async def _find_tile_anchor(page: Page, offer: Offer):
 
     **Every tile in this section shares one URL.** Measured 2026-08-23: seven tiles,
     one distinct `href`, `…bing.com/?…&rwAutoFlyout=exb` for all of them. So matching
-    the whole destination — the strongest signature everywhere else in this project,
-    and what `find_offer_anchor` is built on — degenerates here into always clicking
+    the whole destination - the strongest signature everywhere else in this project,
+    and what `find_offer_anchor` is built on - degenerates here into always clicking
     whichever card the page happens to render first.
 
     That is the whole of what looked like a mechanism failure. On 08-23 the first tile
@@ -330,7 +330,7 @@ async def _find_tile_anchor(page: Page, offer: Offer):
     completed; the three attempted after it re-clicked that same finished card and were
     never activated. A retry that hour, starting with `hotel`, clicked the same card
     again and completed nothing. The queries were never the variable, and the
-    activation flow was right all along — `successToast` on the completed tile reads
+    activation flow was right all along - `successToast` on the completed tile reads
     "Activated! · Search on Bing to complete this activity".
 
     The title is unique: measured against the same capture, each of the four open tiles
@@ -394,7 +394,7 @@ async def _work_tile(page: Page, context: BrowserContext, offer: Offer) -> tuple
 
 
 # A retry types one more search. It is made only while at least this many remain in the
-# day's allowance, so that the day never lands exactly on the quota — the one figure the
+# day's allowance, so that the day never lands exactly on the quota - the one figure the
 # varying search count exists to stay under.
 RETRY_NEEDS_SEARCHES_LEFT = 2
 
@@ -466,7 +466,7 @@ async def run_explore_on_bing(
 
     for offer in todo:
         topic = topic_of(offer)
-        logger.info(f"   → {topic} — searching {query_for(offer)!r}")
+        logger.info(f"   → {topic} - searching {query_for(offer)!r}")
         record = {"offer_id": offer.offer_id, "topic": topic,
                   "query": query_for(offer), "title": offer.title,
                   "method": None, "confirmed": False}
@@ -542,8 +542,8 @@ async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Of
     One more attempt at every tile still undone; what fails again is a warning.
 
     The account holder's rule of 2026-10-11 (notes/roadmap.md): a retry has usually
-    fixed a failed tile — `personalloan` on 09-28 passed on the same words eight
-    minutes after failing — and one that survives it is not worth an alert. Each
+    fixed a failed tile - `personalloan` on 09-28 passed on the same words eight
+    minutes after failing - and one that survives it is not worth an alert. Each
     retry is a typed search, so the day's allowance is read once first and a retry
     that would reach the quota is skipped; that tile is a warning too.
     """
@@ -594,4 +594,4 @@ async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Of
             continue
         result.warnings.append(message)
         result.warned_points += TILE_POINTS
-        logger.warning(f"     △ {topic} still incomplete — a warning, not an error")
+        logger.warning(f"     △ {topic} still incomplete - a warning, not an error")

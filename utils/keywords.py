@@ -8,7 +8,7 @@ debugging while consecutive days share little vocabulary.
 
 Refinements are matched to the *kind* of topic rather than drawn from one pool. An
 earlier version applied any modifier to any subject and produced "film noir for small
-spaces" and "wildlife photography for small spaces" — grammatical, but not phrases a
+spaces" and "wildlife photography for small spaces" - grammatical, but not phrases a
 person would type. Nonsensical queries are one of the signals Rewards is documented to
 act on, so the shape of the text matters, not just its variety.
 
@@ -89,7 +89,7 @@ def generate(count: int, seed_date: date | None = None) -> list[str]:
     Build `count` search terms for a given day.
 
     Roughly a third are refinements of the topic just searched, which is what genuine
-    sequential searching looks like — and the refinement is drawn from the pool that
+    sequential searching looks like - and the refinement is drawn from the pool that
     suits that topic, so the result stays idiomatic.
     """
     rng = _rng(seed_date)

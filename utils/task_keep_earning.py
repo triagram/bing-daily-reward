@@ -1,16 +1,16 @@
 """
-Task 2 — the point-bearing offers that render under "Keep earning".
+Task 2 - the point-bearing offers that render under "Keep earning".
 
 Named for the heading most of them appear under, and deliberately **not** "Explore",
 because that name was wrong twice over. The page has a section literally headed
-"Explore on Bing" holding a different offer family — `ENUS_<topic>_exploreonbing_*`
+"Explore on Bing" holding a different offer family - `ENUS_<topic>_exploreonbing_*`
 tiles that this module has never touched and cannot complete, since they credit only
 when a search is made in the session the tile opens. Calling this task Explore led the
 notes to claim that section was covered when it was not, and led the account holder to
 read a clean run as a failure. See docs/DEVELOP.md.
 
 What it actually completes: `WW_Bing_MonthlyFeaturedTopic_*` and
-`ENstar_Rewards_DailyGlobalOffer_*` — quizzes, polls, puzzles and single-search offers
+`ENstar_Rewards_DailyGlobalOffer_*` - quizzes, polls, puzzles and single-search offers
 worth 5-15 points each.
 
 Selection is by *having a point value and being incomplete*, never by which heading
@@ -20,7 +20,7 @@ dashboard invents. Two consequences of the offer ids to know:
 - **Offer ids carry no date.** Daily-set ids embed one, which is what makes filtering
   by day possible; these look like `WW_Rewards_locked_level2_Aug26w2_offer1` or
   `ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday`. So "today's offers" cannot be
-  selected — only "outstanding" ones, which rotate rather than accumulate (Q7).
+  selected - only "outstanding" ones, which rotate rather than accumulate (Q7).
 - **Point values vary**: 5, 10 and 15 have all been seen, so what a run is worth is
   not a fixed multiple and has to be measured.
 - **The page mixes offers with promotional banners.** Banners have no `points`, and
@@ -90,7 +90,7 @@ async def _fetch_earn(page: Page):
 
 
 # Offers that only the Bing phone app can complete. This project drives a desktop
-# browser, so they are unreachable by architecture — a decision recorded 2026-08-16,
+# browser, so they are unreachable by architecture - a decision recorded 2026-08-16,
 # which this family then walked straight past by carrying a point value like any other
 # offer.
 APP_ONLY_FAMILY = "RewardsApp"
@@ -122,7 +122,7 @@ def outstanding_offers(state) -> list[Offer]:
     **App-only offers are excluded, and the reason is not merely that they fail.** On
     2026-09-02 five of them appeared at 10 points each. Being the highest-valued things
     outstanding they sorted to the front, filled the whole per-run cap of six, and pushed
-    "Quote of the day" out of the run entirely — so the cost was not five wasted
+    "Quote of the day" out of the run entirely - so the cost was not five wasted
     navigations but a real offer never attempted. Their destinations are ordinary
     `bing.com/search?q=…` URLs, which is why nothing else about them looks wrong.
     """
@@ -210,7 +210,7 @@ async def run_keep_earning(
     Complete the outstanding Explore offers.
 
     `limit` caps how many to do in one run; `None` uses `KEEP_EARNING_MAX_PER_RUN`. There is
-    no daily boundary to lean on here — Explore ids carry no date — so the cap is what
+    no daily boundary to lean on here - Explore ids carry no date - so the cap is what
     keeps a backlog day from becoming an unusually long burst.
 
     It is set to cover the observed range rather than to ration: an arbitrary limit of
@@ -381,4 +381,4 @@ async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Of
         result.warnings.append(message)
         result.warned_points += by_id[offer_id].points or 0
         logger.warning(f"     △ {record['title']!r} still incomplete after a retry "
-                       "— a warning, not an error")
+                       "- a warning, not an error")

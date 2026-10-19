@@ -22,12 +22,12 @@ dist/
 build/
 *.egg-info/
 
-# Browser profile — contains live session cookies. NEVER commit.
+# Browser profile - contains live session cookies. NEVER commit.
 browser_session/
 
 # Runtime artifacts
 debug_*.png
 logs/
 
-# Reconnaissance output — contains account state. Never commit.
+# Reconnaissance output - contains account state. Never commit.
 captures/

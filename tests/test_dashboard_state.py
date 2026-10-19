@@ -9,9 +9,9 @@ These tests turn that into a red test run instead.
 Two layers:
 
 - Against `fixtures/dashboard_min.html`, which is synthetic. It carries the shapes
-  learned from real captures — a direct `?q=` destination, a `checkuser?ru=` redirect,
+  learned from real captures - a direct `?q=` destination, a `checkuser?ru=` redirect,
   a completed card, a card from the previous day, an Explore offer with no date in its
-  id, a banner with no points, progress rings, and a Ready-to-claim pair — with no
+  id, a banner with no points, progress rings, and a Ready-to-claim pair - with no
   account data in it, so it can be committed and run anywhere, CI included.
 - Against whatever real captures happen to be on disk, skipped when there are none.
   Synthetic fixtures verify the parser does what it was written to do; real pages are
@@ -54,7 +54,7 @@ def state():
 
 def test_flight_stream_is_reassembled():
     stream = extract_flight_stream(FIXTURE.read_text(encoding="utf-8"))
-    assert stream, "no flight stream recovered — __next_f extraction is broken"
+    assert stream, "no flight stream recovered - __next_f extraction is broken"
     assert '"offerId"' in stream
 
 
@@ -123,8 +123,8 @@ def test_query_is_none_when_there_is_no_destination():
 # --------------------------------------------------------------------------- #
 #
 # Found live on 2026-08-19: a dry run reported six outstanding cards for a set that
-# has three. Each card shipped as two objects — the rendered element (offerId,
-# isCompleted, href) and the data behind it (title, points, destination) — and the
+# has three. Each card shipped as two objects - the rendered element (offerId,
+# isCompleted, href) and the data behind it (title, points, destination) - and the
 # dedup key included the very fields the two copies disagree on, so both survived.
 # The fixture carries an element copy of Child1 to keep that shape covered.
 
@@ -138,13 +138,13 @@ def test_one_offer_per_id_however_many_objects_ship_it(state):
 def test_the_split_card_keeps_the_data_half(state):
     """
     Child1 arrives twice and only one copy has the points and the destination. Losing
-    them leaves a card that cannot be opened and cannot be valued — which is what the
+    them leaves a card that cannot be opened and cannot be valued - which is what the
     live run produced.
     """
     card = next(o for o in state.offers if o.slot == "Child1" and o.day == TODAY)
     assert card.title == "Direct query card"
     assert card.points == 10
-    assert card.destination, "no destination — the card could not be opened"
+    assert card.destination, "no destination - the card could not be opened"
     assert card.query == "Sport events near me"
 
 
@@ -225,7 +225,7 @@ def test_balance_and_level(state):
 
 
 def test_ready_to_claim_is_read_from_the_rendered_tree(state):
-    """It has no field of its own — only a label node followed by a heading."""
+    """It has no field of its own - only a label node followed by a heading."""
     assert state.ready_to_claim == 77
 
 
@@ -267,7 +267,7 @@ def test_latest_real_capture_still_parses():
     page, because it is frozen. This runs the same parser over the newest real sample.
     """
     state = parse_dashboard(gzip.decompress(Path(REAL[-1]).read_bytes()).decode("utf-8"))
-    assert state.balance is not None, "no balance in a real capture — the page shape moved"
+    assert state.balance is not None, "no balance in a real capture - the page shape moved"
     assert state.offers, "no offers in a real capture"
     assert state.counters, "no activity counters in a real capture"
     assert any(o.is_daily_set for o in state.offers)
@@ -296,7 +296,7 @@ JEWELRY_ID = "ENUS_jewelry_exploreonbing_activation_Evergreen"
 JEWELRY_PROMPT = "Search on Bing to find stunning jewelry for any occasion"
 # A text row is length-prefixed in UTF-8 bytes, so the sample text carries multi-byte
 # characters: counting characters instead would land mid-way into the next row.
-SVG_PATH_TEXT = "M5 13h6 — café ✓"
+SVG_PATH_TEXT = "M5 13h6 - café ✓"
 
 
 def _page(stream: str, chunks: int = 3) -> str:
@@ -312,7 +312,7 @@ def _outlined_tile_stream() -> str:
     """
     The shape served on 2026-10-11: the tile's text block is its own row, and the tile
     holds only "$L75" where the text used to be. Around it, the row kinds that must not
-    be read as text — a hint row with no id, a client-component import, a text row.
+    be read as text - a hint row with no id, a client-component import, a text row.
     """
     text_bytes = len(SVG_PATH_TEXT.encode("utf-8"))
     tile = {

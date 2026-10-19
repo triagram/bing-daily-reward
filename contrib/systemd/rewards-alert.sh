@@ -9,14 +9,14 @@
 # Delivery: alerts go to the desktop always (the run needs the desktop session anyway,
 # so if the notification cannot reach you, neither could the run) and to the phone
 # when ~/.config/bing-daily-reward/alert.env, outside this repository, configures a
-# channel: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID for Telegram, NTFY_TOPIC for ntfy —
+# channel: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID for Telegram, NTFY_TOPIC for ntfy -
 # either, or both. An alert is one sentence and never carries a point figure.
 #
 # The report is the exception, by the account holder's decision on 2026-10-05: it
 # carries the day's figures, goes to the phone only, and is sent after every run.
 # The bot renders it (rewards_bot.py --report); this script only delivers it. On a
 # flagged day the report already says what the flag is, so "failed 2" keeps the
-# desktop notification and skips the phone — one push, not two.
+# desktop notification and skips the phone - one push, not two.
 set -u
 REPO=/projects/bing-daily-reward
 ENV_FILE="$HOME/.config/bing-daily-reward/alert.env"
@@ -34,15 +34,15 @@ case "${1:-}" in
     unit="${2:-rewards-bot.service}"
     code=$(systemctl --user show -p ExecMainStatus --value "$unit")
     case "$code" in
-      2) msg="Today's run finished with flags — read logs/observation/$today.log"
+      2) msg="Today's run finished with flags - read logs/observation/$today.log"
          phone=no ;;
-      3) msg="Sign-in required — run: uv run python rewards_bot.py --login" ;;
-      4) msg="Browser profile was busy for five minutes — is a browser window open?" ;;
-      5) msg="No desktop session this morning — the run needs you logged in; it did nothing" ;;
-      *) msg="Today's run crashed (exit $code) — journalctl --user -u $unit" ;;
+      3) msg="Sign-in required - run: uv run python rewards_bot.py --login" ;;
+      4) msg="Browser profile was busy for five minutes - is a browser window open?" ;;
+      5) msg="No desktop session this morning - the run needs you logged in; it did nothing" ;;
+      *) msg="Today's run crashed (exit $code) - journalctl --user -u $unit" ;;
     esac ;;
   test)
-    msg="Test message — the alert channel works" ;;
+    msg="Test message - the alert channel works" ;;
   report)
     # No record for today means the run stopped before recording one (sign-in, busy
     # profile, no desktop); that is the failure alert's business. Say nothing.
@@ -54,7 +54,7 @@ case "${1:-}" in
     # Still running, or already recorded: nothing to say.
     systemctl --user is-active --quiet rewards-bot.service && exit 0
     grep -q "\"date\": \"$today\"" "$REPO/logs/runs.jsonl" 2>/dev/null && exit 0
-    msg="No run recorded today — the timer did not fire, or the machine was off" ;;
+    msg="No run recorded today - the timer did not fire, or the machine was off" ;;
   *)
     echo "usage: $0 failed <unit> | missing | report | test" >&2; exit 2 ;;
 esac

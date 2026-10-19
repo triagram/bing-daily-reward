@@ -3,8 +3,8 @@ Judge whether a run fell short, and say so loudly.
 
 A broken run is silent by default: it completes, prints `0/3 confirmed, +0 points`,
 and exits zero. Nothing distinguishes that from a day with nothing to do. The two
-causes that matter — a selector breaking after a Microsoft redesign, and the account
-being restricted — produce exactly that output, and both are worth knowing about the
+causes that matter - a selector breaking after a Microsoft redesign, and the account
+being restricted - produce exactly that output, and both are worth knowing about the
 same day rather than a week later.
 
 The comparison is against what the run *could* have earned: the point values the page
@@ -43,7 +43,7 @@ def assess(expected: int, measured: int | None, attempted: int,
 
     `tolerance` is the fraction of the advertised value below which a run counts as
     short. It is loose on purpose: measured totals do not always match the advertised
-    ones — an Explore run on 2026-08-17 measured 50 against 40 advertised — so a tight
+    ones - an Explore run on 2026-08-17 measured 50 against 40 advertised - so a tight
     threshold would cry wolf. What this is for is catching the difference between
     "roughly worked" and "earned nothing", not auditing individual point values.
 
@@ -58,7 +58,7 @@ def assess(expected: int, measured: int | None, attempted: int,
         return Shortfall(
             Verdict.UNKNOWN, expected, None,
             f"attempted {attempted} item(s) worth {expected} pts, but the point total "
-            "could not be read — the run cannot say whether it worked",
+            "could not be read - the run cannot say whether it worked",
         )
 
     if measured <= 0:
@@ -80,7 +80,7 @@ def assess(expected: int, measured: int | None, attempted: int,
 
 
 # One item failing its retry looks like chance; every item of a task failing together
-# looks like breakage. Below this many items, a task with nothing done is only warned —
+# looks like breakage. Below this many items, a task with nothing done is only warned -
 # the account holder's choice of 2026-10-11, since a lone failed card on a Friday or a
 # Saturday is the ordinary case, not a broken page.
 MIN_ITEMS_FOR_BREAKAGE = 2
@@ -88,14 +88,14 @@ MIN_ITEMS_FOR_BREAKAGE = 2
 
 def flags_for(tasks: dict) -> list[str]:
     """
-    Why a recorded run is not clean — one entry per task, empty when it is.
+    Why a recorded run is not clean - one entry per task, empty when it is.
 
     This is the observation window's exit criterion, and the one judgement the
     project makes about a day: a task is clean when its verdict is not zero / short /
     unknown, it recorded no errors, and it did everything it attempted. Errors flag on
     their own, not only through the verdict: the 2026-08-19 run failed a card outright
     and still assessed `ok`, because 20 of an advertised 30 clears the tolerance. The
-    tolerance is right — advertised values are a guide — but a run carrying an error is
+    tolerance is right - advertised values are a guide - but a run carrying an error is
     never clean, whatever it earned.
 
     `--history` prints these; a scheduled run turns a non-empty list into its exit
@@ -125,6 +125,6 @@ def flags_for(tasks: dict) -> list[str]:
 
 
 def warnings_for(tasks: dict) -> list[str]:
-    """Items that failed even on their retry, one entry per task — reported, not flagged."""
+    """Items that failed even on their retry, one entry per task - reported, not flagged."""
     return [f"{name}:{len(task['warnings'])}warn"
             for name, task in tasks.items() if task.get("warnings")]

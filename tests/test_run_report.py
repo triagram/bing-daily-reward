@@ -1,5 +1,5 @@
 """
-Tests for the daily report — the one message that carries point figures to a phone.
+Tests for the daily report - the one message that carries point figures to a phone.
 
 The constraint that matters is width: a Telegram monospace block on a phone wraps at
 about thirty characters, and a wrapped aligned line is worse than no alignment. So the
@@ -103,7 +103,7 @@ def test_columns_line_up():
 def test_flagged_day_names_the_task_the_offer_and_the_problem():
     text = render_report(FLAGGED_RUN)
     assert "⚠ keep_earning:1err" in text
-    assert "⚠ Keep earning — 1 error" in text
+    assert "⚠ Keep earning - 1 error" in text
     assert "• Do you know the answer?: not marked complete after anchor-click" in text
     assert "  (ENstar_Rewards_DailyGlobalOffer_Evergreen_Sunday)" in text
 
@@ -133,11 +133,11 @@ def test_a_warned_day_reads_clean_and_counts_its_warnings():
 
 def test_each_warning_names_its_task_its_item_and_the_whole_message():
     text = render_report(WARNED_RUN)
-    assert "△ Keep earning — 1 warning" in text
+    assert "△ Keep earning - 1 warning" in text
     assert ("• Mars exploration: not marked complete after anchor-click, "
             "nor after a retry (anchor-click)") in text
     assert "  (WW_Bing_MonthlyFeaturedTopic_20260930_44)" in text
-    assert "△ Explore — 1 warning" in text
+    assert "△ Explore - 1 warning" in text
     assert "• Shine bright: not marked complete after" in text
     assert "  (jewelry)" in text
 
@@ -181,7 +181,7 @@ def test_a_short_verdict_is_explained_and_shelved_topics_are_listed():
     record["tasks"]["explore_on_bing"]["shelved"] = ["lyrics"]
     text = render_report(record)
     assert "⚠ searches:short" in text
-    assert "⚠ Searches — short:" in text
+    assert "⚠ Searches - short:" in text
     assert "Shelved, not attempted: lyrics" in text
 
 
@@ -195,7 +195,7 @@ def test_idle_task_and_unreadable_total_are_shown_not_invented():
     record["overall_delta"] = None
     text = render_report(record)
     rows = _table_rows(text)
-    assert next(r for r in rows if r.startswith("Keep earning")).split()[-2:] == ["—", "0"]
+    assert next(r for r in rows if r.startswith("Keep earning")).split()[-2:] == ["-", "0"]
     assert next(r for r in rows if r.startswith("Searches")).split()[-1] == "?"
     assert "Total unknown" in text
-    assert "⚠ Searches — unknown:" in text
+    assert "⚠ Searches - unknown:" in text

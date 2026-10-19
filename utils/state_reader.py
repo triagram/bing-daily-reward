@@ -37,7 +37,7 @@ async def fetch_state(page: Page, settle_seconds: float = 3.5) -> DashboardState
     await asyncio.sleep(settle_seconds)
     state = parse_dashboard(await page.content())
     if state.balance is None:
-        logger.warning("Could not read point balance — the page layout may have changed.")
+        logger.warning("Could not read point balance - the page layout may have changed.")
     return state
 
 
@@ -55,8 +55,8 @@ async def fetch_search_progress(page: Page) -> tuple[int, int] | None:
     """
     Read today's search points as (earned, cap), e.g. (45, 60).
 
-    The dashboard has no search counter in its embedded state — the `Bing` ring is a
-    1/1 gate (Q6) — but the points-breakdown modal renders the real figure. It is
+    The dashboard has no search counter in its embedded state - the `Bing` ring is a
+    1/1 gate (Q6) - but the points-breakdown modal renders the real figure. It is
     rendered client-side, so this reads the laid-out text rather than parsing the
     flight stream, which carries only the i18n strings.
 
@@ -93,7 +93,7 @@ def searches_remaining(progress: tuple[int, int] | None, reserve: int = 0) -> in
     How many more searches can still earn, or None if it could not be read.
 
     `reserve` is searches held back for work later in the same run that also types
-    into the search box — the Explore on Bing tiles — so that this task's count plus
+    into the search box - the Explore on Bing tiles - so that this task's count plus
     theirs stays short of the quota.
     """
     if not progress:

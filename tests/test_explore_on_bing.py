@@ -2,7 +2,7 @@
 Selecting Explore on Bing tiles.
 
 The one manual attempt at this offer type, on 2026-08-20, was spent on a tile the
-server had locked — it renders first in the section, so it looked available. Nothing
+server had locked - it renders first in the section, so it looked available. Nothing
 was learned and no points were earned. Everything here is about not repeating that.
 """
 
@@ -45,7 +45,7 @@ def tile(topic, *, completed=False, locked=False, disabled=None,
 def no_override_for(topic):
     """
     The fallback tests name real topics from real captures, and the override map grows
-    every time a tile fails — `dictionary` and `timezonedates` both acquired an entry on
+    every time a tile fails - `dictionary` and `timezonedates` both acquired an entry on
     2026-09-05. What those tests check is the *order* query_for resolves in, so a topic
     joining the map must not turn them red.
     """

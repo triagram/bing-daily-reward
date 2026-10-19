@@ -90,7 +90,7 @@ logger = logging.getLogger("bing_rewards")
 # lyrics", and is still unexplained. It was briefly written off as a malformed tile
 # because it carried no description. That reading was wrong, and so was the next one,
 # that activation removes the text: the prompt was on the page throughout, in a row the
-# parser did not follow until 2026-10-11 (DEVELOP.md). No override is kept for it; the
+# parser did not follow until 2026-10-11. No override is kept for it; the
 # next appearance starts from a clean tile.
 #
 # `recipe` is the second of that kind. Its prompt arrived as "new\u00a0recipes" with a
@@ -181,7 +181,7 @@ SHELVED_TOPICS: dict[str, str] = {
     # works - "<artist> <song> lyrics" ("queen bohemian rhapsody lyrics", 09-16). Every
     # search credited its 3; the tile never flipped. Corrected 2026-10-11: the title
     # search on 09-16 was a parser gap, not a missing prompt; the other three failures
-    # stand. See DEVELOP.md.
+    # stand.
     "lyrics": "2026-09-16: four failures across three query shapes",
 }
 
@@ -541,7 +541,7 @@ async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Of
     """
     One more attempt at every tile still undone; what fails again is a warning.
 
-    The account holder's rule of 2026-10-11 (notes/roadmap.md): a retry has usually
+    The account holder's rule of 2026-10-11: a retry has usually
     fixed a failed tile - `personalloan` on 09-28 passed on the same words eight
     minutes after failing - and one that survives it is not worth an alert. Each
     retry is a typed search, so the day's allowance is read once first and a retry

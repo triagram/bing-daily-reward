@@ -186,7 +186,7 @@ def verdict_for(res) -> Shortfall:
     Judge a task on the items that were not warned.
 
     A warned item failed, was retried and failed again, and is reported as a warning
-    rather than flagged (notes/roadmap.md, 2026-10-11). Leaving its advertised points
+    rather than flagged (the account holder's rule of 2026-10-11). Leaving its advertised points
     in the expected total would let the same missing item come back as a "short"
     verdict, which is a flag by another name.
     """

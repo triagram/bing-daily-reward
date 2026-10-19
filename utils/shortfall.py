@@ -102,7 +102,7 @@ def flags_for(tasks: dict) -> list[str]:
     code. Both read this function so the two can never drift apart.
 
     Since 2026-10-11 an item that failed, was retried once and failed again is a
-    *warning*, not a flag: the account holder's rule (notes/roadmap.md), on the evidence
+    *warning*, not a flag: the account holder's rule, on the evidence
     that a retry usually fixes it and one missed item is not worth an alert. Warned
     items count towards "everything attempted accounted for". What stays a flag is a
     task of `MIN_ITEMS_FOR_BREAKAGE` or more items that got none of them done, which

@@ -127,9 +127,8 @@ seconds. Neither needs the other to be running.
 
 ## Scheduled sampling
 
-`monitor.py` is worth running on a schedule rather than by hand. The questions in
-[../../docs/DEVELOP.md](../../docs/DEVELOP.md#open-questions) are about change over
-time, and that needs regular observations.
+`monitor.py` is worth running on a schedule rather than by hand: it is for seeing how
+the dashboard changes over time, and that needs regular observations.
 
 ```bash
 cp rewards-monitor.{service,timer} ~/.config/systemd/user/

@@ -1,9 +1,7 @@
 # Design
 
 Why the project is built the way it is. Stable: this changes when a design decision
-changes, not when the code does. Where a number came from is in
-[DEVELOP.md](DEVELOP.md), the lab notebook; the routine is in the
-[README](../README.md).
+changes, not when the code does. The routine is in the [README](../README.md).
 
 ## Goal
 
@@ -118,5 +116,4 @@ not warned, so a warned item cannot come back as a "short" verdict.
 ## Deferred
 
 A wider inter-search gap, an occasional click on a result, and the unexplored `Edge`
-counter - one at a time, after a clean week under the timer. See
-[notes/roadmap.md](../notes/roadmap.md).
+counter - one at a time, after a clean week under the timer.

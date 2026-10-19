@@ -8,8 +8,7 @@ Description=Run the Rewards tasks once a day, in the morning
 # between 08:49 and 09:19 local (07:49-08:19 UTC), and a run before the rotation only
 # sees the previous day's pair - a pair is lost whenever such a run is followed by one
 # after the rotation (09-25/26, 20 points). Winter time moves the rotation earlier in
-# local terms, not later, so 09:30 holds through the clock change. Evidence in
-# docs/DEVELOP.md, "A keep-earning card credited more than five minutes after its click".
+# local terms, not later, so 09:30 holds through the clock change.
 OnCalendar=*-*-* 09:30:00
 RandomizedDelaySec=3h
 # A day the machine was off is run at the next login. Catch-up is for a day that did

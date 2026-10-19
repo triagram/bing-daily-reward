@@ -234,7 +234,7 @@ async def run_daily_set(
             logger.info(f"     ✓ confirmed complete")
         else:
             # Failed twice: a warning, not an error, by the account holder's rule of
-            # 2026-10-11 (notes/roadmap.md). The late-credit pass below can still clear it.
+            # 2026-10-11. The late-credit pass below can still clear it.
             logger.warning(f"     △ still incomplete after {method} - a warning, not an error")
             result.warnings.append(f"{offer.slot}: not marked complete after {method}")
             result.warned_points += offer.points or 0

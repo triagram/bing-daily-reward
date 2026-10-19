@@ -1,6 +1,5 @@
 [Unit]
 Description=Microsoft Rewards daily run
-Documentation=file:///projects/bing-daily-reward/docs/OBSERVATION.md
 # Any non-zero exit: 1 crashed, 2 ran with flags, 3 sign-in needed, 4 profile busy,
 # 5 no desktop session within the wait window.
 OnFailure=rewards-alert.service

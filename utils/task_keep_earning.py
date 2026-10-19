@@ -7,7 +7,7 @@ because that name was wrong twice over. The page has a section literally headed
 tiles that this module has never touched and cannot complete, since they credit only
 when a search is made in the session the tile opens. Calling this task Explore led the
 notes to claim that section was covered when it was not, and led the account holder to
-read a clean run as a failure. See docs/DEVELOP.md.
+read a clean run as a failure.
 
 What it actually completes: `WW_Bing_MonthlyFeaturedTopic_*` and
 `ENstar_Rewards_DailyGlobalOffer_*` - quizzes, polls, puzzles and single-search offers
@@ -341,7 +341,7 @@ async def _retry_undone(state_page: Page, context: BrowserContext, todo: list[Of
     """
     One more attempt at every offer still undone; what fails again is a warning.
 
-    The account holder's rule of 2026-10-11 (notes/roadmap.md): a retry has usually
+    The account holder's rule of 2026-10-11: a retry has usually
     fixed a failed item, and one that survives it is not worth an alert. It runs after
     the late-credit wait, so an offer that was only slow is not clicked twice, and its
     own wait afterwards gives the retry the same chance to land.

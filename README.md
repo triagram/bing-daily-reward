@@ -19,9 +19,7 @@ It can run on a systemd user timer, every morning at a random time. After each r
 sends a short report as a push notification (Telegram or ntfy), and a desktop
 notification if something went wrong.
 
-- **How it is built and why:** [docs/DESIGN.md](docs/DESIGN.md)
-- **What the dashboard actually returns, open questions, findings:** [docs/DEVELOP.md](docs/DEVELOP.md)
-- **Automation and notifications in detail:** [contrib/systemd/README.md](contrib/systemd/README.md)
+Automation and notifications in detail: [contrib/systemd/README.md](contrib/systemd/README.md).
 
 ---
 
@@ -203,16 +201,10 @@ Everything tunable is in `config.py`:
 - **One account, no VPN or proxy, and that won't change.** Both are the most commonly
   reported causes of suspension, and this project won't make either easy.
 
-## Testing
+## Development
 
-```bash
-uv run pytest -q
-```
-
-The suite parses a synthetic copy of the dashboard, plus any real captures on disk, and
-one module drives a local Chromium against fixed HTML (it skips where Chromium is not
-installed). Nothing in it reaches the network or an account, so it is safe to run
-anywhere, but it also proves nothing about a live run. CI runs it on every push.
+`uv run pytest -q` runs the offline tests; they never reach the network or an account.
+How it is built and why: [docs/DESIGN.md](docs/DESIGN.md).
 
 ---
 

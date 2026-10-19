@@ -1,5 +1,5 @@
 """
-Tests for the retry-once-then-warn rule of 2026-10-11 (notes/roadmap.md).
+Tests for the retry-once-then-warn rule of 2026-10-11.
 
 Every item gets one retry; an item that fails again is a warning, reported in the daily
 report rather than flagged. The retry only runs against the real page on a bad day, so

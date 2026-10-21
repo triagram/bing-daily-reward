@@ -21,8 +21,8 @@ before recording anything has no report; the failure notification covers that ca
 recorded, because a run that never started cannot report its own absence.
 
 ```bash
-cp rewards-bot.{service,timer} rewards-alert.service rewards-check.{service,timer} \
-   ~/.config/systemd/user/
+systemctl --user link "$PWD"/rewards-bot.{service,timer} "$PWD"/rewards-alert.service \
+   "$PWD"/rewards-check.{service,timer}
 systemctl --user daemon-reload
 
 systemctl --user start rewards-bot.service      # one run now, while you watch
@@ -31,6 +31,12 @@ journalctl --user -u rewards-bot.service -f     # ... and its output
 systemctl --user enable --now rewards-bot.timer rewards-check.timer
 systemctl --user list-timers 'rewards-*'        # when each next fires
 ```
+
+Run these from this directory. `link` points systemd at the files here instead of
+copying them. The units name no paths: `%Y` is the directory a linked unit really
+lives in, the repository is two levels up from it, and the scripts find it the same
+way from their own location. So the clone can live anywhere, and a moved clone only
+needs linking again. `uv` is expected at `~/.local/bin/uv`, where its installer puts it.
 
 **Linger is on for this user** (the monitor needs it), so the bot's timer fires whether
 or not you are logged in. But the bot opens a real window, which needs your desktop
@@ -131,16 +137,13 @@ seconds. Neither needs the other to be running.
 the dashboard changes over time, and that needs regular observations.
 
 ```bash
-cp rewards-monitor.{service,timer} ~/.config/systemd/user/
+systemctl --user link "$PWD"/rewards-monitor.{service,timer}
 systemctl --user daemon-reload
 systemctl --user enable --now rewards-monitor.timer
 
 # Run when not logged in
 loginctl enable-linger "$USER"
 ```
-
-Adjust `WorkingDirectory` and the `uv` path in the service file if the repository
-lives elsewhere.
 
 ```bash
 systemctl --user list-timers rewards-monitor.timer   # when it next fires

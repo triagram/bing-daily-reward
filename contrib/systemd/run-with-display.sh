@@ -1,7 +1,8 @@
 #!/bin/sh
-# Wait for the desktop session's display, then exec the command given.
+# Wait for the desktop session's display, then exec the command given, from the
+# repository root (two levels up from this script, wherever the clone lives).
 #
-#   run-with-display.sh /home/mengyuan/.local/bin/uv run python rewards_bot.py
+#   run-with-display.sh ~/.local/bin/uv run python rewards_bot.py
 #
 # Why this exists: the user manager lingers (the read-only monitor needs it), so the
 # bot's timer fires whether or not anyone is logged in - and the bot opens a real
@@ -23,6 +24,7 @@ PROBE=${DISPLAY_PROBE:-xset q}
 EXIT_NO_DISPLAY=5
 
 [ $# -ge 1 ] || { echo "usage: $0 <command...>" >&2; exit 2; }
+CDPATH= cd -- "$(dirname -- "$0")/../.." || exit 1
 deadline=$(( $(date +%s) + WINDOW_S ))
 
 while :; do

@@ -18,7 +18,8 @@
 # flagged day the report already says what the flag is, so "failed 2" keeps the
 # desktop notification and skips the phone - one push, not two.
 set -u
-REPO=/projects/bing-daily-reward
+# Two levels up from this script, wherever the clone lives.
+REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 ENV_FILE="$HOME/.config/bing-daily-reward/alert.env"
 today=$(date +%F)
 # systemd's environment has no ~/.local/bin on PATH; the service names uv by path too.

@@ -3,6 +3,6 @@ Description=Microsoft Rewards read-only state sample
 
 [Service]
 Type=oneshot
-WorkingDirectory=/projects/bing-daily-reward
-ExecStart=/home/mengyuan/.local/bin/uv run python monitor.py --note scheduled
+# %Y is this file's real directory once linked; the repository is two levels up.
+ExecStart=%h/.local/bin/uv --directory=%Y/../.. run python monitor.py --note scheduled
 TimeoutStartSec=300

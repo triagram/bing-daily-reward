@@ -76,10 +76,14 @@ count is meant to avoid. Re-run a failed day; leave a clean one alone.
 ## Automation
 
 ```bash
-cp contrib/systemd/rewards-*.{service,timer} ~/.config/systemd/user/
+systemctl --user link "$PWD"/contrib/systemd/rewards-*.{service,timer}
 systemctl --user daemon-reload
 systemctl --user enable --now rewards-bot.timer rewards-check.timer
 ```
+
+Run these from the repository root. `link` points systemd at the files in the clone
+instead of copying them, so the clone can live anywhere; if you move it, link again.
+`uv` is expected at `~/.local/bin/uv`, where its installer puts it.
 
 `rewards-bot.timer` starts the run at 09:30 local time plus a random delay of up to
 three hours. If you are not logged in yet, it waits for your desktop session. Leave the

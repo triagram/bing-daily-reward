@@ -27,13 +27,19 @@ EXIT_NO_DISPLAY=5
 CDPATH= cd -- "$(dirname -- "$0")/../.." || exit 1
 deadline=$(( $(date +%s) + WINDOW_S ))
 
+# The probe and the command must see the same environment. An XAUTHORITY set but empty
+# hides ~/.Xauthority, which is where labwc's Xwayland on Raspberry Pi OS keeps its
+# cookie: the probe was refused there while the command itself would have got in.
+use_session_display() {
+  export DISPLAY="$session_display"
+  if [ -n "$session_xauth" ]; then export XAUTHORITY="$session_xauth"; fi
+}
+
 while :; do
   session_display=$(systemctl --user show-environment 2>/dev/null | sed -n 's/^DISPLAY=//p')
   session_xauth=$(systemctl --user show-environment 2>/dev/null | sed -n 's/^XAUTHORITY=//p')
-  if [ -n "$session_display" ] \
-     && DISPLAY="$session_display" XAUTHORITY="$session_xauth" $PROBE >/dev/null 2>&1; then
-    export DISPLAY="$session_display"
-    [ -n "$session_xauth" ] && export XAUTHORITY="$session_xauth"
+  if [ -n "$session_display" ] && ( use_session_display && $PROBE ) >/dev/null 2>&1; then
+    use_session_display
     exec "$@"
   fi
   if [ "$(date +%s)" -ge "$deadline" ]; then

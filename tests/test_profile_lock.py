@@ -1,5 +1,5 @@
 """
-Two processes, one browser profile: the bot must wait for the monitor, not crash.
+Two processes, one browser profile: the bot must wait for the other, not crash.
 """
 
 import asyncio

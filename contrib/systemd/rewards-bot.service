@@ -7,8 +7,8 @@ OnFailure=rewards-alert.service
 [Service]
 Type=oneshot
 # The wrapper waits (up to three hours) for the desktop session's display, then runs
-# the bot in it. The user manager lingers for the monitor's sake, so the timer fires
-# logged-in or not; the window the bot opens needs a session. See the script.
+# the bot in it. The user manager lingers, so the timer fires logged-in or not; the
+# window the bot opens needs a session. See the script.
 # No paths here: %Y is this file's real directory once linked, and the wrapper runs
 # the bot from the repository root, so the clone can live anywhere.
 ExecStart=%Y/run-with-display.sh %h/.local/bin/uv run python rewards_bot.py
@@ -17,5 +17,5 @@ ExecStart=%Y/run-with-display.sh %h/.local/bin/uv run python rewards_bot.py
 # profile, no desktop) has no report, and OnFailure= speaks for it instead.
 ExecStopPost=%Y/rewards-alert.sh report
 # Three hours of waiting, then a run of ten to fifteen minutes, plus up to five
-# waiting for the monitor's hold on the profile.
+# waiting for a busy profile.
 TimeoutStartSec=14400

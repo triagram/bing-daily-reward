@@ -1,8 +1,0 @@
-[Unit]
-Description=Microsoft Rewards read-only state sample
-
-[Service]
-Type=oneshot
-# %Y is this file's real directory once linked; the repository is two levels up.
-ExecStart=%h/.local/bin/uv --directory=%Y/../.. run python monitor.py --note scheduled
-TimeoutStartSec=300

@@ -80,12 +80,11 @@ not warned, so a warned item cannot come back as a "short" verdict.
 - A user timer fires at a fixed morning hour plus a random delay of up to three hours,
   and is persistent, so a day the machine was off is caught up at boot.
 - The bot opens a real window, which needs the desktop session; the user manager
-  lingers for the monitor's sake, so the service runs through a wrapper that waits for
-  the session's display (re-read each minute - a fresh login re-imports it) and gives up
-  with its own exit code after the window.
-- The bot and the read-only monitor share one browser profile. The monitor skips a
-  sample while the bot holds it; the bot waits for the monitor, which holds it for
-  seconds.
+  lingers, so that a morning nobody logs in still ends in an alert, and the service
+  runs through a wrapper that waits for the session's display (re-read each minute - a
+  fresh login re-imports it) and gives up with its own exit code after the window.
+- The browser profile has one user at a time. The bot waits a few minutes for it, since
+  a tool run by hand may be finishing, and gives up with its own exit code after that.
 - Exit codes carry the outcome: 0 clean, 1 crashed, 2 ran with flags, 3 sign-in
   required, 4 profile busy, 5 no desktop session. `OnFailure=` hands the code to one
   alert script, which words it and sends it - a desktop notification always, a phone

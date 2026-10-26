@@ -141,7 +141,7 @@ configured. A longer walkthrough, including the error codes you might see, is in
 To stop the daily run but keep everything, so it can be switched back on later:
 
 ```bash
-systemctl --user disable --now rewards-bot.timer rewards-check.timer rewards-monitor.timer
+systemctl --user disable --now rewards-bot.timer rewards-check.timer
 ```
 
 The `enable --now` line under *Automation* switches it back on. To remove it completely,
@@ -164,7 +164,6 @@ uv run python rewards_bot.py --report        # today's report, as it is pushed (
 uv run python rewards_bot.py --dry-run       # read today's state, change nothing
 uv run python explore_on_bing.py --dry-run   # which Explore tiles are open, and what would be searched
 uv run python explore_on_bing.py             # retry the Explore tiles alone, after a failed day, not a clean one
-uv run python monitor.py --history           # the read-only state samples
 ```
 
 Each run adds one line to `logs/runs.jsonl` and saves everything it printed to

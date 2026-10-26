@@ -1,8 +1,7 @@
 # Scheduling
 
-Two things run on a timer here: the read-only monitor (below, the original), and since
-2026-09-17 the daily run itself. Both are user units, so no root and nothing
-system-wide.
+The daily run and its evening check run on timers here. They are user units, so no
+root and nothing system-wide.
 
 ## The daily run
 
@@ -38,15 +37,16 @@ lives in, the repository is two levels up from it, and the scripts find it the s
 way from their own location. So the clone can live anywhere, and a moved clone only
 needs linking again. `uv` is expected at `~/.local/bin/uv`, where its installer puts it.
 
-**Linger is on for this user** (the monitor needs it), so the bot's timer fires whether
-or not you are logged in. But the bot opens a real window, which needs your desktop
-session. So `rewards-bot.service` runs through `run-with-display.sh`, which waits up to
-three hours for the session's display to appear, re-reading `DISPLAY` from the user
-manager every minute (a fresh login re-imports it), and then runs the bot in it. If
-you log in at 09:15 the run starts within the minute; if you stay away all morning it
-exits 5, which the notification reports as "no desktop session this morning". A day
-the machine was off is caught up at boot (`Persistent=true`) and then waits for you the
-same way.
+**Linger is on for this user** (`loginctl enable-linger "$USER"`), so the timers fire
+whether or not you are logged in: a morning nobody logs in ends in an alert rather than
+silence, and the evening check still runs. But the bot opens a real window, which
+needs your desktop session. So `rewards-bot.service` runs through `run-with-display.sh`,
+which waits up to three hours for the session's display to appear, re-reading `DISPLAY`
+from the user manager every minute (a fresh login re-imports it), and then runs the
+bot in it. If you log in at 09:15 the run starts within the minute; if you stay away
+all morning it exits 5, which the notification reports as "no desktop session this
+morning". A day the machine was off is caught up at boot (`Persistent=true`) and then
+waits for you the same way.
 
 Enabling the timer for the first time after 09:30 fires a catch-up run at once, and so
 does moving `OnCalendar=` to a time that has already passed today. To skip that, stamp
@@ -126,31 +126,3 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
 | `401 Unauthorized` | the token is wrong |
 | `400 Bad Request: chat not found` | wrong chat id, or *Start* was never pressed |
 | `403 Forbidden: bot was blocked by the user` | unblock the bot in its chat |
-
-The bot and the monitor share one browser profile. The monitor skips a sample while
-the bot holds it; the bot waits up to five minutes for the monitor, which holds it for
-seconds. Neither needs the other to be running.
-
-## Scheduled sampling
-
-`monitor.py` is worth running on a schedule rather than by hand: it is for seeing how
-the dashboard changes over time, and that needs regular observations.
-
-```bash
-systemctl --user link "$PWD"/rewards-monitor.{service,timer}
-systemctl --user daemon-reload
-systemctl --user enable --now rewards-monitor.timer
-
-# Run when not logged in
-loginctl enable-linger "$USER"
-```
-
-```bash
-systemctl --user list-timers rewards-monitor.timer   # when it next fires
-journalctl --user -u rewards-monitor.service -n 30   # what it did
-systemctl --user start rewards-monitor.service       # sample now
-systemctl --user disable --now rewards-monitor.timer # stop scheduling
-```
-
-Four samples a day bracket the daily reset and give enough resolution to see credit
-arriving late. Once the reset time is pinned down, one a day is plenty.

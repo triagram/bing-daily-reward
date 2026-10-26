@@ -4,8 +4,8 @@
 #
 #   run-with-display.sh ~/.local/bin/uv run python rewards_bot.py
 #
-# Why this exists: the user manager lingers (the read-only monitor needs it), so the
-# bot's timer fires whether or not anyone is logged in - and the bot opens a real
+# Why this exists: the user manager lingers (so a day nobody logs in still alerts), so
+# the bot's timer fires whether or not anyone is logged in - and the bot opens a real
 # window. Without this, a logged-out morning is a failed launch, a false "crashed"
 # alert, and no catch-up, since the timer did fire. With it, the run waits for you:
 # log in at 09:15 and it starts within the minute; stay away all morning and it

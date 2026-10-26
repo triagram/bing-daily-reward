@@ -323,7 +323,7 @@ async def main():
 
     USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # The monitor holds the profile for seconds; wait it out rather than lose the day.
+    # A tool run by hand may still be closing the profile; wait it out rather than lose the day.
     if not await wait_for_profile(USER_DATA_DIR):
         logger.error("The browser profile is still in use after five minutes - a browser "
                      "window or another run has it open. Nothing was done.")

@@ -2,10 +2,9 @@
 One Chromium process per profile.
 
 Chromium refuses to open a user-data-dir another process holds, and marks the hold
-with two files inside it. Two things share `browser_session/`: the daily run and the
-read-only monitor, and on a schedule their windows overlap. The monitor skips when the
-profile is busy - its next sample is hours away. The bot cannot skip a day so cheaply,
-so it waits: the monitor holds the profile for seconds.
+with two files inside it. The scheduled run shares `browser_session/` with the tools
+run by hand (`--dry-run`, `explore_on_bing.py`, `recon.py`), and one of them may be
+finishing when the timer fires. The bot cannot skip a day cheaply, so it waits.
 """
 
 import asyncio
@@ -23,7 +22,7 @@ async def wait_for_profile(user_data_dir: Path, max_wait_s: float = 300.0,
                            poll_s: float = 5.0) -> bool:
     """
     Wait for the profile to be free. True once it is; False if it stayed held for
-    `max_wait_s` - which means a browser or another run is open, not the monitor.
+    `max_wait_s` - which means a browser window or another run is open.
     """
     waited = 0.0
     while profile_in_use(user_data_dir):

@@ -362,6 +362,9 @@ def test_one_flag_per_task_and_idle_is_not_a_flag():
     ("https://rewards.bing.com/?refd=...", False),
     ("https://login.live.com/oauth20_authorize.srf?client_id=...", True),
     ("https://login.microsoftonline.com/common/oauth2/signin?x=1", True),
+    ("https://rewards.bing.com/about", True),
+    ("https://rewards.bing.com/about/?ref=x", True),
+    ("https://rewards.bing.com/earn", False),
 ])
 def test_the_sign_in_page_is_recognised_by_its_url(url, expected):
     from rewards_bot import sign_in_required

@@ -27,6 +27,7 @@ import asyncio
 import logging
 from datetime import datetime, date
 from pathlib import Path
+from urllib.parse import urlparse
 
 from playwright.async_api import async_playwright
 from rich.console import Console
@@ -252,8 +253,15 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
 
 
 def sign_in_required(url: str) -> bool:
-    """Microsoft bounced the dashboard load to its sign-in flow."""
-    return "login.live.com" in url or "signin" in url
+    """
+    Microsoft did not serve the dashboard: it bounced the load to its sign-in flow, or
+    sent a browser with no session at all to the public about page. A fresh profile
+    lands there, not on login.live.com (seen 2026-10-26), and took it for the dashboard.
+    """
+    parsed = urlparse(url)
+    is_signed_out_landing = (parsed.hostname == "rewards.bing.com"
+                             and parsed.path.rstrip("/") == "/about")
+    return "login.live.com" in url or "signin" in url or is_signed_out_landing
 
 
 async def wait_for_sign_in(page, context) -> None:

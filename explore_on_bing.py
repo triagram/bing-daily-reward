@@ -26,6 +26,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from config import HEADLESS, REWARDS_URL, USER_DATA_DIR
+from rewards_bot import sign_in_required
 from utils.state_reader import fetch_state
 from utils.task_explore_on_bing import (
     _fetch_earn,
@@ -63,7 +64,7 @@ async def main():
         await page.goto(REWARDS_URL, wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3.0)
 
-        if "login.live.com" in page.url or "signin" in page.url:
+        if sign_in_required(page.url):
             console.print("\n[bold yellow]Sign-in required.[/bold yellow] "
                           "Sign in, then press ENTER here.\n")
             await asyncio.to_thread(input, "ENTER once signed in > ")

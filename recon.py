@@ -33,6 +33,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from config import USER_DATA_DIR, REWARDS_URL, REWARDS_EARN_URL
+from rewards_bot import sign_in_required
 
 console = Console()
 logging.basicConfig(
@@ -146,7 +147,7 @@ async def capture(out_dir: Path, do_redact: bool):
             await page.evaluate("window.scrollTo(0, 0)")
             await asyncio.sleep(1.5)
 
-            if "login.live.com" in page.url or "signin" in page.url:
+            if sign_in_required(page.url):
                 logger.error("Session is not signed in - run rewards_bot.py once to log in first.")
                 await context.close()
                 return None

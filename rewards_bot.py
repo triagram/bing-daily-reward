@@ -25,6 +25,7 @@ read the next day. (The systemd journal has the same text, streamed.)
 import sys
 import json
 import asyncio
+import socket
 import logging
 from datetime import datetime, date
 from pathlib import Path
@@ -201,9 +202,20 @@ def verdict_for(res) -> Shortfall:
                   res.points_earned, res.attempted - len(warned))
 
 
+def machine_name() -> str:
+    """
+    Which machine ran, for the report: two with timers on means two runs a day.
+
+    Only the part before the first dot. The report goes to the phone, and a full name
+    can carry the network's domain, which says where the machine is.
+    """
+    return socket.gethostname().split(".")[0]
+
+
 def build_run_record(run_date: str, opening_total: int | None, closing_total: int | None,
                      results: dict, *, started_at: str | None = None,
-                     opening: dict | None = None, closing: dict | None = None) -> dict:
+                     opening: dict | None = None, closing: dict | None = None,
+                     machine: str | None = None) -> dict:
     """
     The line runs.jsonl gets: one entry per task, in the shape --history reads.
 
@@ -215,7 +227,8 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
     it is what a person reads.
 
     `started_at`, `opening` and `closing` (balance, unclaimed, total) were added
-    2026-10-05 for the daily report; records before that lack them and are read fine.
+    2026-10-05 for the daily report, `machine` 2026-11-18; records before that lack
+    them and are read fine.
     """
     overall = (closing_total - opening_total
                if closing_total is not None and opening_total is not None else None)
@@ -243,6 +256,7 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
         tasks[name] = entry
     return {
         "date": run_date,
+        "machine": machine,
         "started_at": started_at,
         "opening": opening,
         "closing": closing,
@@ -534,6 +548,7 @@ async def main():
                      "total": opening.total_points},
             closing={"balance": closing.balance, "unclaimed": closing.ready_to_claim,
                      "total": closing.total_points},
+            machine=machine_name(),
         )
         record_run(record)
         console.print(f"[dim]Run recorded in {RUN_LOG.relative_to(Path(__file__).parent)}[/dim]")

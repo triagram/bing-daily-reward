@@ -477,6 +477,22 @@ def test_the_run_record_keeps_explore_tiles_and_what_was_shelved():
     assert record["claim"] is None
 
 
+def test_the_run_record_names_the_machine():
+    from rewards_bot import build_run_record
+
+    record = build_run_record("2026-11-18", 100, 100, {}, machine="pi")
+    assert record["machine"] == "pi"
+
+
+def test_the_machine_name_drops_the_domain(monkeypatch):
+    import rewards_bot
+
+    monkeypatch.setattr(rewards_bot.socket, "gethostname", lambda: "desk.example.org")
+    assert rewards_bot.machine_name() == "desk"
+    monkeypatch.setattr(rewards_bot.socket, "gethostname", lambda: "pi")
+    assert rewards_bot.machine_name() == "pi"
+
+
 def test_an_unreadable_total_leaves_the_overall_delta_unknown():
     from rewards_bot import build_run_record
 

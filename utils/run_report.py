@@ -71,6 +71,12 @@ def _time_line(record: dict) -> str:
     return "time unknown"
 
 
+def _machine_lines(record: dict) -> list[str]:
+    """Records before 2026-11-18 do not say which machine ran them."""
+    machine = record.get("machine")
+    return [f"Ran on {machine}"] if machine else []
+
+
 def _title_line(record: dict) -> str:
     day = record.get("date") or "unknown date"
     try:
@@ -142,7 +148,7 @@ def render_report(record: dict) -> str:
     if warned:
         status += f", {warned} warning" + ("" if warned == 1 else "s")
 
-    lines = [_title_line(record), _time_line(record), status, ""]
+    lines = [_title_line(record), _time_line(record), *_machine_lines(record), status, ""]
 
     lines.append(_row("Task", "Done", "Points"))
     for name, entry in tasks.items():

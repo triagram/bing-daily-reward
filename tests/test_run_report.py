@@ -199,3 +199,15 @@ def test_idle_task_and_unreadable_total_are_shown_not_invented():
     assert next(r for r in rows if r.startswith("Searches")).split()[-1] == "?"
     assert "Total unknown" in text
     assert "⚠ Searches - unknown:" in text
+
+
+def test_the_report_names_the_machine_that_ran_it():
+    record = copy.deepcopy(CLEAN_RUN)
+    record["machine"] = "pi"
+    lines = render_report(record).splitlines()
+    assert lines[2] == "Ran on pi"
+    assert lines[3] == "✓ clean"
+
+
+def test_a_record_without_a_machine_has_no_machine_line():
+    assert "Ran on" not in render_report(CLEAN_RUN)

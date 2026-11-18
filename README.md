@@ -46,9 +46,11 @@ uv run playwright install chromium   # the browser build Playwright drives
 uv run python rewards_bot.py --login
 ```
 
-A Chromium window opens on the Rewards dashboard. Sign in there. The command reads your
-balance to confirm the session works, then exits. The session is kept in
-`browser_session/` and reused after that.
+A Chromium window opens on the Rewards dashboard. Sign in there (Microsoft may ask a
+new device to verify). The command reads your balance to confirm the session works,
+then opens Bing: if a cookie banner appears, click **Accept**, since searches earn
+nothing until it is answered. The session is kept in `browser_session/` and reused
+after that.
 
 > [!CAUTION]
 > Never commit or share `browser_session/`. It is a Chromium profile with your
@@ -84,6 +86,11 @@ systemctl --user enable --now rewards-bot.timer rewards-check.timer
 Run these from the repository root. `link` points systemd at the files in the clone
 instead of copying them, so the clone can live anywhere; if you move it, link again.
 `uv` is expected at `~/.local/bin/uv`, where its installer puts it.
+
+Turn the timers on in one place only: two machines mean two runs a day. To move,
+disable them on the old machine first ([Uninstall](#uninstall)), and if today has
+already run there, stamp the new one before enabling it
+([how](contrib/systemd/README.md#the-daily-run)).
 
 `rewards-bot.timer` starts the run at 09:30 local time plus a random delay of up to
 three hours. If you are not logged in yet, it waits for your desktop session. Leave the

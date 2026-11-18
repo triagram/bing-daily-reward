@@ -6,11 +6,11 @@
 #   rewards-alert.sh report          ExecStopPost= of the run: the day's report
 #   rewards-alert.sh test            send one line through every channel, by hand
 #
-# Delivery: alerts go to the desktop always (the run needs the desktop session anyway,
-# so if the notification cannot reach you, neither could the run) and to the phone
-# when ~/.config/bing-daily-reward/alert.env, outside this repository, configures a
-# channel: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID for Telegram, NTFY_TOPIC for ntfy -
-# either, or both. An alert is one sentence and never carries a point figure.
+# Delivery: alerts go to the desktop when it has a notification service (the run needs
+# the desktop session anyway, so if the notification cannot reach you, neither could
+# the run) and to the phone when ~/.config/bing-daily-reward/alert.env, outside this
+# repository, configures a channel: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID for
+# Telegram, NTFY_TOPIC for ntfy - either, or both. An alert is one sentence and never carries a point figure.
 #
 # The report is the exception, by the account holder's decision on 2026-10-05: it
 # carries the day's figures, goes to the phone only, and is sent after every run.
@@ -60,7 +60,14 @@ case "${1:-}" in
     echo "usage: $0 failed <unit> | missing | report | test" >&2; exit 2 ;;
 esac
 
-if [ "$desktop" = yes ]; then
+# A desktop without a notification service (the Pi's, 2026-10-26) only gets a D-Bus
+# error from notify-send, so it is skipped there. busctl lists activatable names too:
+# a service that starts on demand counts.
+has_notification_service() {
+  busctl --user list 2>/dev/null | grep -q '^org\.freedesktop\.Notifications '
+}
+
+if [ "$desktop" = yes ] && has_notification_service; then
   notify-send -u critical "Microsoft Rewards" "$msg" || true
 fi
 [ "$phone" = yes ] && [ -r "$ENV_FILE" ] || exit 0

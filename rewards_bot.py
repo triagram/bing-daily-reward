@@ -10,6 +10,7 @@ observe: where a total could not be read it says so.
     uv run python rewards_bot.py --history  # what past runs earned
     uv run python rewards_bot.py --report [YYYY-MM-DD]  # the day's report, as the phone gets it
     uv run python rewards_bot.py --login    # sign in by hand; confirms the session works
+                                            # and Bing's cookie banner is answered
 
 Exit codes: 0 clean (or nothing to do); 1 crashed; 2 ran but Flags is not empty;
 3 no session and no terminal to sign in from; 4 the browser profile stayed busy.
@@ -41,6 +42,7 @@ from config import (
     RUN_EXPLORE_ON_BING,
     USER_DATA_DIR,
 )
+from utils.bing_consent import consent_banner_shown, open_bing_home, wait_until_answered
 from utils.claim import claim_pending
 from utils.profile_lock import wait_for_profile
 from utils.run_report import render_report
@@ -62,6 +64,9 @@ EXIT_FLAGGED = 2
 EXIT_SIGN_IN_REQUIRED = 3
 # The profile stayed held for the whole wait: a browser or another run has it open.
 EXIT_PROFILE_BUSY = 4
+
+# How long --login waits for a person to answer Bing's cookie banner.
+CONSENT_ANSWER_WAIT_S = 300
 
 # Recorded so the day's log file can be written from what was actually shown, table
 # and warnings included - the tee that the observation window relied on, built in.
@@ -284,6 +289,36 @@ async def wait_for_sign_in(page, context) -> None:
     await asyncio.to_thread(input, "ENTER once signed in > ")
 
 
+async def bing_consent_answered(page) -> bool:
+    """
+    --login's second check: a session that reads the dashboard still earns nothing from
+    searches while Bing's cookie banner is unanswered, which a fresh profile in the UK
+    is shown (2026-10-27). Waits for a person to answer it, then reloads to see the
+    answer was kept.
+    """
+    await open_bing_home(page)
+    if not await consent_banner_shown(page):
+        console.print("  Bing shows no cookie banner\n")
+        return True
+
+    # Accept is the answer that was measured to restore search credit; Reject never was.
+    console.print("[bold yellow]Bing shows its cookie banner.[/bold yellow] Click "
+                  "[bold]Accept[/bold] in the browser window: until it is answered, "
+                  "searches earn nothing.")
+    if not await wait_until_answered(page, CONSENT_ANSWER_WAIT_S):
+        console.print("[bold red]The banner was not answered within "
+                      f"{CONSENT_ANSWER_WAIT_S // 60} minutes.[/bold red] Run --login again.")
+        return False
+    await open_bing_home(page)
+    if await consent_banner_shown(page):
+        console.print("[bold red]The banner came back after a reload: the answer was not "
+                      "kept.[/bold red]")
+        return False
+
+    console.print("  Bing's cookie banner answered, and still gone after a reload\n")
+    return True
+
+
 _day_log: Path | None = None
 
 
@@ -366,8 +401,11 @@ async def main():
                 await context.close()
                 sys.exit(1)
             console.print(f"  session works - balance [bold]{opening.balance}[/bold], "
-                          f"total [bold]{opening.total_points}[/bold]\n")
+                          f"total [bold]{opening.total_points}[/bold]")
+            is_bing_ready = await bing_consent_answered(page)
             await context.close()
+            if not is_bing_ready:
+                sys.exit(1)
             return
         console.print(
             f"  balance [bold]{opening.balance}[/bold]  ·  "

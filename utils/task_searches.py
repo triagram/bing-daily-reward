@@ -13,7 +13,8 @@ from utils import keywords
 from config import POINTS_PER_SEARCH
 from utils.humanizer import daily_search_count, human_scroll, human_type, search_gap
 from utils.retry import retry_async
-from utils.state_reader import fetch_search_progress, fetch_state, searches_remaining
+from utils.state_reader import (day_already_searched, fetch_search_progress, fetch_state,
+                                searches_credited, searches_remaining)
 
 logger = logging.getLogger("bing_rewards")
 
@@ -38,6 +39,9 @@ class SearchResult:
     per_search: list[dict] = field(default_factory=list)
     # Searches pay a flat rate, so what a run is worth is simply its length.
     expected_points: int = 0
+    # Set when the run searched nothing because the day already had its searches:
+    # how many were credited before it started. The report says so.
+    already_credited: int | None = None
 
     @property
     def points_earned(self) -> int | None:
@@ -150,6 +154,15 @@ async def run_daily_searches(
         # quota - the one number the varying count exists to stay under. Observed
         # rather than assumed: the points breakdown reports the real figure.
         progress = await fetch_search_progress(state_page)
+        credited = searches_credited(progress)
+        if day_already_searched(credited):
+            logger.warning(f"⚠ [Searches] {credited} searches already credited today, before "
+                           "this run: skipping them. Has another machine run today?")
+            result.already_credited = credited
+            if owns_state_page:
+                await state_page.close()
+            return result
+
         remaining = searches_remaining(progress, reserve_searches)
         if remaining is not None:
             held = f" after holding {reserve_searches} back" if reserve_searches else ""

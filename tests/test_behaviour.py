@@ -20,7 +20,8 @@ from config import (
 from utils import keywords
 from utils.humanizer import daily_search_count, search_gap
 from utils.shortfall import flags_for, warnings_for
-from utils.state_reader import searches_remaining
+from utils.state_reader import (day_already_searched, searches_credited,
+                                searches_remaining)
 
 DAY = date(2026, 8, 17)
 
@@ -145,6 +146,63 @@ def test_searches_remaining(progress, expected):
 )
 def test_a_reservation_comes_off_the_remaining_allowance(progress, reserve, expected):
     assert searches_remaining(progress, reserve) == expected
+
+
+@pytest.mark.parametrize(
+    "progress, credited",
+    [((0, 60), 0), ((21, 60), 7), ((58, 60), 19), (None, None)],
+)
+def test_searches_credited(progress, credited):
+    assert searches_credited(progress) == credited
+
+
+@pytest.mark.parametrize(
+    "credited, is_searched",
+    [(0, False),
+     (5, False),         # the most any logged first run started with
+     (DAILY_SEARCH_MIN - 1, False),
+     (DAILY_SEARCH_MIN, True),
+     (20, True),
+     (None, False)],     # unreadable: search, as before the check
+)
+def test_a_day_counts_as_searched_from_the_smallest_draw(credited, is_searched):
+    assert day_already_searched(credited) is is_searched
+
+
+class _ReachedTheBrowser(BaseException):
+    """Not an Exception, so the task's own error handling lets it through."""
+
+
+def _searches_with_progress(monkeypatch, progress):
+    """The search task up to its first browser call, with the breakdown read stubbed."""
+    import asyncio
+    from utils import task_searches
+
+    async def fake_progress(_page):
+        return progress
+
+    async def reached_the_browser(*_args, **_kwargs):
+        raise _ReachedTheBrowser
+
+    monkeypatch.setattr(task_searches, "fetch_search_progress", fake_progress)
+    monkeypatch.setattr(task_searches, "fetch_state", reached_the_browser)
+    return asyncio.run(task_searches.run_daily_searches(None, state_page=object()))
+
+
+def test_a_second_run_searches_nothing_and_says_why(monkeypatch):
+    result = _searches_with_progress(monkeypatch, (33, 60))
+    assert result.attempted == 0
+    assert result.already_credited == 11
+
+
+def test_a_first_run_is_not_stopped_by_the_check(monkeypatch):
+    with pytest.raises(_ReachedTheBrowser):
+        _searches_with_progress(monkeypatch, (15, 60))
+
+
+def test_an_unreadable_breakdown_does_not_stop_the_run(monkeypatch):
+    with pytest.raises(_ReachedTheBrowser):
+        _searches_with_progress(monkeypatch, None)
 
 
 # --------------------------------------------------------------------------- #
@@ -475,6 +533,30 @@ def test_the_run_record_keeps_explore_tiles_and_what_was_shelved():
     assert explore["shelved"] == ["lyrics"]
     assert explore["attempted"] == 1          # the shelved tile is not an attempt
     assert record["claim"] is None
+
+
+def test_a_skipped_search_is_recorded_and_not_flagged():
+    from rewards_bot import build_run_record
+    from utils.task_searches import SearchResult
+
+    record = build_run_record("2026-11-18", 100, 100, {
+        "searches": SearchResult(already_credited=11),
+        "daily_set": _Task(3, 3, 30, 30),
+    })
+    assert record["tasks"]["searches"]["already_credited"] == 11
+    assert "already_credited" not in record["tasks"]["daily_set"]
+    assert flags_for(record["tasks"]) == []
+
+
+def test_a_run_that_searched_records_no_skip():
+    from rewards_bot import build_run_record
+    from utils.task_searches import SearchResult
+
+    record = build_run_record("2026-11-18", 100, 130, {
+        "searches": SearchResult(attempted=10, submitted=10, total_before=100,
+                                 total_after=130, expected_points=30),
+    })
+    assert "already_credited" not in record["tasks"]["searches"]
 
 
 def test_the_run_record_names_the_machine():

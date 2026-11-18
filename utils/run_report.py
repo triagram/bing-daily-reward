@@ -129,6 +129,14 @@ def _item_lines(task_name: str, entry: dict, field: str, marker: str,
     return lines
 
 
+def _skipped_search_lines(entry: dict) -> list[str]:
+    credited = entry.get("already_credited")
+    if not credited:
+        return []
+    return [f"△ Searches skipped: {credited} were already credited before this run. "
+            "Has another machine run today?"]
+
+
 def _verdict_lines(task_name: str, entry: dict) -> list[str]:
     if entry.get("verdict") not in ("zero", "short", "unknown"):
         return []
@@ -165,6 +173,7 @@ def render_report(record: dict) -> str:
     detail = []
     for name, entry in tasks.items():
         detail += _verdict_lines(name, entry)
+        detail += _skipped_search_lines(entry)
         detail += _item_lines(name, entry, "errors", "⚠", "error")
         detail += _item_lines(name, entry, "warnings", "△", "warning")
         shelved = entry.get("shelved") or []

@@ -13,7 +13,7 @@ import re
 
 from playwright.async_api import Page
 
-from config import REWARDS_URL, POINTS_PER_SEARCH
+from config import DAILY_SEARCH_MIN, REWARDS_URL, POINTS_PER_SEARCH
 from utils.dashboard_state import DashboardState, parse_dashboard
 from utils.retry import retry_async
 
@@ -100,3 +100,24 @@ def searches_remaining(progress: tuple[int, int] | None, reserve: int = 0) -> in
         return None
     earned, cap = progress
     return max(0, (cap - earned) // POINTS_PER_SEARCH - reserve)
+
+
+def searches_credited(progress: tuple[int, int] | None) -> int | None:
+    """How many searches today has already paid for, or None if it could not be read."""
+    if not progress:
+        return None
+    earned, _cap = progress
+    return earned // POINTS_PER_SEARCH
+
+
+def day_already_searched(credited: int | None) -> bool:
+    """
+    Whether today had a run's worth of searches before this run searched at all.
+
+    That is a second run, most likely on another machine left with its timers on, and
+    searching again would add a second burst near the quota. The threshold is the
+    smallest count a run draws; no logged run, 2026-08-19 to 10-26, started with more
+    than 5 credited, so a first run is not taken for a second. An unreadable figure is
+    not taken for a searched day: the run searches, as it did before this check.
+    """
+    return credited is not None and credited >= DAILY_SEARCH_MIN

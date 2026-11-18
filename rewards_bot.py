@@ -253,6 +253,8 @@ def build_run_record(run_date: str, opening_total: int | None, closing_total: in
             entry["offers"] = getattr(res, "per_offer", [])
         elif name == "daily_set":
             entry["cards"] = getattr(res, "per_card", [])
+        elif name == "searches" and getattr(res, "already_credited", None):
+            entry["already_credited"] = res.already_credited
         tasks[name] = entry
     return {
         "date": run_date,

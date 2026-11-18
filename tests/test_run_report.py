@@ -211,3 +211,15 @@ def test_the_report_names_the_machine_that_ran_it():
 
 def test_a_record_without_a_machine_has_no_machine_line():
     assert "Ran on" not in render_report(CLEAN_RUN)
+
+
+def test_a_skipped_search_says_why_and_stays_clean():
+    record = copy.deepcopy(CLEAN_RUN)
+    record["tasks"]["searches"] = {"attempted": 0, "done": 0, "points": None,
+                                   "expected": 0, "verdict": "idle", "errors": [],
+                                   "warnings": [], "already_credited": 11}
+    text = render_report(record)
+    assert "✓ clean" in text
+    assert ("△ Searches skipped: 11 were already credited before this run. "
+            "Has another machine run today?") in text
+    assert next(r for r in _table_rows(text) if r.startswith("Searches")).split()[1] == "-"

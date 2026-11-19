@@ -15,10 +15,10 @@ CLEAN_RUN = {
     "at": "2026-10-05T10:02:47",
     "started_at": "2026-10-05T09:49:30",
     "date": "2026-10-05",
-    "opening": {"balance": 119560, "unclaimed": 602, "total": 120162},
-    "closing": {"balance": 120361, "unclaimed": 0, "total": 120361},
-    "opening_total": 120162,
-    "closing_total": 120361,
+    "opening": {"balance": 49398, "unclaimed": 602, "total": 50000},
+    "closing": {"balance": 50199, "unclaimed": 0, "total": 50199},
+    "opening_total": 50000,
+    "closing_total": 50199,
     "overall_delta": 199,
     "claim": {"clicked": True, "moved": 3, "error": None},
     "tasks": {
@@ -36,7 +36,7 @@ CLEAN_RUN = {
 FLAGGED_RUN = copy.deepcopy(CLEAN_RUN)
 FLAGGED_RUN.update({
     "at": "2026-10-04T11:17:46", "started_at": "2026-10-04T11:06:24",
-    "date": "2026-10-04", "opening_total": 120040, "closing_total": 120157,
+    "date": "2026-10-04", "opening_total": 49800, "closing_total": 49917,
     "overall_delta": 117,
 })
 FLAGGED_RUN["tasks"]["keep_earning"] = {
@@ -83,7 +83,7 @@ def test_every_task_and_the_totals_are_in_the_table():
         row = next(r for r in rows if r.startswith(label))
         assert row.split()[-2:] == [done, points], row
     assert "Earned" in joined and "+199" in joined
-    assert "Total  120,162 → 120,361" in joined
+    assert "Total  50,000 → 50,199" in joined
 
 
 def test_table_rows_fit_a_phone():

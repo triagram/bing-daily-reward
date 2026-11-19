@@ -69,11 +69,10 @@ It does the four tasks in order (Daily set, searches, Keep earning, Explore on B
 then claims the "Ready to claim" pot. A run takes about ten minutes, most of it waiting
 between searches, and ends with a table of points per task.
 
-**Don't run it twice on a day that went fine.** The other tasks only do what is still
-outstanding, but the search task picks a new count each time and adds it, stopping four
-searches short of the daily quota. You don't lose anything, but the day ends up with two
-bursts of searches and a nearly full quota, which is exactly the pattern the random
-count is meant to avoid. Re-run a failed day; leave a clean one alone.
+**Re-run a failed day; leave a clean one alone.** A second run only does what is still
+outstanding. If the day already has eight or more searches, it does none and says so in
+the report, because a second burst of searches near the daily quota is exactly the
+pattern the random count is meant to avoid.
 
 ## Automation
 
@@ -192,7 +191,7 @@ Everything tunable is in `config.py`:
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the day's search count is picked from. Deliberately below the quota, and different every day |
+| `DAILY_SEARCH_MIN` / `MAX` | `8` / `12` | Range the day's search count is picked from. Deliberately below the quota, and different every day. A day that already has `MIN` searches gets no more |
 | `DAILY_SEARCH_ALLOWANCE` / `POINTS_PER_SEARCH` | `20` / `3` | The measured daily quota. The run reads the real figure from the dashboard |
 | `KEEP_EARNING_MAX_PER_RUN` | `6` | Maximum number of Keep earning offers per run |
 | `RUN_EXPLORE_ON_BING` | `True` | Do the Explore on Bing tiles as part of the daily run |

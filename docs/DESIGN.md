@@ -87,8 +87,8 @@ not warned, so a warned item cannot come back as a "short" verdict.
   a tool run by hand may be finishing, and gives up with its own exit code after that.
 - Exit codes carry the outcome: 0 clean, 1 crashed, 2 ran with flags, 3 sign-in
   required, 4 profile busy, 5 no desktop session. `OnFailure=` hands the code to one
-  alert script, which words it and sends it - a desktop notification always, a phone
-  push when configured, never a point figure. An evening timer covers the case no
+  alert script, which words it and sends it - a desktop notification where the desktop
+  has a notification service, a phone push when configured, never a point figure. An evening timer covers the case no
   failure can report: a run that never started.
 - The day's report is the one message that does carry figures, by the account
   holder's decision on 2026-10-05. `ExecStopPost=` sends it through the same script
@@ -97,9 +97,9 @@ not warned, so a warned item cannot come back as a "short" verdict.
   and the offer it belongs to. It is shaped for a phone - aligned lines under thirty
   characters, long detail below them - and on a flagged day it replaces the phone
   copy of the failure sentence, so a day is one push either way.
-- Nothing runs twice on purpose. A second run on a clean day would add a second burst
-  of searches and leave the day four short of the quota, so the routine is one run,
-  and the retry tools are for a failed day.
+- Nothing runs twice on purpose: the routine is one run, and the retry tools are for a
+  failed day. A second run anyway does no new searches once the day has the smallest
+  count a run draws, so a second burst near the quota cannot happen by accident.
 
 ## Ruled out
 

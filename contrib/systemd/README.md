@@ -61,8 +61,9 @@ systemctl --user disable --now rewards-bot.timer # stop scheduling the run
 ## Push notifications
 
 Optional. All messages are worded and sent in one place, `rewards-alert.sh`. The
-desktop notification is always sent. The run needs your desktop session anyway, so if
-the notification can't reach you, the run couldn't have happened either. Push
+desktop notification is sent when the desktop has a notification service; one without
+gets the phone push only. The run needs your desktop session anyway, so if the
+notification can't reach you, the run couldn't have happened either. Push
 notifications are added on top, through Telegram, ntfy or both; you pick which, and
 they reach whatever devices you have those apps on. Two kinds of message are pushed:
 

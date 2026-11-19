@@ -8,15 +8,20 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 from playwright.async_api import BrowserContext, Page
+from playwright.async_api import Error as PlaywrightError
 
 from utils import keywords
 from config import POINTS_PER_SEARCH
+from utils.bing_consent import consent_banner_shown, open_bing_home
 from utils.humanizer import daily_search_count, human_scroll, human_type, search_gap
 from utils.retry import retry_async
 from utils.state_reader import (day_already_searched, fetch_search_progress, fetch_state,
                                 searches_credited, searches_remaining)
 
 logger = logging.getLogger("bing_rewards")
+
+BANNER_UNANSWERED_ERROR = ("Bing's cookie banner is unanswered, so searches would earn "
+                           "nothing and none were made. Run --login and click Accept.")
 
 
 @dataclass
@@ -93,6 +98,24 @@ async def _search_once(page: Page, term: str, use_search_box: bool) -> None:
 
     await asyncio.sleep(random.uniform(1.0, 2.5))
     await human_scroll(page)
+
+
+async def _consent_banner_blocks_searching(context: BrowserContext) -> bool:
+    """
+    Whether Bing's cookie banner is on screen, which makes every search earn nothing
+    (2026-10-27). One look per run is enough: the profile keeps an answer once given, so
+    the banner only comes back if that answer is lost. A look that fails proves nothing,
+    and the run searches as it did before this check.
+    """
+    page = await context.new_page()
+    try:
+        await open_bing_home(page)
+        return await consent_banner_shown(page)
+    except PlaywrightError as e:
+        logger.warning(f"   Could not look for Bing's cookie banner ({e}); searching anyway")
+        return False
+    finally:
+        await page.close()
 
 
 async def run_daily_searches(
@@ -178,6 +201,13 @@ async def run_daily_searches(
 
     if search_count <= 0:
         logger.info("✅ [Searches] Allowance already spent today - nothing to do.")
+        if owns_state_page:
+            await state_page.close()
+        return result
+
+    if await _consent_banner_blocks_searching(context):
+        logger.error(f"✗ [Searches] {BANNER_UNANSWERED_ERROR}")
+        result.errors.append(BANNER_UNANSWERED_ERROR)
         if owns_state_page:
             await state_page.close()
         return result

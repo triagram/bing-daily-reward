@@ -173,8 +173,21 @@ class _ReachedTheBrowser(BaseException):
     """Not an Exception, so the task's own error handling lets it through."""
 
 
-def _searches_with_progress(monkeypatch, progress):
-    """The search task up to its first browser call, with the breakdown read stubbed."""
+class _Tab:
+    async def close(self):
+        pass
+
+
+class _Context:
+    async def new_page(self):
+        return _Tab()
+
+
+def _searches_with_progress(monkeypatch, progress, banner=False):
+    """
+    The search task up to its first balance read, with the breakdown and the look for
+    Bing's banner stubbed. `banner` is what the look finds, or an exception it raises.
+    """
     import asyncio
     from utils import task_searches
 
@@ -184,9 +197,19 @@ def _searches_with_progress(monkeypatch, progress):
     async def reached_the_browser(*_args, **_kwargs):
         raise _ReachedTheBrowser
 
+    async def bing_home_loaded(_page):
+        pass
+
+    async def banner_look(_page):
+        if isinstance(banner, Exception):
+            raise banner
+        return banner
+
     monkeypatch.setattr(task_searches, "fetch_search_progress", fake_progress)
     monkeypatch.setattr(task_searches, "fetch_state", reached_the_browser)
-    return asyncio.run(task_searches.run_daily_searches(None, state_page=object()))
+    monkeypatch.setattr(task_searches, "open_bing_home", bing_home_loaded)
+    monkeypatch.setattr(task_searches, "consent_banner_shown", banner_look)
+    return asyncio.run(task_searches.run_daily_searches(_Context(), state_page=object()))
 
 
 def test_a_second_run_searches_nothing_and_says_why(monkeypatch):
@@ -203,6 +226,22 @@ def test_a_first_run_is_not_stopped_by_the_check(monkeypatch):
 def test_an_unreadable_breakdown_does_not_stop_the_run(monkeypatch):
     with pytest.raises(_ReachedTheBrowser):
         _searches_with_progress(monkeypatch, None)
+
+
+def test_an_unanswered_banner_stops_the_searches_with_an_error(monkeypatch):
+    from utils.task_searches import BANNER_UNANSWERED_ERROR
+
+    result = _searches_with_progress(monkeypatch, (0, 60), banner=True)
+    assert result.attempted == 0
+    assert result.errors == [BANNER_UNANSWERED_ERROR]
+
+
+def test_a_failed_look_for_the_banner_does_not_stop_the_run(monkeypatch):
+    from playwright.async_api import Error as PlaywrightError
+
+    with pytest.raises(_ReachedTheBrowser):
+        _searches_with_progress(monkeypatch, (0, 60),
+                                banner=PlaywrightError("net::ERR_NAME_NOT_RESOLVED"))
 
 
 # --------------------------------------------------------------------------- #
@@ -546,6 +585,16 @@ def test_a_skipped_search_is_recorded_and_not_flagged():
     assert record["tasks"]["searches"]["already_credited"] == 11
     assert "already_credited" not in record["tasks"]["daily_set"]
     assert flags_for(record["tasks"]) == []
+
+
+def test_an_unanswered_banner_flags_the_day():
+    from rewards_bot import build_run_record
+    from utils.task_searches import BANNER_UNANSWERED_ERROR, SearchResult
+
+    record = build_run_record("2026-11-19", 100, 100, {
+        "searches": SearchResult(errors=[BANNER_UNANSWERED_ERROR]),
+    })
+    assert flags_for(record["tasks"]) == ["searches:1err"]
 
 
 def test_a_run_that_searched_records_no_skip():

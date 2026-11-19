@@ -30,10 +30,8 @@ in the section, in greyscale, and one browser profile has been seen showing the 
 four as though they were open. An attempt on a locked tile earns nothing however it is
 searched - that is what an early manual test proved, having tested nothing else.
 
-Deliberately not wired into `rewards_bot.py`. It runs from `explore_on_bing.py` so that
-an unproven task cannot put a `zero` verdict into the daily run's Flags column, which is
-what the observation window's exit criterion reads. The result type matches the other
-tasks so that merging it later is three lines.
+Part of the daily run since 2026-09-26, behind `RUN_EXPLORE_ON_BING` in config.py.
+`explore_on_bing.py` runs it alone, to retry the tiles after a failed day.
 """
 
 import re
@@ -168,8 +166,8 @@ VERIFIED_QUERIES: dict[str, str] = {
 TOPIC_QUERIES: dict[str, str] = VERIFIED_QUERIES
 
 # Topics this task no longer attempts. A tile here is skipped and logged as shelved; it
-# is neither attempted nor failed, so once the task joins the daily run a tile that
-# cannot be made to credit does not put a flag on an otherwise clean day.
+# is neither attempted nor failed, so in the daily run a tile that cannot be made to
+# credit does not put a flag on an otherwise clean day.
 #
 # The bar is high on purpose: every other tile has completed on its prompt, an override
 # or a retry, and an entry gives up ten points a fortnight for good. The value is the

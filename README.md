@@ -20,6 +20,7 @@ sends a short report as a push notification (Telegram or ntfy), and a desktop
 notification if something went wrong.
 
 Automation and notifications in detail: [contrib/systemd/README.md](contrib/systemd/README.md).
+Running it on a Raspberry Pi: [docs/raspberry-pi.md](docs/raspberry-pi.md).
 
 ---
 
@@ -213,7 +214,9 @@ Everything tunable is in `config.py`:
 ## Development
 
 `uv run pytest -q` runs the offline tests; they never reach the network or an account.
-How it is built and why: [docs/DESIGN.md](docs/DESIGN.md).
+How it is built and why: [docs/DESIGN.md](docs/DESIGN.md). What the dashboard
+returns and what was measured: [docs/DEVELOP.md](docs/DEVELOP.md). What comes next, and
+what was ruled out: [notes/roadmap.md](notes/roadmap.md).
 
 ---
 

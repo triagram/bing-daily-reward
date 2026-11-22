@@ -147,6 +147,12 @@ def test_the_instruction_is_stripped_but_the_subject_is_not():
             == "top-rated mattresses at great prices")
 
 
+def test_the_instruction_is_stripped_when_it_says_using_bing():
+    """`translations`, 2026-11-20: the whole prompt was typed, instruction included, twice."""
+    assert (query_from_description("Search using Bing to translate any word you want")
+            == "translate any word you want")
+
+
 def test_the_title_carries_a_tile_whose_prompt_did_not_parse():
     """`dictionary` rendered a title and no description on 2026-08-22."""
     with no_override_for("dictionary"):

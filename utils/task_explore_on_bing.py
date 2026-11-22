@@ -184,8 +184,10 @@ SHELVED_TOPICS: dict[str, str] = {
 }
 
 # A tile's prompt reads "Search on Bing to find top-rated mattresses at great prices".
-# The instruction is not part of the query; what follows it is.
-PROMPT_PREFIX = re.compile(r"^\s*search\s+on\s+bing\s+(?:to|for)\s+", re.I)
+# The instruction is not part of the query; what follows it is. "using" since 2026-11-20:
+# `translations` said "Search using Bing to translate any word you want", and the whole
+# sentence was typed, twice, without the tile completing.
+PROMPT_PREFIX = re.compile(r"^\s*search\s+(?:on|using)\s+bing\s+(?:to|for)\s+", re.I)
 LEADING_VERB = re.compile(r"^(?:see|find|check|discover|learn\s+about|explore)\s+", re.I)
 
 
